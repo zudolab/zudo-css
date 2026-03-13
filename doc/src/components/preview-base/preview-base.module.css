@@ -179,3 +179,19 @@
     'Liberation Mono', 'Courier New', monospace;
   white-space: pre;
 }
+
+/* Shiki highlighted code within preview */
+.codeBlockHighlighted :global(pre.shiki) {
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--preview-code-bg) !important;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.codeBlockHighlighted :global(pre.shiki code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  white-space: pre;
+}

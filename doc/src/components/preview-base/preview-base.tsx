@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import HighlightedCode from './highlighted-code';
 import styles from './preview-base.module.css';
 
 export interface CodeBlockData {
@@ -143,13 +144,10 @@ export default function PreviewBase({
             {codeBlocks.map((block) => (
               <div key={block.title} className={styles.codeBlock}>
                 <span className={styles.codeBlockTitle}>{block.title}</span>
-                <pre className={styles.codeBlockPre}>
-                  <code
-                    className={`${styles.codeBlockCode} language-${block.language}`}
-                  >
-                    {block.code}
-                  </code>
-                </pre>
+                <HighlightedCode
+                  code={block.code}
+                  language={block.language}
+                />
               </div>
             ))}
           </div>
