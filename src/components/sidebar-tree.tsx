@@ -142,6 +142,7 @@ export default function SidebarTree({ nodes, currentSlug, backToMenuHref, backTo
             ref={filterRef}
             type="text"
             placeholder="Filter..."
+            aria-label="Filter sidebar"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"

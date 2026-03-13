@@ -75,6 +75,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
           className="fixed inset-0 z-30 lg:hidden"
           style={{ backgroundColor: "rgba(0, 0, 0, 0.3)" }}
           onClick={() => setOpen(false)}
+          aria-hidden="true"
         />
       )}
 

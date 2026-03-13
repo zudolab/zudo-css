@@ -1,9 +1,10 @@
 import type { AstroIntegration } from "astro";
-import { readFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import { settings } from "../config/settings";
+import { collectContentFiles } from "../utils/doc-history";
 
 /** Maximum body text stored per entry (for display excerpts) */
 const MAX_BODY_LENGTH = 300;
@@ -68,44 +69,12 @@ function slugToUrl(slug: string, locale: string | null): string {
   return `${base}/docs/${slug}`;
 }
 
-/** Walk a directory and collect all .md/.mdx files */
-function collectMdFiles(
-  dir: string,
-): Array<{ filePath: string; slug: string }> {
-  const results: Array<{ filePath: string; slug: string }> = [];
-
-  function walk(currentDir: string, baseDir: string): void {
-    let entries;
-    try {
-      entries = readdirSync(currentDir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const fullPath = join(currentDir, entry.name);
-      if (entry.isDirectory()) {
-        walk(fullPath, baseDir);
-      } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
-        const rel = fullPath
-          .slice(baseDir.length + 1)
-          .replace(/\.mdx?$/, "")
-          .replace(/\/index$/, "");
-        results.push({ filePath: fullPath, slug: rel });
-      }
-    }
-  }
-
-  walk(dir, dir);
-  return results;
-}
-
 /** Build search index entries for a content directory */
 function buildEntries(
   contentDir: string,
   locale: string | null,
 ): SearchIndexEntry[] {
-  const absDir = resolve(contentDir);
-  const files = collectMdFiles(absDir);
+  const files = collectContentFiles(contentDir);
   const entries: SearchIndexEntry[] = [];
 
   for (const { filePath, slug } of files) {
