@@ -1,21 +1,44 @@
 import { useState } from "react";
 import type { NavNode } from "@/utils/docs";
-import { INDENT, BASE_PAD, connectorLeft, ConnectorLines } from "./tree-nav-shared";
+import { INDENT, connectorLeft, ConnectorLines } from "./tree-nav-shared";
+
+// site-tree-nav uses wider padding than the narrow sidebar
+const SITE_BASE_PAD = "clamp(0.8rem, 1.5vw, 1.8rem)";
 
 function padLeft(depth: number): string {
-  if (depth === 0) return BASE_PAD;
+  if (depth === 0) return SITE_BASE_PAD;
   return `calc(${depth} * ${INDENT} + 1.25rem + 5px)`;
+}
+
+function reorderTree(tree: NavNode[], order: string[]): NavNode[] {
+  const map = new Map(tree.map((node) => [node.slug, node]));
+  const ordered: NavNode[] = [];
+  for (const slug of order) {
+    const node = map.get(slug);
+    if (node) {
+      ordered.push(node);
+      map.delete(slug);
+    }
+  }
+  // append unmatched nodes at end
+  for (const node of map.values()) {
+    ordered.push(node);
+  }
+  return ordered;
 }
 
 interface SiteTreeNavProps {
   tree: NavNode[];
   ariaLabel?: string;
+  categoryOrder?: string[];
 }
 
 export default function SiteTreeNav({
   tree,
   ariaLabel = "Site index",
+  categoryOrder,
 }: SiteTreeNavProps) {
+  const orderedTree = categoryOrder ? reorderTree(tree, categoryOrder) : tree;
   return (
     <nav
       aria-label={ariaLabel}
@@ -24,7 +47,7 @@ export default function SiteTreeNav({
         gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
       }}
     >
-      {tree.map((node) => (
+      {orderedTree.map((node) => (
         <div key={node.slug} className="min-w-0 border border-muted">
           {node.children.length > 0 ? (
             <CategoryNode node={node} depth={0} isLast={true} />
@@ -112,7 +135,7 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className="px-hsp-md py-vsp-xs hover:underline focus:underline"
+            className={`px-hsp-xl py-vsp-xs hover:underline focus:underline ${open ? "border-l border-b border-muted" : "border-l border-muted"}`}
             aria-expanded={open}
             aria-label={open ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
