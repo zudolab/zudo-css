@@ -84,7 +84,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          pnpm dlx wrangler pages deploy deploy \
+          npx wrangler pages deploy deploy \
             --project-name=zudo-css \
             --branch=main \
             --commit-hash=${GITHUB_SHA} \
