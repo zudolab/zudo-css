@@ -28,9 +28,16 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Cloudflare
+.wrangler/
+
+# Playwright
+.playwright-cli/
+
 # Misc
 __inbox/
 src/data/
+doc/
 
 # Generated skill files (contain machine-specific absolute paths)
 .claude/skills/css-wisdom/SKILL.md
