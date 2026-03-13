@@ -141,7 +141,7 @@ export default function HeaderNav({ items }: HeaderNavProps) {
     <nav
       ref={navRef}
       aria-label="Main"
-      className="relative ml-hsp-xl hidden min-w-0 flex-1 items-center gap-x-hsp-2xs whitespace-nowrap sm:flex"
+      className="relative ml-hsp-xl hidden min-w-0 flex-1 items-center gap-x-hsp-2xs whitespace-nowrap lg:flex"
     >
       {/* Hidden measurement row — mirrors item styles for accurate width calculation */}
       <div
