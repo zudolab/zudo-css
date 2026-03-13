@@ -8,11 +8,9 @@ const ROOT = process.cwd();
 
 // Resolve the main repo root (handles git worktrees correctly)
 function getRepoRoot() {
-  const gitCommonDir = execSync("git rev-parse --git-common-dir", {
+  return execSync("git rev-parse --show-toplevel", {
     encoding: "utf-8",
   }).trim();
-  // gitCommonDir is e.g. "/home/user/repo/.git" — parent is the repo root
-  return dirname(gitCommonDir);
 }
 
 const REPO_ROOT = getRepoRoot();
@@ -135,6 +133,13 @@ Each entry: \`file path\` — brief description.`);
     lines.push("");
     for (const article of grouped[cat]) {
       lines.push(`- \`${article.relPath}\` — ${article.description}`);
+    }
+  }
+
+  // Warn about categories not in CATEGORY_ORDER
+  for (const cat of Object.keys(grouped)) {
+    if (!CATEGORY_ORDER.includes(cat)) {
+      process.stderr.write(`Warning: Category "${cat}" not in CATEGORY_ORDER, ${grouped[cat].length} article(s) excluded\n`);
     }
   }
 

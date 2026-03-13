@@ -18,6 +18,16 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
     };
   }, [open]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open]);
+
   // Close mobile sidebar on View Transition navigation
   useEffect(() => {
     function handleSwap() {
@@ -34,6 +44,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         type="button"
         onClick={() => setOpen(!open)}
         className="lg:hidden px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
+        aria-expanded={open}
         aria-label={open ? "Close sidebar" : "Open sidebar"}
       >
         {open ? (

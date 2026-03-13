@@ -77,7 +77,9 @@ export default function HeaderNav({ items }: HeaderNavProps) {
 
     const nav = navRef.current;
     if (!nav) return;
-    const observer = new ResizeObserver(recalculate);
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(recalculate);
+    });
     observer.observe(nav);
     return () => observer.disconnect();
   }, [recalculate]);
@@ -208,7 +210,6 @@ export default function HeaderNav({ items }: HeaderNavProps) {
       {menuOpen && hasOverflow && (
         <div
           ref={menuRef}
-          role="menu"
           className="absolute right-0 top-full z-50 mt-px min-w-[10rem] border border-muted bg-surface py-vsp-2xs"
           style={{ boxShadow: "0 4px 12px color-mix(in srgb, var(--zd-bg) 50%, transparent)" }}
         >
@@ -216,7 +217,6 @@ export default function HeaderNav({ items }: HeaderNavProps) {
             <a
               key={item.href}
               href={item.href}
-              role="menuitem"
               aria-current={item.isActive ? "page" : undefined}
               className={`block px-hsp-lg py-vsp-2xs text-small font-medium whitespace-nowrap transition-colors ${
                 item.isActive
