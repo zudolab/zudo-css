@@ -73,13 +73,11 @@ const tree = buildNavTree(navDocs, lang, categoryMeta);
         </div>
 
         <!-- Full site tree nav -->
-        <div>
-          <SiteTreeNav
-            tree={tree}
-            ariaLabel="サイトインデックス"
-            client:idle
-          />
-        </div>
+        <SiteTreeNav
+          tree={tree}
+          ariaLabel="サイトインデックス"
+          client:idle
+        />
       </main>
     </div>
     <PageLoadingOverlay />

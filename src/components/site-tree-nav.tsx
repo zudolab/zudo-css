@@ -17,8 +17,22 @@ export default function SiteTreeNav({
   ariaLabel = "Site index",
 }: SiteTreeNavProps) {
   return (
-    <nav aria-label={ariaLabel}>
-      <NodeList nodes={tree} depth={0} />
+    <nav
+      aria-label={ariaLabel}
+      className="grid gap-vsp-md"
+      style={{
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(18rem, 100%), 1fr))",
+      }}
+    >
+      {tree.map((node) => (
+        <div key={node.slug} className="min-w-0 border border-muted">
+          {node.children.length > 0 ? (
+            <CategoryNode node={node} depth={0} isLast={true} />
+          ) : (
+            <LeafNode node={node} depth={0} isLast={true} />
+          )}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -62,7 +76,7 @@ function CategoryNode({
   const paddingLeft = padLeft(depth);
 
   return (
-    <div className={`${depth === 0 ? "border-t border-muted first:border-t-0" : ""} ${depth >= 1 && !isLast ? "relative" : ""}`}>
+    <div className={`${depth >= 1 && !isLast ? "relative" : ""}`}>
       {depth >= 1 && !isLast && open && (
         <div
           className="absolute border-l border-solid border-muted z-10"
@@ -142,7 +156,7 @@ function LeafNode({
   const paddingLeft = padLeft(depth);
 
   return (
-    <div className={isRoot ? "border-t border-muted first:border-t-0" : ""}>
+    <div>
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
         <a
