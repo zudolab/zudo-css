@@ -71,27 +71,8 @@ const tree = buildNavTree(navDocs, "en", categoryMeta);
           )}
         </div>
 
-        <!-- Category cards -->
-        <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-3">
-          {settings.headerNav.map((item) => (
-              <a
-                href={withBase(item.path)}
-                class="group block border border-muted bg-surface px-hsp-xl py-vsp-lg hover:border-accent"
-              >
-                <h2 class="text-subheading font-bold text-fg group-hover:text-accent mb-vsp-xs">
-                  {item.label}
-                </h2>
-                <span class="text-small text-muted">
-                  Browse {item.label.toLowerCase()} &rarr;
-                </span>
-              </a>
-          ))}
-        </div>
-
         <!-- Full site tree nav -->
-        <div class="mt-vsp-2xl">
-          <SiteTreeNav tree={tree} client:idle />
-        </div>
+        <SiteTreeNav tree={tree} client:idle />
       </main>
     </div>
     <PageLoadingOverlay />
