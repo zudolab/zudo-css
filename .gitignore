@@ -5,6 +5,9 @@ node_modules/
 dist/
 build/
 
+# Astro
+.astro/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -27,6 +30,7 @@ pnpm-debug.log*
 
 # Misc
 __inbox/
+src/data/
 
 # Generated skill files (contain machine-specific absolute paths)
 .claude/skills/css-wisdom/SKILL.md

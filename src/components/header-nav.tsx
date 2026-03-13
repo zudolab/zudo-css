@@ -77,7 +77,9 @@ export default function HeaderNav({ items }: HeaderNavProps) {
 
     const nav = navRef.current;
     if (!nav) return;
-    const observer = new ResizeObserver(recalculate);
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(recalculate);
+    });
     observer.observe(nav);
     return () => observer.disconnect();
   }, [recalculate]);

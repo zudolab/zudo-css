@@ -1,16 +1,51 @@
 {
   "name": "zcss",
+  "version": "0.0.1",
   "private": true,
+  "type": "module",
   "scripts": {
-    "doc:start": "pnpm --dir doc start",
-    "doc:start:ja": "pnpm --dir doc start:ja",
-    "doc:build": "pnpm --dir doc build",
-    "doc:serve": "pnpm --dir doc serve",
-    "doc:check": "pnpm --dir doc check",
-    "doc:check:fix": "pnpm --dir doc check:fix",
-    "doc:generate": "pnpm --dir doc generate",
-    "generate:css-wisdom": "node doc/scripts/generate-css-wisdom.js",
-    "setup:symlink": "node doc/scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked ~/.claude/skills/css-wisdom → .claude/skills/css-wisdom'"
+    "// ── Core ─────────────────────────────────────────": "",
+    "predev": "lsof -ti :8811 | xargs kill 2>/dev/null; true",
+    "dev": "astro dev --port 8811 --host css-bp.localhost",
+    "build": "astro build",
+    "preview": "astro preview --port 8811",
+    "// ── Quality ──────────────────────────────────────": "",
+    "check": "NODE_OPTIONS='--max-old-space-size=6144' astro check",
+    "// ── Tools ──────────────────────────────────────": "",
+    "generate:css-wisdom": "node scripts/generate-css-wisdom.js",
+    "setup:symlink": "node scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked'"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.3.13",
+    "@astrojs/react": "^4.4.2",
+    "@shikijs/transformers": "^4.0.1",
+    "@takazudo/mdx-formatter": "latest",
+    "astro": "^5.18.0",
+    "clsx": "^2.1.1",
+    "diff": "^8.0.3",
+    "github-slugger": "^2.0.0",
+    "gray-matter": "^4.0.3",
+    "minisearch": "^7.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "shiki": "^4.0.2",
+    "unist-util-visit": "^5.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@types/hast": "^3.0.4",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   },
   "engines": {
     "node": ">=20.0"

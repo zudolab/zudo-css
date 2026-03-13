@@ -20,9 +20,6 @@ importers:
       '@takazudo/mdx-formatter':
         specifier: latest
         version: 0.4.0
-      '@types/hast':
-        specifier: ^3.0.4
-        version: 3.0.4
       astro:
         specifier: ^5.18.0
         version: 5.18.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
@@ -60,6 +57,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.2.1
         version: 4.2.1(vite@6.4.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.31.1)(yaml@2.8.2))
+      '@types/hast':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/node':
         specifier: ^25.3.5
         version: 25.5.0

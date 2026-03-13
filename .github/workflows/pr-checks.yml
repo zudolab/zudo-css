@@ -34,11 +34,11 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: doc/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: pnpm --dir doc install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Quality checks
-        run: pnpm --dir doc run check
+        run: pnpm run check
 
   build-and-preview:
     name: Build and Deploy Preview
@@ -56,15 +56,15 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: doc/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: pnpm --dir doc install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Build
-        run: pnpm --dir doc run build
+        run: pnpm run build
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zcss
-          cp -r doc/dist/* deploy/pj/zcss/
+          cp -r dist/* deploy/pj/zcss/
       - name: Deploy preview
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

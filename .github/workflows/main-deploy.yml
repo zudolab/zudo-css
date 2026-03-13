@@ -32,11 +32,11 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: doc/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: pnpm --dir doc install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Quality checks
-        run: pnpm --dir doc run check
+        run: pnpm run check
 
   build:
     name: Build
@@ -54,15 +54,15 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: doc/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: pnpm --dir doc install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Build
-        run: pnpm --dir doc run build
+        run: pnpm run build
       - uses: actions/upload-artifact@v4
         with:
           name: doc-dist
-          path: doc/dist/
+          path: dist/
           retention-days: 1
 
   deploy:
