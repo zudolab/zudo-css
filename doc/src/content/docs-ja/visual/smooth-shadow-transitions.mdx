@@ -1,0 +1,302 @@
+---
+title: スムーズなシャドウトランジション
+sidebar_position: 6
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+カードのホバーエフェクトでは、`box-shadow` を変更して要素を浮き上がらせるのが一般的です。AIエージェントは素朴に `transition: box-shadow 0.3s ease` と書きますが、これは視覚的には機能するものの、アニメーションの各フレームでコストの高いリペイントを発生させます。`box-shadow` はコンポジターフレンドリーなプロパティではないため、ブラウザはフレームごとにシャドウのピクセルを再計算してリペイントする必要があります。インタラクティブなカードが多いページでは、特に低スペックのデバイスで目に見えるフレーム落ちやジャンクを引き起こします。
+
+## 解決方法
+
+`box-shadow` を直接トランジションする代わりに、重いシャドウを擬似要素（`::after`）に配置し、その `opacity` のみをトランジションします。`opacity` はレイアウトやペイントを発生させずにGPUコンポジターで完全に処理されるため、シャドウの複雑さに関係なくアニメーションは滑らかな60 FPSで動作します。
+
+個々のシャドウパラメータ（ブラー、スプレッド、色）を独立してアニメーションする必要がある場合は、`@property` ルールを使うことで、ブラウザにカスタムプロパティを型付きのアニメーション可能な値として扱わせることができます。
+
+## コード例
+
+### 素朴な（コストの高い）アプローチ
+
+これは機能しますが、`box-shadow` の変更がフレームごとにペイントを発生させるため、パフォーマンスが悪いです。
+
+```css
+/* Avoid this for performance-critical animations */
+.card-naive {
+  box-shadow: 0 1px 2px hsl(0deg 0% 0% / 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-naive:hover {
+  box-shadow:
+    0 4px 8px hsl(0deg 0% 0% / 0.1),
+    0 16px 32px hsl(0deg 0% 0% / 0.08);
+}
+```
+
+### パフォーマンスの良いアプローチ：擬似要素のオパシティ
+
+```css
+.card {
+  position: relative;
+  border-radius: 12px;
+  background: white;
+  /* Base shadow — always visible */
+  box-shadow: 0 1px 2px hsl(0deg 0% 0% / 0.1);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Hover shadow — pre-rendered but invisible */
+  box-shadow:
+    0 4px 8px hsl(220deg 60% 50% / 0.08),
+    0 12px 24px hsl(220deg 60% 50% / 0.06),
+    0 24px 48px hsl(220deg 60% 50% / 0.04);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  /* Keep pseudo-element behind content */
+  z-index: -1;
+}
+
+.card:hover::after {
+  opacity: 1;
+}
+```
+
+```html
+<div class="card">
+  <h3>Performant Shadow Hover</h3>
+  <p>Shadow transitions via opacity, not box-shadow.</p>
+</div>
+```
+
+ブラウザは両方のシャドウを一度だけレンダリングし（完全な値で）、ホバー時に擬似要素のオパシティをフェードするだけです。リペイントは不要で、コンポジティングのみです。
+
+### リフトエフェクト付きの完全なカード
+
+擬似要素のシャドウと微妙な `transform: translateY()` を組み合わせると、説得力のある「ページから浮き上がる」ホバーエフェクトになります。
+
+```css
+.lift-card {
+  position: relative;
+  border-radius: 12px;
+  background: white;
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.06),
+    0 2px 4px hsl(220deg 60% 50% / 0.06);
+  transition: transform 0.3s ease;
+}
+
+.lift-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    0 2px 4px hsl(220deg 60% 50% / 0.05),
+    0 8px 16px hsl(220deg 60% 50% / 0.05),
+    0 16px 32px hsl(220deg 60% 50% / 0.05),
+    0 32px 64px hsl(220deg 60% 50% / 0.04);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.lift-card:hover {
+  transform: translateY(-4px);
+}
+
+.lift-card:hover::after {
+  opacity: 1;
+}
+```
+
+`transform` と `opacity` はどちらもコンポジターフレンドリーなため、このホバーエフェクト全体がレイアウトやペイントなしで動作します。
+
+### @property トリックによる個別シャドウパラメータ
+
+きめ細かい制御が必要な場合 — 例えば、シャドウのブラーや色だけを独立してアニメーションする場合 — `@property` を使って型付きのカスタムプロパティを作成し、ブラウザが補間できるようにします。
+
+```css
+@property --shadow-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 2px;
+}
+
+@property --shadow-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 1px;
+}
+
+@property --shadow-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: hsl(220deg 60% 50% / 0.1);
+}
+
+.card-property {
+  box-shadow: 0 var(--shadow-y) var(--shadow-blur) var(--shadow-color);
+  transition:
+    --shadow-blur 0.3s ease,
+    --shadow-y 0.3s ease,
+    --shadow-color 0.5s ease;
+}
+
+.card-property:hover {
+  --shadow-blur: 24px;
+  --shadow-y: 12px;
+  --shadow-color: hsl(220deg 60% 50% / 0.2);
+}
+```
+
+これにより各シャドウパラメータが独自のタイミングでトランジションします。ブラウザはフレームごとにリペイントしますが（素朴なアプローチと同様）、個々のパラメータに対する精密な制御が得られます。パフォーマンスよりもクリエイティブな制御が重要な場合、例えば単一のヒーロー要素などに使いましょう。
+
+### 3つのアプローチの比較
+
+```css
+/* 1. Naive — simple but expensive */
+.approach-naive {
+  box-shadow: 0 2px 4px hsl(0deg 0% 0% / 0.1);
+  transition: box-shadow 0.3s;
+}
+
+/* 2. Pseudo-element opacity — performant */
+.approach-pseudo {
+  position: relative;
+  box-shadow: 0 2px 4px hsl(0deg 0% 0% / 0.1);
+}
+
+.approach-pseudo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 12px 24px hsl(0deg 0% 0% / 0.15);
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
+}
+
+/* 3. @property — creative control, moderate performance */
+@property --blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 4px;
+}
+
+.approach-property {
+  box-shadow: 0 2px var(--blur) hsl(0deg 0% 0% / 0.1);
+  transition: --blur 0.3s;
+}
+
+.approach-property:hover {
+  --blur: 24px;
+}
+```
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="コストの高い box-shadow トランジション vs 軽量なオパシティアプローチ"
+  html={`<div class="demo"><div class="card naive"><h3>Naive Approach</h3><p>Transitions box-shadow directly (triggers repaint every frame)</p><span class="hint">Hover to see effect</span></div><div class="card performant"><h3>Performant Approach</h3><p>Transitions pseudo-element opacity (GPU compositing only)</p><span class="hint">Hover to see effect</span></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #f1f5f9;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      padding: 24px;
+      border-radius: 12px;
+      background: white;
+      width: 220px;
+      cursor: pointer;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: #0f172a;
+    }
+    .card p {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0 0 12px;
+      line-height: 1.5;
+    }
+    .hint {
+      font-size: 12px;
+      color: #3b82f6;
+      font-weight: 500;
+    }
+    .naive {
+      box-shadow: 0 1px 3px hsl(0deg 0% 0% / 0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    .naive:hover {
+      box-shadow:
+      0 4px 8px hsl(0deg 0% 0% / 0.1),
+      0 16px 32px hsl(0deg 0% 0% / 0.08);
+    }
+    .performant {
+      position: relative;
+      box-shadow: 0 1px 3px hsl(0deg 0% 0% / 0.1);
+      transition: transform 0.3s ease;
+    }
+    .performant::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow:
+      0 4px 8px hsl(220deg 60% 50% / 0.08),
+      0 12px 24px hsl(220deg 60% 50% / 0.06),
+      0 24px 48px hsl(220deg 60% 50% / 0.04);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+    }
+    .performant:hover {
+      transform: translateY(-2px);
+    }
+    .performant:hover::after {
+      opacity: 1;
+    }
+    `}
+  height={280} />
+
+## AIがよくやるミス
+
+- **常に `transition: box-shadow` を使う** — これは最もよくある間違いです。視覚的には機能しますが、ホバー可能なカードが多いページではブラウザがフレームごとにシャドウをリペイントするためジャンクが発生します。
+- **親に `position: relative` を忘れる** — 擬似要素はアンカーとなる位置指定された親が必要です。これがないと、シャドウが予期しない位置にレンダリングされます。
+- **`border-radius: inherit` がない** — 擬似要素はデフォルトでは border-radius を継承しません。これがないと、ホバーシャドウは角が四角で、カードは角丸になります。
+- **擬似要素に `z-index: -1` を忘れる** — 負の z-index がないと、擬似要素のシャドウがカードコンテンツの上に表示され、テキストの選択やクリックイベントをブロックします。
+- **`will-change: box-shadow` を使う** — これは助けになりません。`will-change` は要素を独自のコンポジターレイヤーに昇格させますが、`box-shadow` の変更はそのレイヤー内でリペイントが必要です。擬似要素のオパシティトリックが正しい解決策です。
+- **型付きカスタムプロパティに `@property` を使わない** — 標準の `--custom-properties` は文字列として扱われ、補間できません。アニメーション可能なカスタムプロパティには、明示的な `syntax` を持つ `@property` が必要です。
+- **頻繁にアニメーションされる要素に過度に複雑なシャドウを使う** — オパシティトリックを使っても、多くの要素で同時に非常に複雑なシャドウ（6レイヤー以上）をレンダリングすると、初期ペイントのパフォーマンスに影響する可能性があります。
+
+## 使い分け
+
+- **カードのホバーエフェクト** — ホバー可能なカードグリッドには擬似要素のオパシティトリックが標準アプローチ
+- **インタラクティブなリストやテーブル** — パフォーマンスコストなしでシャドウを変更する行のホバーエフェクト
+- **クリエイティブなシャドウを持つヒーロー要素** — 精密なパラメータアニメーションが重要な単一要素には `@property` トリック
+- **`transition: box-shadow` を持つ任意の要素** — パフォーマンスが重要なコンテキストでは擬似要素テクニックに置き換えましょう
+
+## 参考リンク
+
+- [How to Animate Box-Shadow with Silky Smooth Performance — Tobias Ahlin](https://tobiasahlin.com/blog/how-to-animate-box-shadow/)
+- [Box-Shadow Transition Performance — Cloud 66](https://blog.cloud66.com/box-shadow-transition-performance)
+- [Exploring @property and Its Animating Powers — CSS-Tricks](https://css-tricks.com/exploring-property-and-its-animating-powers/)
+- [The Times You Need a Custom @property Instead of a CSS Variable — Smashing Magazine](https://www.smashingmagazine.com/2024/05/times-need-custom-property-instead-css-variable/)
+- [box-shadow — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow)

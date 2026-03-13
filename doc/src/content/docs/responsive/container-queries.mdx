@@ -1,0 +1,721 @@
+---
+title: Container Queries
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Media queries respond to the viewport width, not the width of the component's container. When a component is placed in a sidebar, a modal, or any constrained layout, viewport-based media queries cannot adapt the component's layout to its actual available space. AI agents almost always reach for `@media` queries for component-level responsiveness, ignoring container queries entirely.
+
+## The Solution
+
+CSS Container Queries (`@container`) allow components to respond to the size of their parent container rather than the viewport. This makes components truly reusable across different layout contexts. Container queries are Baseline 2023 and supported in all modern browsers.
+
+### Setting Up a Container
+
+A parent element must be declared as a containment context using `container-type`. The most common value is `inline-size`, which enables queries based on the container's inline (horizontal) dimension.
+
+```css
+.card-wrapper {
+  container-type: inline-size;
+}
+```
+
+### Querying the Container
+
+```css
+@container (min-width: 400px) {
+  .card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+  }
+}
+```
+
+### Basic Container Query
+
+The iframe in this demo acts as the container boundary. Use the viewport buttons to see the card layout adapt to the container width.
+
+<CssPreview client:load
+  title="Basic Container Query — card layout adapts to container width"
+  html={`
+    <div class="card-wrapper">
+      <article class="card">
+        <div class="card__image"></div>
+        <div class="card__body">
+          <h3 class="card__title">Responsive Card</h3>
+          <p class="card__text">This card uses container queries to adapt its layout. At narrow widths it stacks vertically; at wider widths it switches to a horizontal layout.</p>
+        </div>
+      </article>
+    </div>
+    `}
+  css={`
+    .card-wrapper {
+      container-type: inline-size;
+      padding: 1rem;
+    }
+    
+    .card {
+      display: flex;
+      flex-direction: column;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .card__image {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    }
+    
+    .card__body {
+      padding: 1rem;
+    }
+    
+    .card__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: #1e293b;
+    }
+    
+    .card__text {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    @container (min-width: 500px) {
+    .card {
+      flex-direction: row;
+    }
+    .card__image {
+      width: 200px;
+      height: auto;
+      min-height: 150px;
+    }
+    }
+    
+    @container (min-width: 700px) {
+    .card {
+    gap: 1rem;
+    }
+    .card__image {
+    width: 280px;
+    }
+    .card__title {
+    font-size: 1.375rem;
+    }
+    }
+    `} />
+
+## Named Containers
+
+When containers are nested, `@container` queries match the nearest ancestor with `container-type` set. To target a specific container, use `container-name` and reference it in the query.
+
+```css
+.sidebar {
+  container-type: inline-size;
+  container-name: sidebar;
+}
+
+.main-content {
+  container-type: inline-size;
+  container-name: main;
+}
+
+/* Only responds to the sidebar container */
+@container sidebar (max-width: 300px) {
+  .nav-list {
+    flex-direction: column;
+  }
+}
+```
+
+The shorthand `container` property combines both:
+
+```css
+.sidebar {
+  container: sidebar / inline-size;
+}
+```
+
+<CssPreview client:load
+  title="Named Containers — same component adapts differently in sidebar vs main"
+  html={`
+    <div class="page-layout">
+      <aside class="sidebar">
+        <h4 class="section-label">Sidebar (narrow container)</h4>
+        <div class="info-card">
+          <div class="info-card__icon">&#9733;</div>
+          <div class="info-card__content">
+            <strong class="info-card__title">Featured</strong>
+            <span class="info-card__text">This card adapts to its sidebar container</span>
+          </div>
+        </div>
+      </aside>
+      <main class="main-content">
+        <h4 class="section-label">Main Content (wide container)</h4>
+        <div class="info-card">
+          <div class="info-card__icon">&#9733;</div>
+          <div class="info-card__content">
+            <strong class="info-card__title">Featured</strong>
+            <span class="info-card__text">Same card component adapts to the wider main container, showing a horizontal layout with more space</span>
+          </div>
+        </div>
+      </main>
+    </div>
+    `}
+  css={`
+    .page-layout {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .sidebar {
+      container: sidebar / inline-size;
+    }
+    
+    .main-content {
+      container: main / inline-size;
+    }
+    
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin: 0 0 0.5rem;
+    }
+    
+    .info-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+    }
+    
+    .info-card__icon {
+      font-size: 1.5rem;
+      color: #f59e0b;
+      line-height: 1;
+    }
+    
+    .info-card__content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .info-card__title {
+      font-size: 0.875rem;
+      color: #1e293b;
+    }
+    
+    .info-card__text {
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    
+    @container main (min-width: 300px) {
+    .info-card {
+      flex-direction: row;
+      text-align: left;
+      align-items: flex-start;
+    }
+    }
+    `}
+  height={220} />
+
+## Container Query Units
+
+Container query units are relative to the dimensions of the query container. These are useful for fluid sizing within a component.
+
+- `cqw` — 1% of the container's width
+- `cqh` — 1% of the container's height
+- `cqi` — 1% of the container's inline size
+- `cqb` — 1% of the container's block size
+- `cqmin` — the smaller of `cqi` or `cqb`
+- `cqmax` — the larger of `cqi` or `cqb`
+
+```css
+.card-container {
+  container-type: inline-size;
+}
+
+.card__title {
+  /* 5% of the container's inline size, clamped */
+  font-size: clamp(1rem, 5cqi, 2rem);
+}
+
+.card__body {
+  /* Padding relative to container width */
+  padding: 2cqi;
+}
+```
+
+<CssPreview client:load
+  title="Container Query Units — text and spacing scale with container"
+  html={`
+    <div class="cqu-demo">
+      <div class="cqu-card">
+        <h3 class="cqu-card__title">Fluid Title</h3>
+        <p class="cqu-card__text">This text and padding scale with the container width using cqi units. Resize using the viewport buttons to see everything scale proportionally.</p>
+        <div class="cqu-card__badge">cqi sized</div>
+      </div>
+    </div>
+    `}
+  css={`
+    .cqu-demo {
+      container-type: inline-size;
+      padding: 1rem;
+    }
+    
+    .cqu-card {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: white;
+      padding: clamp(0.75rem, 4cqi, 2.5rem);
+      border-radius: clamp(0.375rem, 1.5cqi, 1rem);
+    }
+    
+    .cqu-card__title {
+      font-size: clamp(1rem, 5cqi, 2.25rem);
+      font-weight: 700;
+      margin: 0 0 clamp(0.25rem, 1.5cqi, 0.75rem);
+      line-height: 1.2;
+    }
+    
+    .cqu-card__text {
+      font-size: clamp(0.75rem, 2.5cqi, 1.125rem);
+      color: #cbd5e1;
+      margin: 0 0 clamp(0.5rem, 2cqi, 1rem);
+      line-height: 1.5;
+    }
+    
+    .cqu-card__badge {
+      display: inline-block;
+      background: #3b82f6;
+      color: white;
+      font-size: clamp(0.625rem, 2cqi, 0.875rem);
+      font-weight: 600;
+      padding: clamp(0.125rem, 0.5cqi, 0.375rem) clamp(0.375rem, 1.5cqi, 0.75rem);
+      border-radius: 9999px;
+    }
+    `} />
+
+## Card Component Adapting to Container Width
+
+A common real-world use case is a card component that works in any layout context: a narrow sidebar, a medium-width grid column, or a full-width main area.
+
+<CssPreview client:load
+  title="Adaptive Card Grid — cards respond to their container, not the viewport"
+  html={`
+    <div class="card-grid">
+      <div class="card-cell">
+        <article class="adaptive-card">
+          <div class="adaptive-card__media"></div>
+          <div class="adaptive-card__body">
+            <h3 class="adaptive-card__title">Mountain Retreat</h3>
+            <p class="adaptive-card__desc">A peaceful getaway nestled in the mountains with stunning views and fresh mountain air.</p>
+            <span class="adaptive-card__price">$120 / night</span>
+          </div>
+        </article>
+      </div>
+      <div class="card-cell">
+        <article class="adaptive-card">
+          <div class="adaptive-card__media" style="background: linear-gradient(135deg, #22c55e, #15803d);"></div>
+          <div class="adaptive-card__body">
+            <h3 class="adaptive-card__title">Forest Cabin</h3>
+            <p class="adaptive-card__desc">A cozy cabin surrounded by towering trees and natural beauty.</p>
+            <span class="adaptive-card__price">$95 / night</span>
+          </div>
+        </article>
+      </div>
+      <div class="card-cell">
+        <article class="adaptive-card">
+          <div class="adaptive-card__media" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+          <div class="adaptive-card__body">
+            <h3 class="adaptive-card__title">Beach House</h3>
+            <p class="adaptive-card__desc">Oceanfront living with direct beach access and sunset views from every room.</p>
+            <span class="adaptive-card__price">$200 / night</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    `}
+  css={`
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .card-cell {
+      container-type: inline-size;
+    }
+    
+    .adaptive-card {
+      display: flex;
+      flex-direction: column;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      height: 100%;
+    }
+    
+    .adaptive-card__media {
+      width: 100%;
+      height: 100px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+    }
+    
+    .adaptive-card__body {
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    
+    .adaptive-card__title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.375rem;
+      color: #1e293b;
+    }
+    
+    .adaptive-card__desc {
+      font-size: 0.8125rem;
+      color: #64748b;
+      margin: 0 0 0.75rem;
+      line-height: 1.4;
+      flex: 1;
+    }
+    
+    .adaptive-card__price {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #059669;
+    }
+    
+    @container (min-width: 350px) {
+    .adaptive-card {
+      flex-direction: row;
+    }
+    .adaptive-card__media {
+      width: 140px;
+      height: auto;
+      min-height: 120px;
+    }
+    .adaptive-card__body {
+      padding: 1rem;
+    }
+    }
+    `}
+  height={400} />
+
+## Container Queries vs. Media Queries
+
+The key difference: media queries respond to the **viewport**, while container queries respond to the **parent container**. This demo places the same component in two different-width containers on the same page. The media query version looks identical in both because the viewport hasn't changed. The container query version adapts to each container independently.
+
+<CssPreview client:load
+  title="Container queries vs media queries — same component, different containers"
+  html={`
+    <h4 class="demo-heading">Using @container (adapts to each container)</h4>
+    <div class="comparison-layout">
+      <div class="narrow-container cq-container">
+        <article class="cq-card">
+          <div class="cq-card__image"></div>
+          <div class="cq-card__body">
+            <strong>Container Query Card</strong>
+            <span>Narrow container</span>
+          </div>
+        </article>
+      </div>
+      <div class="wide-container cq-container">
+        <article class="cq-card">
+          <div class="cq-card__image"></div>
+          <div class="cq-card__body">
+            <strong>Container Query Card</strong>
+            <span>Wide container</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    
+    <h4 class="demo-heading" style="margin-top: 1.5rem;">Using @media (both look the same)</h4>
+    <div class="comparison-layout">
+      <div class="narrow-container">
+        <article class="mq-card">
+          <div class="mq-card__image"></div>
+          <div class="mq-card__body">
+            <strong>Media Query Card</strong>
+            <span>Narrow container</span>
+          </div>
+        </article>
+      </div>
+      <div class="wide-container">
+        <article class="mq-card">
+          <div class="mq-card__image"></div>
+          <div class="mq-card__body">
+            <strong>Media Query Card</strong>
+            <span>Wide container</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo-heading {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #475569;
+      margin: 0 0 0.5rem;
+      padding: 0 0.75rem;
+    }
+    
+    .comparison-layout {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 0.75rem;
+      padding: 0 0.75rem;
+    }
+    
+    .narrow-container {
+      min-width: 0;
+    }
+    
+    .wide-container {
+      min-width: 0;
+    }
+    
+    /* ---- Container Query version ---- */
+    .cq-container {
+      container-type: inline-size;
+    }
+    
+    .cq-card {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #bfdbfe;
+      border-radius: 0.375rem;
+      overflow: hidden;
+      background: #eff6ff;
+    }
+    
+    .cq-card__image {
+      width: 100%;
+      height: 48px;
+      background: #3b82f6;
+    }
+    
+    .cq-card__body {
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+    
+    .cq-card__body strong {
+      font-size: 0.75rem;
+      color: #1e293b;
+    }
+    
+    .cq-card__body span {
+      font-size: 0.6875rem;
+      color: #64748b;
+    }
+    
+    @container (min-width: 300px) {
+    .cq-card {
+      flex-direction: row;
+    }
+    .cq-card__image {
+      width: 80px;
+      height: auto;
+      min-height: 60px;
+    }
+    }
+    
+    /* ---- Media Query version ---- */
+    .mq-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    background: #fef2f2;
+    }
+    
+    .mq-card__image {
+    width: 100%;
+    height: 48px;
+    background: #ef4444;
+    }
+    
+    .mq-card__body {
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    }
+    
+    .mq-card__body strong {
+    font-size: 0.75rem;
+    color: #1e293b;
+    }
+    
+    .mq-card__body span {
+    font-size: 0.6875rem;
+    color: #64748b;
+    }
+    
+    @media (min-width: 300px) {
+    .mq-card {
+    flex-direction: row;
+    }
+    .mq-card__image {
+    width: 80px;
+    height: auto;
+    min-height: 60px;
+    }
+    }
+    `}
+  height={380} />
+
+In the demo above, the `@container` cards adapt independently: the card in the narrow container stacks vertically while the card in the wide container goes horizontal. The `@media` cards both go horizontal because the viewport (the iframe) is wider than `300px` — neither card knows how wide its actual container is.
+
+## Code Examples
+
+### Responsive Card Component
+
+```css
+.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+/* Base: stacked layout */
+.card {
+  display: flex;
+  flex-direction: column;
+}
+
+.card__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* When container is wide enough: horizontal layout */
+@container card (min-width: 500px) {
+  .card {
+    flex-direction: row;
+  }
+
+  .card__image {
+    width: 200px;
+    aspect-ratio: 1;
+  }
+}
+
+/* When container is very wide: add extra spacing */
+@container card (min-width: 800px) {
+  .card {
+    gap: 2rem;
+    padding: 2rem;
+  }
+
+  .card__image {
+    width: 300px;
+  }
+}
+```
+
+### Navigation That Adapts to Its Container
+
+```css
+.nav-wrapper {
+  container-type: inline-size;
+  container-name: nav;
+}
+
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Horizontal layout when container allows */
+@container nav (min-width: 600px) {
+  .nav-list {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}
+```
+
+### Combining Container Queries with Container Query Units
+
+```css
+.widget-wrapper {
+  container: widget / inline-size;
+}
+
+.widget__title {
+  font-size: clamp(1rem, 5cqi, 2rem);
+}
+
+.widget__body {
+  padding: clamp(0.5rem, 3cqi, 1.5rem);
+}
+
+@container widget (min-width: 400px) {
+  .widget {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+  }
+}
+```
+
+## Common AI Mistakes
+
+- **Using media queries for component layouts**: AI agents default to `@media` queries even when the component needs to adapt to its container, not the viewport.
+- **Forgetting `container-type`**: Writing `@container` rules without setting `container-type` on the parent element. The container must be explicitly declared.
+- **Using `container-type: size` unnecessarily**: Height-based containment (`size`) can cause layout issues. Use `inline-size` for the vast majority of cases.
+- **Not naming nested containers**: When containers are nested, omitting `container-name` leads to ambiguity — `@container` queries match the nearest ancestor container. Name containers when nesting to target specific ancestors.
+- **Querying the element itself**: The `@container` query targets the nearest ancestor with `container-type` set, not the element you are styling. The container and the styled element must be different elements.
+
+## When to Use
+
+- **Component-level responsiveness**: Any reusable component that may appear in different layout widths (cards, navigation, form groups).
+- **Sidebar vs. main content**: When the same component appears in both wide and narrow contexts on the same page.
+- **Design system components**: Components built for reuse across different applications and layouts.
+- **Not for page-level layout**: Continue using `@media` queries for macro layout concerns like switching between single-column and multi-column page layouts.
+
+## References
+
+- [CSS Container Queries — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Containment/Container_queries)
+- [@container — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@container)
+- [Container Query Units — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_size_and_style_queries#container_query_length_units)
+- [Container Queries Unleashed — Josh W. Comeau](https://www.joshwcomeau.com/css/container-queries-unleashed/)
+- [CSS Container Queries — CSS-Tricks](https://css-tricks.com/css-container-queries/)

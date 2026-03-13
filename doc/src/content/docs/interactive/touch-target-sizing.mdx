@@ -1,0 +1,335 @@
+---
+title: Touch Target Sizing
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Small interactive targets are one of the most common accessibility failures on the web. Users with motor impairments, older adults, and anyone on a mobile device struggle to accurately tap small buttons and links. AI agents routinely generate buttons, icon buttons, and navigation links that are far too small — especially icon-only controls that may be only 16-24px in size. WCAG requires a minimum target size, and failing to meet it creates a frustrating, inaccessible experience.
+
+## The Solution
+
+All interactive elements must have a minimum touch target size of **44x44 CSS pixels** (WCAG 2.1 Level AAA / best practice) or at minimum **24x24 CSS pixels** (WCAG 2.2 Level AA). The target area includes the element's content, padding, and any additional clickable spacing — so padding is your primary tool for meeting the requirement.
+
+### WCAG Target Size Requirements
+
+- **Level AAA (2.5.5)**: At least **44x44px** for all interactive targets. This is the recommended baseline.
+- **Level AA (2.5.8)**: At least **24x24px**, with at least **24px** of spacing between adjacent targets.
+
+<CssPreview client:load
+  title="Touch Target Comparison: 44px Minimum vs Too Small"
+  html={`
+    <div class="demo">
+      <div class="section">
+        <h3 class="section-title good-title">&#10003; 44px targets (accessible)</h3>
+        <div class="btn-row">
+          <button class="btn btn-good">Save</button>
+          <button class="btn btn-good">Edit</button>
+          <button class="btn btn-good icon-btn-good">&#10005;</button>
+        </div>
+        <p class="size-label">min-height: 44px &middot; min-width: 44px</p>
+      </div>
+      <div class="section">
+        <h3 class="section-title bad-title">&#10007; 24px targets (too small)</h3>
+        <div class="btn-row">
+          <button class="btn btn-bad">Save</button>
+          <button class="btn btn-bad">Edit</button>
+          <button class="btn btn-bad icon-btn-bad">&#10005;</button>
+        </div>
+        <p class="size-label">height: 24px — hard to tap on mobile</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+    
+    .section {
+      text-align: center;
+    }
+    
+    .section-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      display: inline-block;
+    }
+    
+    .good-title {
+      background: #f0fdf4;
+      color: #166534;
+    }
+    
+    .bad-title {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      border: none;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn-good {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.5rem 1rem;
+      background: #3b82f6;
+      color: white;
+      font-size: 0.875rem;
+    }
+    
+    .icon-btn-good {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    
+    .btn-bad {
+      height: 24px;
+      min-width: 24px;
+      padding: 0 0.5rem;
+      background: #94a3b8;
+      color: white;
+      font-size: 0.6875rem;
+    }
+    
+    .icon-btn-bad {
+      padding: 0 0.375rem;
+      font-size: 0.625rem;
+    }
+    
+    .size-label {
+      font-size: 0.6875rem;
+      color: #94a3b8;
+      margin: 0.75rem 0 0;
+    }
+    `} />
+
+## Code Examples
+
+### Minimum Button Size
+
+```css
+.button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.625rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+```
+
+### Icon Button with Adequate Target
+
+Icon buttons often have a small visible icon but must maintain a large clickable area:
+
+```css
+.icon-button {
+  /* Visual size is small, but clickable area is 44x44 */
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 0.375rem;
+}
+
+.icon-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+```
+
+### Expanding Clickable Area with Pseudo-Elements
+
+When you cannot increase the visible size of an element, expand the click target invisibly:
+
+```css
+.compact-link {
+  position: relative;
+  /* Visual styling stays compact */
+  font-size: 0.875rem;
+  padding: 0.25rem;
+}
+
+.compact-link::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem; /* Expand touch area by 8px in each direction */
+  /* Ensures minimum 44x44 clickable area */
+}
+```
+
+### Navigation Links
+
+```css
+.nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+/* On touch devices, ensure even more generous sizing */
+@media (pointer: coarse) {
+  .nav-link {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+```
+
+### Checkbox and Radio Targets
+
+Native checkboxes and radios are notoriously small. Use labels and padding:
+
+```css
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+
+.form-check input[type="checkbox"],
+.form-check input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  cursor: pointer;
+}
+```
+
+Wrapping the input in a `<label>` makes the entire label text clickable, greatly increasing the effective touch target.
+
+### Close Button in Tight Spaces
+
+```css
+.close-button {
+  /* Visually compact but tap-friendly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* Negative margin to visually align while maintaining target */
+  margin: -0.375rem;
+}
+```
+
+### Spacing Between Targets
+
+Adjacent targets need adequate spacing to prevent accidental taps:
+
+```css
+.button-group {
+  display: flex;
+  gap: 0.5rem; /* At least 8px between targets */
+}
+
+.button-group .button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Vertical list of tappable items */
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.action-list__item {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+```
+
+### Responsive Target Sizing with pointer Query
+
+```css
+.interactive {
+  min-height: 36px;
+  padding: 0.5rem 1rem;
+}
+
+/* Fine pointer (mouse): slightly smaller targets acceptable */
+@media (pointer: fine) {
+  .interactive {
+    min-height: 32px;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* Coarse pointer (touch): larger targets needed */
+@media (pointer: coarse) {
+  .interactive {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+```
+
+## Common AI Mistakes
+
+- **Making icon buttons too small**: Generating a 24px or 32px icon button without padding to reach the 44px minimum.
+- **Relying on visual size only**: Assuming the visible size of an element equals its touch target size. Padding and pseudo-elements count toward the target area.
+- **Ignoring inline links**: Links within paragraphs can be very small touch targets. Adding `padding-block` or increasing `line-height` helps.
+- **Not testing on actual touch devices**: Target sizes that look fine on a desktop with a mouse become impossible to tap on a phone.
+- **Crowding targets together**: Placing multiple small buttons or links next to each other without adequate spacing, causing mis-taps.
+- **Using only `width`/`height` instead of `min-width`/`min-height`**: Fixed dimensions prevent the element from growing when text wraps or content is longer than expected.
+- **Forgetting `@media (pointer: coarse)`**: Not increasing target sizes on touch devices where accuracy is lower.
+
+## When to Use
+
+- **Every interactive element**: Buttons, links, form controls, icon buttons — all must meet the minimum target size.
+- **Mobile-first design**: Touch targets should be at least 44x44px by default, with the option to reduce slightly for mouse-only contexts.
+- **Icon-only controls**: Close buttons, menu toggles, action icons — these are the most likely to be undersized.
+- **Navigation items**: Both horizontal and vertical navigation links.
+- **Form controls**: Checkboxes, radios, selects, and their labels.
+
+## References
+
+- [Understanding SC 2.5.5: Target Size (Enhanced) — W3C](https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html)
+- [Understanding SC 2.5.8: Target Size (Minimum) — W3C](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)
+- [Accessible Target Sizes Cheatsheet — Smashing Magazine](https://www.smashingmagazine.com/2023/04/accessible-tap-target-sizes-rage-taps-clicks/)
+- [Foundations: Target Sizes — TetraLogical](https://tetralogical.com/blog/2022/12/20/foundations-target-size/)
+- [All Accessible Touch Target Sizes — LogRocket](https://blog.logrocket.com/ux-design/all-accessible-touch-target-sizes/)

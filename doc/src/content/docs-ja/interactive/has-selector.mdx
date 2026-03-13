@@ -1,0 +1,303 @@
+---
+title: ":has()セレクター"
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+CSSには、子要素に基づいて親要素を選択する方法がありませんでした。開発者は、入力が無効な場合にフォームグループをハイライトしたり、画像の有無に基づいてカードレイアウトを変更したりするなど、親子の状態関係にJavaScriptでクラスをトグルすることに頼っていました。AIエージェントが`:has()`を使うことはほとんどなく、代わりにこれらのパターンにJavaScriptベースのソリューションを提案します。
+
+## 解決方法
+
+`:has()`関係擬似クラスは、指定されたセレクターリストに一致する要素を少なくとも1つ含む要素を選択します。「親セレクター」として機能しますが、はるかに強力です：子、兄弟、子孫など、あらゆる相対的な位置を見て条件的にスタイルを適用できます。
+
+## コード例
+
+### 基本的な親の選択
+
+```css
+/* Style a card differently when it contains an image */
+.card:has(img) {
+  grid-template-rows: 200px 1fr;
+}
+
+.card:has(img) .card-body {
+  padding-top: 0;
+}
+```
+
+### フォームバリデーションのスタイリング
+
+JavaScriptなしで入力の有効性に基づいてフォームグループにスタイルを適用します。
+
+```css
+/* Highlight the entire field group when input is invalid */
+.field-group:has(:user-invalid) {
+  border-left: 3px solid red;
+  background: #fff5f5;
+}
+
+.field-group:has(:user-invalid) .error-message {
+  display: block;
+}
+
+/* Style label when its sibling input is focused */
+.field-group:has(input:focus) label {
+  color: blue;
+  font-weight: bold;
+}
+```
+
+```html
+<div class="field-group">
+  <label for="email">Email</label>
+  <input type="email" id="email" required />
+  <span class="error-message">Please enter a valid email</span>
+</div>
+```
+
+### 数量クエリ
+
+JavaScriptなしで子要素の数に基づいてレイアウトを適応させます。
+
+```css
+/* Switch to grid layout when a list has 5 or more items */
+.item-list:has(> :nth-child(5)) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Single-column layout for fewer items */
+.item-list:not(:has(> :nth-child(5))) {
+  display: flex;
+  flex-direction: column;
+}
+```
+
+```css
+/* Style based on even/odd number of children */
+.grid:has(> :last-child:nth-child(even)) {
+  /* Even number of children */
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid:has(> :last-child:nth-child(odd)) {
+  /* Odd number of children */
+  grid-template-columns: repeat(3, 1fr);
+}
+```
+
+### 兄弟の状態に基づくスタイリング
+
+```css
+/* Change page layout when a sidebar checkbox is checked */
+body:has(#sidebar-toggle:checked) .main-content {
+  margin-left: 0;
+}
+
+body:has(#sidebar-toggle:checked) .sidebar {
+  transform: translateX(-100%);
+}
+```
+
+### 他のセレクターとの組み合わせ
+
+```css
+/* Style a navigation item that contains the current page link */
+nav li:has(> a[aria-current="page"]) {
+  background: #e0e7ff;
+  border-radius: 4px;
+}
+
+/* Style a table row that has an empty cell */
+tr:has(td:empty) {
+  opacity: 0.6;
+}
+```
+
+### `:has()`と直接子結合子の使用
+
+パフォーマンス向上のために直接子結合子`>`を使用しましょう。ブラウザの検索をすべての子孫ではなく直接の子要素に限定します。
+
+```css
+/* Preferred: direct child (faster) */
+.container:has(> .alert) {
+  border: 2px solid red;
+}
+
+/* Avoid when possible: descendant (slower on large DOMs) */
+.container:has(.alert) {
+  border: 2px solid red;
+}
+```
+
+## ブラウザサポート
+
+- Chrome 105+
+- Safari 15.4+
+- Firefox 121+
+- Edge 105+
+
+グローバルサポートは96%を超えています。機能検出は`@supports selector(:has(*))`で利用可能です。
+
+## AIがよくやるミス
+
+- `:has()`で解決できる問題にJavaScriptのクラストグルを提案する
+- `:has()`の存在を知らず回避策を推奨する
+- `:has()`内で直接子`>`の方がパフォーマンスが良い場合に子孫セレクターを使用する
+- `:has()`と`:not()`を逆ロジックのために組み合わせない（例：`.card:not(:has(img))`）
+- `:has()`が子孫だけでなく兄弟も見ることができることを忘れる（例：`h2:has(+ p)`）
+- `:has()`のポリフィルを試みる — リアルタイムのDOM認識が必要で、効率的なポリフィルはできない
+
+## 使い分け
+
+- 子の状態に基づく親のスタイリング（フォームバリデーション、コンテンツ対応レイアウト）
+- 子要素の数に基づいてレイアウトを適応させる数量クエリ
+- JavaScriptなしの状態駆動スタイリング（チェックボックスハック、フォーカス管理）
+- コンテンツの有無に基づく条件的なコンポーネントスタイリング
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title=":has(:focus) — 子のフォーカスに親が反応する"
+  html={`
+    <div class="field-group">
+      <label for="name">Name</label>
+      <input type="text" id="name" placeholder="Click to focus..." />
+    </div>
+    <div class="field-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Click to focus..." />
+    </div>
+    <p class="hint">Click an input — the parent field-group highlights via :has(:focus)</p>
+    `}
+  css={`
+    .field-group {
+      font-family: system-ui, sans-serif;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    
+    .field-group:has(:focus) {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    }
+    
+    .field-group:has(:focus) label {
+    color: #2563eb;
+    font-weight: 700;
+    }
+    
+    label {
+    display: block;
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    transition: color 0.2s;
+    }
+    
+    input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+    box-sizing: border-box;
+    }
+    
+    input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    
+    .hint {
+    font-family: system-ui, sans-serif;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 0.5rem;
+    }
+    `} />
+
+<CssPreview client:load
+  title=":has(:checked) — チェックボックスでスタイルを切り替える"
+  html={`
+    <div class="card">
+      <label class="toggle-label">
+        <input type="checkbox" id="featured-toggle" />
+        Mark as featured
+      </label>
+      <h3>Article Title</h3>
+      <p>This card changes appearance when the checkbox is checked — all done with :has(:checked) in pure CSS.</p>
+    </div>
+    <p class="hint">Click the checkbox to see the card transform</p>
+    `}
+  css={`
+    .card {
+      font-family: system-ui, sans-serif;
+      padding: 1.5rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      transition: all 0.3s;
+    }
+    
+    .card:has(:checked) {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+    
+    .card:has(:checked) h3 {
+    color: #b45309;
+    }
+    
+    .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+    }
+    
+    .toggle-label input {
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+    }
+    
+    h3 {
+    margin: 0 0 0.5rem;
+    color: #1e293b;
+    transition: color 0.3s;
+    }
+    
+    p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.6;
+    }
+    
+    .hint {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 0.75rem;
+    }
+    `} />
+
+## 参考リンク
+
+- [:has() - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:has)
+- [:has() CSS relational pseudo-class - Can I Use](https://caniuse.com/css-has)
+- [CSS :has() Parent Selector - Ahmad Shadeed](https://ishadeed.com/article/css-has-parent-selector/)
+- [The CSS :has Selector - CSS-Tricks](https://css-tricks.com/the-css-has-selector/)
+- [Quantity Queries with CSS :has() - Frontend Masters](https://frontendmasters.com/blog/quantity-queries-are-very-easy-with-css-has/)

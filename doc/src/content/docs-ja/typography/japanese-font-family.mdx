@@ -1,0 +1,387 @@
+---
+title: 日本語フォントファミリーの指定
+sidebar_position: 9
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+日本語Webサイトの`font-family`指定は、ラテン文字サイトと比べて格段に複雑です。`sans-serif`と書くだけでは不十分で、ブラウザはOSによって大きく異なるシステムのデフォルトにフォールバックし、古いOSではビットマップフォントで日本語が表示されることもあります。主な課題は以下の通りです：
+
+1. **プラットフォームの分断**: macOSにはヒラギノフォントが、Windows 10以降には游ゴシックが、Linux/Androidにはほぼ Noto Sans CJK が搭載されています。良い表示結果を得るには、各プラットフォームのフォント名を明示的に指定する必要があります。
+2. **日本語フォントにはラテングリフが含まれる**: 日本語フォントにはすべてASCII文字の独自グリフが含まれています。日本語フォントを先に指定すると、英数字や記号がすべて日本語フォントのラテン字形でレンダリングされます。これは専用のラテン書体と比べて一般的に幅が広く、精度も劣ります。
+3. **游ゴシックのウェイト表示バグ**: Windows上の游ゴシックは、Windowsのフォントマッピングの仕様により`font-weight: normal`で極細のストロークウェイトでレンダリングされます。回避策なしでは、日本語テキストが不自然に細く表示されます。
+4. **Webフォントのファイルサイズ**: 日本語の文字セットには数千のグリフが含まれます。Noto Sans JPは非圧縮で約9MB（TTF）にもなります。WOFF2でも全文字セットは数MB以上になり、サブセット化やバリアブルフォント戦略なしでは実用的なWebフォントとして使えません。
+
+## 解決方法
+
+現代的なアプローチでは、順番を慎重に検討したシステムフォントスタックを使います。順序の原則は次の通りです：
+
+1. 欧文Webフォント（ある場合）を先頭に — 英語テキストが意図した書体で表示されるよう
+2. 日本語システムフォントをプラットフォームごとに
+3. 最終フォールバックとして`sans-serif`
+
+### プラットフォーム別フォント一覧
+
+| プラットフォーム | 推奨フォント | 備考 |
+|---|---|---|
+| macOS / iOS | `"Hiragino Sans"` | macOS 10.11 El Capitan以降のデフォルト。10段階のウェイト |
+| macOS（互換用） | `"Hiragino Kaku Gothic ProN"` | 古いが広くサポートされている。2ウェイトのみ |
+| Windows 10+ | `"Yu Gothic UI"` | ウェイトマッピングが正しいUIバリアント |
+| Windows 10（フォールバック） | `"Yu Gothic"` | オリジナル。デフォルトウェイトで細く表示される |
+| Windows Vista〜8.1 | `"Meiryo"` | レガシー。現在はデフォルトではないため、古いOS対応用として含める |
+| Linux / Android | `"Noto Sans CJK JP"` | オープンソース。ほとんどのLinuxディストリビューションに収録 |
+| Android（Google Fonts） | `"Noto Sans JP"` | Android上やGoogle Fonts経由で使われるサブセット版 |
+
+### 推奨スタック
+
+```css
+body {
+  font-family:
+    /* 1. 欧文Webフォント（@font-faceやGoogle Fonts経由で読み込んでいる場合） */
+    'Inter',
+    /* 2. macOS / iOS — モダンなヒラギノ（10ウェイト） */
+    'Hiragino Sans',
+    /* 3. Windows 10+ — "Yu Gothic UI"がウェイト表示バグを修正 */
+    'Yu Gothic UI',
+    'Yu Gothic',
+    /* 4. 古いmacOS / iOSの互換用 */
+    'Hiragino Kaku Gothic ProN',
+    /* 5. Linux / Android */
+    'Noto Sans CJK JP',
+    'Noto Sans JP',
+    /* 6. 最終フォールバック */
+    sans-serif;
+}
+```
+
+### 欧文Webフォントを使わない場合
+
+欧文Webフォントを読み込まない場合は、ステップ1を省略します。ブラウザは最初に解決された日本語フォントのラテングリフを使用します。これはブランドタイポグラフィとして理想的ではありませんが、許容範囲内です：
+
+```css
+body {
+  font-family:
+    'Hiragino Sans',
+    'Yu Gothic UI',
+    'Yu Gothic',
+    'Hiragino Kaku Gothic ProN',
+    'Noto Sans CJK JP',
+    'Noto Sans JP',
+    sans-serif;
+}
+```
+
+### 游ゴシックのウェイト修正
+
+`"Yu Gothic UI"`はWindows 10以降に搭載された游ゴシックのUI最適化バリアントです。`font-weight`の値を正しくマッピングするため、`font-weight: 400`で読みやすいストロークウェイトでレンダリングされます。オリジナルの`"Yu Gothic"`は700未満のウェイトをすべて最も細いバリアントにマッピングするため、本文テキストが極細になってしまいます。
+
+スタックでは必ず`"Yu Gothic UI"`を`"Yu Gothic"`より前に記述してください：
+
+```css
+/* 誤り — WindowsでYu Gothicがウェイト400で細く表示される */
+font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+
+/* 正しい — Yu Gothic UIはウェイトマッピングが正確 */
+font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', sans-serif;
+```
+
+## コード例
+
+### 推奨スタックの動作確認
+
+<CssPreview client:load
+  title="推奨日本語フォントスタック — 日本語と欧文の混在テキスト"
+  height={280}
+  html={`    <div class="font-demo">
+      <p class="font-demo__label">font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Noto Sans CJK JP', sans-serif</p>
+      <p class="font-demo__ja">日本語のWebサイトにおけるフォント指定は、OSによって使用できるフォントが異なるため、複数のフォントをフォールバックとして指定する必要があります。</p>
+      <p class="font-demo__mix">Mixed text: CSS font-family for Japanese (日本語) websites in 2025.</p>
+      <p class="font-demo__en">Latin only: The quick brown fox jumps over the lazy dog. 0123456789.</p>
+    </div>`}
+  css={`.font-demo {
+      padding: 1.5rem;
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+      line-height: 1.8;
+    }
+    .font-demo__label {
+      font-size: 0.7rem;
+      color: hsl(220, 10%, 55%);
+      background: hsl(220, 15%, 95%);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      margin: 0 0 1rem;
+      font-family: monospace;
+      line-height: 1.4;
+    }
+    .font-demo__ja {
+      font-size: 1rem;
+      color: hsl(220, 20%, 15%);
+      margin: 0 0 0.75rem;
+    }
+    .font-demo__mix {
+      font-size: 1rem;
+      color: hsl(220, 20%, 25%);
+      margin: 0 0 0.75rem;
+    }
+    .font-demo__en {
+      font-size: 1rem;
+      color: hsl(220, 20%, 35%);
+      margin: 0;
+    }`} />
+
+### 欧文フォントの順序: 日本語フォントより前か後か
+
+日本語フォントには独自のラテングリフが含まれています。日本語フォントを欧文フォントより前に指定すると、すべてのASCII文字が日本語フォントのラテン字形でレンダリングされます。これは一般的に幅が広く、スペーシングやストロークコントラストも異なります。欧文フォントは必ず先頭に置いてください。
+
+<CssPreview client:load
+  title="欧文フォントの順序 — 日本語フォント先頭 vs 欧文フォント先頭"
+  height={320}
+  html={`    <div class="ordering-demo">
+      <div class="ordering-demo__col ordering-demo__col--wrong">
+        <div class="ordering-demo__badge ordering-demo__badge--wrong">Wrong order</div>
+        <p class="ordering-demo__stack-label">Hiragino Sans, system-ui, sans-serif</p>
+        <p class="ordering-demo__text ordering-demo__text--wrong-order">
+          CSS font-family 2025<br>
+          ABCDEFabcdef<br>
+          0123456789<br>
+          日本語テキスト
+        </p>
+        <p class="ordering-demo__note">Latin characters rendered in Japanese font's Latin variant — wider proportions, different stroke contrast</p>
+      </div>
+      <div class="ordering-demo__col ordering-demo__col--correct">
+        <div class="ordering-demo__badge ordering-demo__badge--correct">Correct order</div>
+        <p class="ordering-demo__stack-label">system-ui, Hiragino Sans, sans-serif</p>
+        <p class="ordering-demo__text ordering-demo__text--correct-order">
+          CSS font-family 2025<br>
+          ABCDEFabcdef<br>
+          0123456789<br>
+          日本語テキスト
+        </p>
+        <p class="ordering-demo__note">Latin characters use system-ui (San Francisco / Segoe UI), Japanese uses Hiragino</p>
+      </div>
+    </div>`}
+  css={`.ordering-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1.25rem;
+    }
+    .ordering-demo__col {
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .ordering-demo__col--wrong {
+      background: hsl(0, 15%, 96%);
+      border: 1px solid hsl(0, 25%, 88%);
+    }
+    .ordering-demo__col--correct {
+      background: hsl(140, 15%, 95%);
+      border: 1px solid hsl(140, 25%, 82%);
+    }
+    .ordering-demo__badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .ordering-demo__badge--wrong {
+      background: hsl(0, 70%, 90%);
+      color: hsl(0, 60%, 35%);
+    }
+    .ordering-demo__badge--correct {
+      background: hsl(140, 55%, 85%);
+      color: hsl(140, 50%, 28%);
+    }
+    .ordering-demo__stack-label {
+      font-size: 0.65rem;
+      font-family: monospace;
+      color: hsl(220, 10%, 50%);
+      margin: 0 0 0.75rem;
+      line-height: 1.4;
+    }
+    .ordering-demo__text {
+      font-size: 1.1rem;
+      line-height: 1.9;
+      color: hsl(220, 20%, 15%);
+      margin: 0 0 0.75rem;
+    }
+    .ordering-demo__text--wrong-order {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+    }
+    .ordering-demo__text--correct-order {
+      font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Noto Sans CJK JP', sans-serif;
+    }
+    .ordering-demo__note {
+      font-size: 0.72rem;
+      color: hsl(220, 15%, 50%);
+      line-height: 1.5;
+      margin: 0;
+      font-family: system-ui, sans-serif;
+    }`} />
+
+### 日本語テキストのフォントウェイトバリエーション
+
+日本語フォントは欧文フォントと同じ`font-weight`スケールをサポートしますが、動作はOSのフォントと利用可能なウェイトによって異なります。ヒラギノSansは10段階のウェイト（W0〜W9）を提供しますが、ヒラギノ角ゴシックProNは2段階（W3、W6）のみです。
+
+<CssPreview client:load
+  title="フォントウェイトスケール — 異なるウェイトでの日本語テキスト"
+  height={360}
+  html={`    <div class="weight-demo">
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">300</span>
+        <p class="weight-demo__text" style="font-weight: 300">フォントウェイト Light — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">400</span>
+        <p class="weight-demo__text" style="font-weight: 400">フォントウェイト Regular — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">500</span>
+        <p class="weight-demo__text" style="font-weight: 500">フォントウェイト Medium — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">600</span>
+        <p class="weight-demo__text" style="font-weight: 600">フォントウェイト SemiBold — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">700</span>
+        <p class="weight-demo__text" style="font-weight: 700">フォントウェイト Bold — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">900</span>
+        <p class="weight-demo__text" style="font-weight: 900">フォントウェイト Black — The quick brown fox jumps over the lazy dog</p>
+      </div>
+    </div>`}
+  css={`.weight-demo {
+      padding: 1rem 1.5rem;
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+    }
+    .weight-demo__row {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      border-bottom: 1px solid hsl(220, 15%, 92%);
+      padding: 0.4rem 0;
+    }
+    .weight-demo__row:last-child {
+      border-bottom: none;
+    }
+    .weight-demo__label {
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: hsl(220, 15%, 55%);
+      min-width: 2.5rem;
+      flex-shrink: 0;
+    }
+    .weight-demo__text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: hsl(220, 20%, 15%);
+      margin: 0;
+    }`} />
+
+### 包括的なシステムスタック vs 最小限のフォールバック
+
+このデモは、包括的なシステムスタックと`sans-serif`だけに頼った場合の違いを示します。ほとんどのモダンデスクトップブラウザでは結果が似て見えることもありますが、CJKフォントの設定が不十分なLinuxシステムでは、`sans-serif`がビットマップや形の悪いフォントにフォールバックすることがあります。
+
+<CssPreview client:load
+  title="包括的なスタック vs sans-serifのみ"
+  height={260}
+  html={`    <div class="stack-compare">
+      <div class="stack-compare__col">
+        <div class="stack-compare__header">Recommended stack</div>
+        <p class="stack-compare__text stack-compare__text--full">
+          日本語のWebサイトでは、各OSに対応したフォントを明示的に指定することが重要です。
+        </p>
+        <p class="stack-compare__subtext">春はあけぼの。やうやう白くなりゆく山際、少し明かりて、紫だちたる雲の細くたなびきたる。</p>
+      </div>
+      <div class="stack-compare__col">
+        <div class="stack-compare__header">sans-serif only</div>
+        <p class="stack-compare__text stack-compare__text--minimal">
+          日本語のWebサイトでは、各OSに対応したフォントを明示的に指定することが重要です。
+        </p>
+        <p class="stack-compare__subtext stack-compare__subtext--minimal">春はあけぼの。やうやう白くなりゆく山際、少し明かりて、紫だちたる雲の細くたなびきたる。</p>
+      </div>
+    </div>`}
+  css={`.stack-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: hsl(220, 15%, 88%);
+    }
+    .stack-compare__col {
+      background: hsl(0, 0%, 100%);
+      padding: 1.25rem;
+    }
+    .stack-compare__header {
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: hsl(220, 30%, 50%);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid hsl(220, 15%, 90%);
+    }
+    .stack-compare__text {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: hsl(220, 20%, 15%);
+      margin: 0 0 0.75rem;
+    }
+    .stack-compare__text--full {
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+    }
+    .stack-compare__text--minimal {
+      font-family: sans-serif;
+    }
+    .stack-compare__subtext {
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: hsl(220, 15%, 45%);
+      margin: 0;
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+    }
+    .stack-compare__subtext--minimal {
+      font-family: sans-serif;
+    }`} />
+
+## AIがよくやるミス
+
+- **日本語システムフォントをまったく省略する** — `system-ui, sans-serif`のみを使い、日本語フォント名をまったく指定しない。フォント選択がブラウザのデフォルトマッピングに完全に委ねられ、プラットフォーム間で一貫性のない結果になる
+- **日本語フォントを欧文フォントより前に並べる** — 英語テキスト、数字、記号が意図したラテン書体ではなく日本語フォントのラテングリフでレンダリングされる
+- **`"Yu Gothic UI"`なしで`"Yu Gothic"`を使う** — Windows 10で通常ウェイトのテキストが極細になる。`"Yu Gothic UI"`を必ずスタックの先に置かなければならない
+- **`"Meiryo"`をWindowsのメインフォントとして含める** — MeiryoはWindows VistaとWindows 7のデフォルトだったが、Windows 10以降は游ゴシックがデフォルト。Meiryoは互換フォールバックとして游ゴシックの後に置くべき
+- **サブセット化なしで日本語Webフォントを読み込む** — すべてのページでNoto Sans JPなど（9MB以上）をフルでダウンロードする。システムフォントならダウンロードコストゼロで同等の表示が得られる
+- **日本語テキストに`italic`スタイルを使う** — 日本語フォントには真のイタリック体がない。ブラウザはCSSのobliqueトランスフォームを適用するため、文字が斜めに傾いて不自然に見える
+- **ヒラギノ角ゴシックProNをmacOSの現行フォントと見なす** — `"Hiragino Sans"`（macOS 10.11で追加）は10段階のウェイトを持つ現代的な後継フォント。ProNの2ウェイトより優れており、常にヒラギノSansを先に並べるべき
+
+## 使い分け
+
+**フルシステムフォントスタック**は、次のような日本語Webサイトやアプリケーションで使います：
+- ページに日本語テキスト（本文、見出し、UIラベル）が含まれる
+- macOS、Windows、Linux間で一貫したレンダリングが必要
+- 日本語Webフォントを読み込まない（パフォーマンスを考慮した一般的なケース）
+
+**欧文Webフォントを先頭に含める**のは：
+- ブランドが特定のラテン書体（Inter、Noto Sans、Robotoなど）を使っている
+- プラットフォーム間で欧文の一貫したレンダリングが重要
+- 他の理由（バリアブルフォントなど）ですでにWebフォントを読み込んでいる
+
+**日本語Webフォント**（Noto Sans JP、BIZ UDPGothicなど）を読み込むのは：
+- プリント品質のデザインシステムなど、クロスプラットフォームでの完全な視覚的一貫性が必要
+- ファイルサイズを管理するためのフォントサブセット化またはプログレッシブローディング戦略を採用している
+- システムフォントでは利用できない特定のグリフスタイルをデザインが要求している
+
+## 参考リンク
+
+- [Best Japanese CSS font-family in 2025 — Bloomstreet Japan](https://www.bloomstreetjapan.com/best-japanese-font-setting-for-websites/)
+- [Japanese web safe fonts and how to use them — JStockMedia](https://jstockmedia.com/blog/japanese-web-safe-fonts-and-how-to-use-them-in-web-design/)
+- [system-fonts/modern-font-stacks — GitHub](https://github.com/system-fonts/modern-font-stacks)
+- [Japanese typography on the web — Pavel Laptev / Medium](https://pavellaptev.medium.com/japanese-typography-on-the-web-tips-and-tricks-981f120ad20e)
+- [MDN: font-family](https://developer.mozilla.org/en-US/docs/Web/CSS/font-family)
+- [MDN: font-variant-east-asian](https://developer.mozilla.org/en-US/docs/Web/CSS/font-variant-east-asian)

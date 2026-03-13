@@ -1,0 +1,255 @@
+---
+title: Font Loading Strategies
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Web fonts are a major source of layout shift (CLS) and poor perceived performance. When a browser downloads a custom font, it must decide what to show while waiting — invisible text (FOIT: Flash of Invisible Text) or fallback-styled text (FOUT: Flash of Unstyled Text). AI agents typically add a `@font-face` declaration or a Google Fonts `<link>` tag and consider the job done, ignoring the loading behavior entirely. This produces visible layout shifts when fonts load, blank text during the loading period, or unnecessary network requests for fonts that could be deferred.
+
+## The Solution
+
+A robust font loading strategy combines several techniques: the `font-display` descriptor to control rendering behavior, `<link rel="preload">` for critical fonts, system font stacks as fallbacks, and metric overrides to minimize layout shift.
+
+## Code Examples
+
+### font-display Values
+
+```css
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont.woff2") format("woff2");
+
+  /* swap: Show fallback immediately, swap when font loads.
+     Best for body text where content must be readable. */
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HeadingFont";
+  src: url("/fonts/heading.woff2") format("woff2");
+
+  /* optional: Use the font only if it's already cached.
+     Best for non-critical text where layout stability matters more. */
+  font-display: optional;
+}
+```
+
+#### Summary of font-display values
+
+| Value      | Block period | Swap period | Best for                         |
+| ---------- | ------------ | ----------- | -------------------------------- |
+| `auto`     | Browser default | Browser default | Rarely the right choice       |
+| `block`    | Short (3s)   | Infinite    | Icon fonts only                  |
+| `swap`     | Extremely short | Infinite | Body text, content fonts          |
+| `fallback` | Very short (100ms) | Short (3s) | Balancing FOUT and CLS       |
+| `optional` | None         | None        | Non-critical fonts, max CLS control |
+
+### Preloading Critical Fonts
+
+```html
+<head>
+  <!-- Preload only the most critical font file (usually body text, regular weight) -->
+  <link
+    rel="preload"
+    href="/fonts/body-regular.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+
+  <!-- Do NOT preload every weight/style — only the one(s) needed for above-the-fold content -->
+</head>
+```
+
+The `crossorigin` attribute is required even for same-origin fonts — without it, the font will be fetched twice.
+
+<CssPreview client:load
+  title="System Font Stack — Rendering with Native Fonts"
+  html={`    <div class="font-demo">
+      <div class="font-card">
+        <h3>system-ui (Default System Font)</h3>
+        <p style="font-family: system-ui, sans-serif;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. 0123456789</p>
+      </div>
+      <div class="font-card">
+        <h3>ui-monospace (System Monospace)</h3>
+        <p style="font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. 0123456789</p>
+      </div>
+      <div class="font-card">
+        <h3>Georgia (Serif Fallback)</h3>
+        <p style="font-family: Georgia, 'Times New Roman', serif;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. 0123456789</p>
+      </div>
+    </div>`}
+  css={`.font-demo {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-family: system-ui, sans-serif;
+    }
+    .font-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+      border-left: 4px solid #6c63ff;
+    }
+    .font-card h3 {
+      font-size: 0.8rem;
+      color: #6c63ff;
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+    .font-card p {
+      font-size: 1.1rem;
+      line-height: 1.5;
+      color: #333;
+      margin: 0;
+    }`}
+  height={280} />
+
+### System Font Stack as Fallback
+
+```css
+:root {
+  --font-system: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
+    "DejaVu Sans Mono", monospace;
+}
+
+body {
+  font-family: "MyFont", var(--font-system);
+}
+
+code {
+  font-family: var(--font-mono);
+}
+```
+
+### Reducing Layout Shift with Metric Overrides
+
+```css
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* Adjust the fallback font metrics to match the web font */
+@font-face {
+  font-family: "MyFont Fallback";
+  src: local("Arial");
+  size-adjust: 104.7%;
+  ascent-override: 93%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+
+body {
+  font-family: "MyFont", "MyFont Fallback", sans-serif;
+}
+```
+
+### Complete Strategy: Optimal Performance
+
+```html
+<head>
+  <!-- 1. Preload the critical font -->
+  <link
+    rel="preload"
+    href="/fonts/body-regular.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+
+  <!-- 2. Inline critical @font-face rules -->
+  <style>
+    @font-face {
+      font-family: "Body";
+      src: url("/fonts/body-regular.woff2") format("woff2");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Body";
+      src: url("/fonts/body-bold.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Heading";
+      src: url("/fonts/heading.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+      font-display: optional;
+    }
+  </style>
+</head>
+```
+
+### Font Subsetting
+
+```css
+/* Latin subset only — significantly reduces file size */
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont-latin.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+```
+
+## Common AI Mistakes
+
+- Not specifying `font-display` at all, leaving the browser to use its default behavior (typically `auto`, which causes FOIT in most browsers)
+- Preloading every font weight and style, which congests the network and can actually slow down the page
+- Missing the `crossorigin` attribute on `<link rel="preload">`, causing the font to be downloaded twice
+- Using only `woff` instead of `woff2` — the latter provides 15-30% better compression and is supported by all modern browsers
+- Loading Google Fonts via `<link>` without `display=swap` parameter (e.g., `fonts.googleapis.com/css2?family=Roboto&display=swap`)
+- Not providing a system font fallback stack, leaving `sans-serif` as the only fallback
+- Including fonts for weights that are never used in the design (e.g., loading 6 weights when only regular and bold are used)
+- Using `font-display: block` for body text, causing invisible text for up to 3 seconds on slow connections
+
+## When to Use
+
+### font-display: swap
+
+- Body text and primary reading content
+- Any text that must be immediately readable
+
+### font-display: optional
+
+- Heading or display fonts where layout stability is critical
+- Fonts used for decorative purposes
+- Return visits where the font is likely cached
+
+### Preloading
+
+- The single most critical font file (usually body regular weight)
+- Above-the-fold heading fonts on landing pages
+- Never more than 1-2 font files
+
+### System font stacks
+
+- When performance is the top priority
+- Internal tools and admin interfaces
+- Fallback chains for custom web fonts
+
+## References
+
+- [Best practices for fonts — web.dev](https://web.dev/articles/font-best-practices)
+- [The Best Font Loading Strategies — CSS-Tricks](https://css-tricks.com/the-best-font-loading-strategies-and-how-to-execute-them/)
+- [A Comprehensive Guide to Font Loading Strategies — Zach Leatherman](https://www.zachleat.com/web/comprehensive-webfonts)
+- [Ensure text remains visible during webfont load — Chrome Developers](https://developer.chrome.com/docs/lighthouse/performance/font-display)
+- [A New Way To Reduce Font Loading Impact — Smashing Magazine](https://www.smashingmagazine.com/2021/05/reduce-font-loading-impact-css-descriptors/)

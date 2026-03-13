@@ -1,0 +1,45 @@
+---
+import { getDocsCollection } from "@/utils/get-docs-collection";
+import DocLayout from "@/layouts/doc-layout.astro";
+import Breadcrumb from "@/components/breadcrumb.astro";
+import { toRouteSlug } from "@/utils/slug";
+import { collectTags } from "@/utils/tags";
+import { t } from "@/config/i18n";
+import { withBase } from "@/utils/base";
+import type { DocsEntry } from "@/types/docs-entry";
+
+const localeDocs = await getDocsCollection("docs-ja");
+const baseDocs = await getDocsCollection("docs");
+const filterDocs = (docs: DocsEntry[]) => import.meta.env.PROD
+  ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
+  : docs.filter((doc) => !doc.data.unlisted);
+const filteredLocale = filterDocs(localeDocs);
+const filteredBase = filterDocs(baseDocs);
+const localeSlugSet = new Set(filteredLocale.map((d) => d.data.slug ?? toRouteSlug(d.id)));
+const docs = [
+  ...filteredLocale,
+  ...filteredBase.filter((d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id))),
+];
+const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
+const sortedTags = [...tagMap.values()].sort((a, b) => a.tag.localeCompare(b.tag));
+---
+
+<DocLayout title={t("doc.allTags", "ja")} lang="ja" currentSlug="tags">
+  <Breadcrumb slot="breadcrumb" items={[{ label: "Docs", href: withBase("/ja/docs") }, { label: t("doc.allTags", "ja") }]} />
+  <h1 class="text-heading font-bold mb-vsp-lg">{t("doc.allTags", "ja")}</h1>
+  {sortedTags.length === 0 ? (
+    <p class="text-muted">{t("doc.noTags", "ja")}</p>
+  ) : (
+    <div class="flex flex-wrap gap-hsp-sm">
+      {sortedTags.map(({ tag, count }) => (
+        <a
+          href={withBase(`/ja/docs/tags/${tag}`)}
+          class="inline-flex items-center gap-hsp-2xs px-hsp-md py-vsp-xs bg-surface border border-muted rounded-full text-fg hover:border-accent hover:text-accent"
+        >
+          <span>{tag}</span>
+          <span class="text-caption text-muted">({count})</span>
+        </a>
+      ))}
+    </div>
+  )}
+</DocLayout>

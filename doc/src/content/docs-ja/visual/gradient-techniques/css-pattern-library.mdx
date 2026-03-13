@@ -1,0 +1,325 @@
+---
+title: CSSのみのパターンライブラリ
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+グラデーションのみで構築されたCSS装飾背景パターンの包括的なコレクションです。以下のすべてのパターンは `background-size` と `background-repeat` を使ってシームレスにタイリングし、画像は一切不要で、CSSカスタムプロパティでカスタマイズできます。
+
+## 斜めストライプ
+
+45度の `repeating-linear-gradient` で、クラシックな斜めストライプを作成します。同じ位置にある2つのハードカラーストップが、色間の瞬時のトランジションを生みます。リピーティングバリアントがパターンを自動的にタイリングします。
+
+<CssPreview client:load
+  title="斜めストライプ"
+  height={220}
+  html={`<div class="diagonal-stripes"></div>`}
+  css={`
+    .diagonal-stripes {
+      --stripe-color-1: hsl(220 70% 55%);
+      --stripe-color-2: hsl(220 70% 40%);
+      --stripe-width: 12px;
+    
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--stripe-color-1) 0px,
+        var(--stripe-color-1) var(--stripe-width),
+        var(--stripe-color-2) var(--stripe-width),
+        var(--stripe-color-2) calc(var(--stripe-width) * 2)
+      );
+    }
+    `} />
+
+## 横罫線（ノートパッド風）
+
+単一の `repeating-linear-gradient` が、白い背景上に均等に配置された横線を描きます。罫線入りノートを模倣しています。トリックは、透明から透明へのスパンと、各罫線のための薄い色付きスライスを使うことです。
+
+<CssPreview client:load
+  title="ノートパッド"
+  height={260}
+  html={`<div class="notebook">
+    <p class="notebook-text">The quick brown fox jumps over the lazy dog. CSS gradients can simulate notebook paper without any images.</p>
+    </div>`}
+  css={`
+    .notebook {
+      --line-color: hsl(210 40% 80%);
+      --line-spacing: 28px;
+      --line-width: 1px;
+    
+      width: 100%;
+      height: 100%;
+      padding: 20px 32px;
+      background-color: hsl(45 50% 97%);
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent calc(var(--line-spacing) - var(--line-width)),
+        var(--line-color) calc(var(--line-spacing) - var(--line-width)),
+        var(--line-color) var(--line-spacing)
+      );
+      background-size: 100% var(--line-spacing);
+      background-position: 0 10px;
+    }
+    .notebook-text {
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      line-height: 28px;
+      color: hsl(220 20% 30%);
+      margin: 0;
+    }
+    `} />
+
+## 水玉模様
+
+2つのオフセットされた `radial-gradient` レイヤーが、均等に配置されたドットパターンを作成します。2番目のレイヤーは両方向にタイルサイズの半分だけずらされているため、ドットが最初のレイヤーのギャップの間に入ります。
+
+<CssPreview client:load
+  title="水玉模様"
+  height={220}
+  html={`<div class="polka-dots"></div>`}
+  css={`
+    .polka-dots {
+      --dot-color: hsl(340 70% 60%);
+      --bg-color: hsl(340 30% 95%);
+      --dot-size: 12px;
+      --dot-spacing: 36px;
+    
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      background-image:
+      radial-gradient(
+        circle,
+        var(--dot-color) var(--dot-size),
+        transparent var(--dot-size)
+      ),
+      radial-gradient(
+        circle,
+        var(--dot-color) var(--dot-size),
+        transparent var(--dot-size)
+      );
+      background-size: var(--dot-spacing) var(--dot-spacing);
+      background-position:
+      0 0,
+      calc(var(--dot-spacing) / 2) calc(var(--dot-spacing) / 2);
+    }
+    `} />
+
+## チェッカーボード
+
+25%間隔で4つのハードストップを持つ `conic-gradient` が、各タイルに2色の象限を生成します。`background-size` で繰り返すと、象限がクラシックなチェッカーボードに揃います。
+
+<CssPreview client:load
+  title="チェッカーボード"
+  height={220}
+  html={`<div class="checkerboard"></div>`}
+  css={`
+    .checkerboard {
+      --color-1: hsl(0 0% 15%);
+      --color-2: hsl(0 0% 95%);
+      --tile-size: 40px;
+    
+      width: 100%;
+      height: 100%;
+      background-image: conic-gradient(
+        var(--color-1) 25%,
+        var(--color-2) 25% 50%,
+        var(--color-1) 50% 75%,
+        var(--color-2) 75%
+      );
+      background-size: var(--tile-size) var(--tile-size);
+    }
+    `} />
+
+## ジグザグ / ノコギリ歯エッジ
+
+2つの `linear-gradient` の三角形を並べて配置すると、ジグザグエッジが作成されます。擬似要素の背景として適用することで、追加のマークアップなしに装飾的なノコギリ歯ボーダーが得られます。
+
+<CssPreview client:load
+  title="ジグザグエッジ"
+  height={260}
+  html={`<div class="zigzag-card">
+    <div class="zigzag-content">Zigzag bottom edge using gradient triangles</div>
+    </div>`}
+  css={`
+    .zigzag-card {
+      --zigzag-color: hsl(250 60% 50%);
+      --zigzag-size: 16px;
+    
+      width: 100%;
+      position: relative;
+      background: var(--zigzag-color);
+      padding: 32px 24px;
+      padding-bottom: calc(32px + var(--zigzag-size));
+    }
+    .zigzag-content {
+      color: hsl(0 0% 100%);
+      font-family: system-ui, sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .zigzag-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: var(--zigzag-size);
+      background:
+      linear-gradient(
+        135deg,
+        var(--zigzag-color) 33.33%,
+        transparent 33.33%
+      ),
+      linear-gradient(
+        225deg,
+        var(--zigzag-color) 33.33%,
+        transparent 33.33%
+      );
+      background-size: calc(var(--zigzag-size) * 2) 100%;
+      background-position: left bottom;
+      transform: translateY(100%);
+    }
+    `} />
+
+## カーボンファイバー
+
+レイヤードされた `radial-gradient` と `linear-gradient` がカーボンファイバーの織り模様をシミュレートします。繊細な放射状のドットグリッドがストライプの線形グラデーションの上に重なり、すべてがダークなベースカラーの上に配置されます。
+
+<CssPreview client:load
+  title="カーボンファイバー"
+  height={220}
+  html={`<div class="carbon-fiber"></div>`}
+  css={`
+    .carbon-fiber {
+      --highlight: hsl(0 0% 22%);
+      --base: hsl(0 0% 12%);
+      --dot: hsl(0 0% 17%);
+      --dot-size: 2px;
+      --cell-size: 8px;
+    
+      width: 100%;
+      height: 100%;
+      background:
+      radial-gradient(
+        circle,
+        var(--dot) var(--dot-size),
+        transparent var(--dot-size)
+      ),
+      radial-gradient(
+        circle,
+        var(--dot) var(--dot-size),
+        transparent var(--dot-size)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent calc(var(--cell-size) / 2),
+        var(--highlight) calc(var(--cell-size) / 2),
+        var(--highlight) var(--cell-size)
+      ),
+      var(--base);
+      background-size:
+      var(--cell-size) var(--cell-size),
+      var(--cell-size) var(--cell-size),
+      var(--cell-size) var(--cell-size);
+      background-position:
+      0 0,
+      calc(var(--cell-size) / 2) calc(var(--cell-size) / 2),
+      0 0;
+    }
+    `} />
+
+## グリッド / 方眼紙
+
+2つのレイヤーの `linear-gradient` パス — 1つは水平、もう1つは垂直 — が細い線を描き、交差してグリッドを形成します。カスタムプロパティを調整することで、線の太さ、間隔、色を変更できます。
+
+<CssPreview client:load
+  title="方眼紙"
+  height={220}
+  html={`<div class="graph-paper"></div>`}
+  css={`
+    .graph-paper {
+      --line-color: hsl(200 40% 75%);
+      --bg-color: hsl(0 0% 100%);
+      --cell-size: 24px;
+      --line-width: 1px;
+    
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      background-image:
+      linear-gradient(
+        to right,
+        var(--line-color) 0px,
+        var(--line-color) var(--line-width),
+        transparent var(--line-width)
+      ),
+      linear-gradient(
+        to bottom,
+        var(--line-color) 0px,
+        var(--line-color) var(--line-width),
+        transparent var(--line-width)
+      );
+      background-size: var(--cell-size) var(--cell-size);
+    }
+    `} />
+
+## ダイヤモンド / アーガイル
+
+反対方向の対角角度に回転した2つの `linear-gradient` レイヤーが、重なり合うダイヤモンド形状を作成します。3番目のグラデーションがダイヤモンド間のクラシックなアーガイル「ステッチ」ラインを追加します。
+
+<CssPreview client:load
+  title="アーガイルパターン"
+  height={220}
+  html={`<div class="argyle"></div>`}
+  css={`
+    .argyle {
+      --color-1: hsl(210 50% 45%);
+      --color-2: hsl(210 50% 35%);
+      --bg-color: hsl(210 50% 55%);
+      --stitch-color: hsl(0 0% 100% / 0.15);
+      --diamond-size: 60px;
+    
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      background-image:
+      repeating-linear-gradient(
+        120deg,
+        var(--stitch-color) 0px,
+        var(--stitch-color) 1px,
+        transparent 1px,
+        transparent 30px
+      ),
+      repeating-linear-gradient(
+        60deg,
+        var(--stitch-color) 0px,
+        var(--stitch-color) 1px,
+        transparent 1px,
+        transparent 30px
+      ),
+      linear-gradient(
+        45deg,
+        var(--color-1) 25%,
+        transparent 25%,
+        transparent 75%,
+        var(--color-1) 75%
+      ),
+      linear-gradient(
+        -45deg,
+        var(--color-2) 25%,
+        transparent 25%,
+        transparent 75%,
+        var(--color-2) 75%
+      );
+      background-size:
+      var(--diamond-size) var(--diamond-size),
+      var(--diamond-size) var(--diamond-size),
+      var(--diamond-size) var(--diamond-size),
+      var(--diamond-size) var(--diamond-size);
+    }
+    `} />

@@ -1,0 +1,305 @@
+---
+title: aspect-ratio
+sidebar_position: 13
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Maintaining aspect ratios for images, videos, embedded content, and card layouts is a common requirement. For years, the only reliable technique was the "padding-top hack" — using percentage-based padding to create a proportional box. AI agents often still generate the old hack or, worse, use fixed pixel dimensions that break on different screen sizes. The modern `aspect-ratio` property solves this in a single line with no extra markup.
+
+## The Solution
+
+The `aspect-ratio` CSS property sets a preferred aspect ratio for an element. The browser adjusts the element's dimensions to maintain this ratio, and content that exceeds the ratio can overflow or be handled with `overflow` or `object-fit`.
+
+```css
+.element {
+  aspect-ratio: 16 / 9;
+}
+```
+
+This is all that is needed. No wrapper divs, no absolute positioning, no percentage padding calculations.
+
+## Code Examples
+
+### Basic Image with Aspect Ratio
+
+```css
+.thumbnail {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+```
+
+```html
+<img class="thumbnail" src="photo.jpg" alt="Landscape photo" />
+```
+
+The image fills its container width and maintains a 16:9 ratio. `object-fit: cover` ensures the image fills the box without distortion, cropping if necessary.
+
+<CssPreview client:load
+  title="aspect-ratio: Image Container (16/9)"
+  html={`    <div class="container">
+      <div class="thumbnail">
+        <div class="label">16 / 9</div>
+      </div>
+      <div class="thumbnail ratio-4-3">
+        <div class="label">4 / 3</div>
+      </div>
+      <div class="thumbnail ratio-1">
+        <div class="label">1 / 1</div>
+      </div>
+    </div>`}
+  css={`.container {
+      display: flex;
+      gap: 12px;
+      padding: 8px;
+      font-family: system-ui, sans-serif;
+    }
+    .thumbnail {
+      flex: 1;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ratio-4-3 {
+      aspect-ratio: 4 / 3;
+      background: linear-gradient(135deg, #22c55e, #14b8a6);
+    }
+    .ratio-1 {
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+    .label {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+    }`} />
+
+### Responsive Video Container
+
+```css
+.video-wrapper {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.video-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+```
+
+```html
+<div class="video-wrapper">
+  <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+</div>
+```
+
+### Square Card Grid
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 1rem;
+}
+
+.card {
+  aspect-ratio: 1;  /* Square */
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+```
+
+```html
+<div class="card-grid">
+  <div class="card"><img src="1.jpg" alt="" /></div>
+  <div class="card"><img src="2.jpg" alt="" /></div>
+  <div class="card"><img src="3.jpg" alt="" /></div>
+</div>
+```
+
+<CssPreview client:load
+  title="aspect-ratio: Card Layout Grid"
+  html={`    <div class="card-grid">
+      <div class="card">
+        <div class="card-img"></div>
+        <div class="card-body">Card Title</div>
+      </div>
+      <div class="card">
+        <div class="card-img img2"></div>
+        <div class="card-body">Card Title</div>
+      </div>
+      <div class="card">
+        <div class="card-img img3"></div>
+        <div class="card-body">Card Title</div>
+      </div>
+    </div>`}
+  css={`.card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 8px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+    .card-img {
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+    }
+    .card-img.img2 {
+      background: linear-gradient(135deg, #22c55e, #14b8a6);
+    }
+    .card-img.img3 {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+    .card-body {
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+    }`} />
+
+### Aspect Ratio with Fallback Content
+
+When content might overflow the aspect ratio box:
+
+```css
+.card-fixed {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 1rem;
+}
+```
+
+If the content is taller than the 4:3 ratio allows, it is clipped. For scrollable overflow, use `overflow: auto` instead.
+
+### The Old Padding-Top Hack (For Reference)
+
+This is the legacy technique that AI agents should stop generating:
+
+```css
+/* OLD: padding-top hack — do not use in new code */
+.video-wrapper-old {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 9/16 = 0.5625 */
+  height: 0;
+}
+
+.video-wrapper-old iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+```
+
+```css
+/* NEW: aspect-ratio — use this instead */
+.video-wrapper-new {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.video-wrapper-new iframe {
+  width: 100%;
+  height: 100%;
+}
+```
+
+The modern version is shorter, more readable, requires no wrapper trickery, and does not misuse the `padding` property.
+
+### Preventing Layout Shift on Images
+
+Setting `aspect-ratio` on images reserves space before the image loads, preventing Cumulative Layout Shift (CLS):
+
+```css
+img {
+  aspect-ratio: attr(width) / attr(height);
+  width: 100%;
+  height: auto;
+}
+```
+
+In practice, browsers already compute aspect ratio from the `width` and `height` HTML attributes. Always include both attributes on `<img>` tags:
+
+```html
+<!-- Good: browser reserves space using width/height ratio -->
+<img src="photo.jpg" alt="Photo" width="800" height="450" />
+
+<!-- Bad: no dimensions, causes layout shift -->
+<img src="photo.jpg" alt="Photo" />
+```
+
+### Circle Avatar
+
+```css
+.avatar {
+  width: 3rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+}
+```
+
+```html
+<img class="avatar" src="user.jpg" alt="User avatar" />
+```
+
+## Common AI Mistakes
+
+- **Still generating the padding-top hack.** The `aspect-ratio` property has had full browser support since 2021 (96%+ global coverage). The padding hack is no longer needed for any modern browser target.
+- **Forgetting `object-fit` on images.** Setting `aspect-ratio` on an `<img>` without `object-fit: cover` (or `contain`) causes the image to distort if its natural ratio differs from the specified ratio.
+- **Using fixed pixel dimensions instead of aspect-ratio.** AI agents often set `width: 640px; height: 360px` for a 16:9 element. This breaks on smaller screens. Use `width: 100%; aspect-ratio: 16 / 9` for responsive behavior.
+- **Not including `width` and `height` attributes on `<img>` tags.** These attributes allow the browser to reserve the correct space before the image loads, preventing layout shift. This is a Core Web Vitals requirement.
+- **Setting both `width` and `height` in CSS alongside `aspect-ratio`.** If both dimensions are explicitly set, `aspect-ratio` has no effect. Set one dimension (usually `width`) and let `aspect-ratio` calculate the other.
+- **Using `aspect-ratio` on flex/grid items without understanding how it interacts with stretching.** In a flex container with `align-items: stretch` (the default), the item's height is determined by the container, which overrides `aspect-ratio`. Set `align-items: flex-start` or `align-self: start` on the item.
+
+## When to Use
+
+### aspect-ratio is ideal for
+
+- Images and image placeholders to prevent layout shift
+- Video embeds (YouTube, Vimeo iframes)
+- Card layouts that need consistent proportions
+- Avatar images (use `aspect-ratio: 1` for squares/circles)
+- Hero sections with fixed proportions
+- Any element that must maintain a width-to-height relationship
+
+### Use object-fit alongside aspect-ratio when
+
+- The content (image or video) may not match the specified ratio
+- `cover` fills the box completely, cropping edges if needed
+- `contain` fits the entire content inside the box, leaving empty space
+
+### Keep the padding-top hack only when
+
+- You must support Internet Explorer (end-of-life since June 2022)
+- Working in a legacy codebase that cannot be updated yet
+
+## References
+
+- [aspect-ratio - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/aspect-ratio)
+- [CSS aspect-ratio property - web.dev](https://web.dev/articles/aspect-ratio)
+- [Aspect Ratio Boxes - CSS-Tricks](https://css-tricks.com/aspect-ratio-boxes/)
+- [A closer look at the CSS aspect-ratio property - LogRocket Blog](https://blog.logrocket.com/a-closer-look-at-the-css-aspect-ratio/)

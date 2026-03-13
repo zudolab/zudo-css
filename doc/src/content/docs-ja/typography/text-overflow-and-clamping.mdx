@@ -1,0 +1,264 @@
+---
+title: テキストオーバーフローとラインクランプ
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+カード、リスト項目、ナビゲーションなど、制約のあるUI領域にテキストを収めるために切り詰めるのはよくある要件です。AIエージェントはJavaScriptベースの解決策に頼ったり、1行の切り詰めしか処理できない不完全なCSSを生成したりしがちです。特に複数行のクランプは、正確なプロパティの組み合わせが必要で、間違えやすいものです。レガシーの`-webkit-line-clamp`アプローチには相互依存する3つの必須プロパティがあり、いずれか1つでも省略するとサイレントに失敗します。
+
+## 解決方法
+
+CSSには2つの主要な切り詰めパターンがあります：`text-overflow`を使った1行の省略記号と、`-webkit-line-clamp`を使った複数行クランプ（標準の`line-clamp`プロパティもより広く採用されつつあります）です。
+
+## コード例
+
+### 1行の省略記号
+
+```css
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+```
+
+3つのプロパティすべてが必須です：
+
+- `white-space: nowrap` は行の折り返しを防ぐ
+- `overflow: hidden` はあふれたコンテンツをクリップする
+- `text-overflow: ellipsis` は`...`インジケーターを表示する
+
+```html
+<p class="truncate">
+  This is a very long text that will be truncated with an ellipsis at the end
+</p>
+```
+
+### 複数行クランプ（レガシー構文）
+
+```css
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+```
+
+このパターンが動作するには4つのプロパティすべてが必須です。`-webkit-`プレフィックスが付いていますが、すべての主要ブラウザ（Chrome、Firefox、Safari、Edge）でサポートされており、完全に仕様化された動作です。
+
+```html
+<div class="card">
+  <h3>Card Title</h3>
+  <p class="line-clamp-3">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+    tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+    quis nostrud exercitation ullamco laboris.
+  </p>
+</div>
+```
+
+<CssPreview client:load
+  title="テキストオーバーフロー — 1行の省略記号と複数行クランプ"
+  html={`    <div class="overflow-demo">
+      <div class="demo-card">
+        <h3>Single-line Ellipsis</h3>
+        <p class="truncate">This is a very long single line of text that will be truncated with an ellipsis at the end when it overflows the container width</p>
+      </div>
+      <div class="demo-card">
+        <h3>2-line Clamp</h3>
+        <p class="clamp-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+      <div class="demo-card">
+        <h3>3-line Clamp</h3>
+        <p class="clamp-3">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+      </div>
+    </div>`}
+  css={`.overflow-demo {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .demo-card {
+      background: #f0f4ff;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .demo-card h3 {
+      font-size: 0.85rem;
+      color: #4f46e5;
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    .demo-card p {
+      font-size: 0.9rem;
+      color: #333;
+      margin: 0;
+    }
+    .truncate {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }`}
+  height={260} />
+
+### モダンな`line-clamp`プロパティ
+
+標準の`line-clamp`プロパティは構文を簡素化します。2025年時点では、Chromiumベースのブラウザがこれをサポートしています。
+
+```css
+.line-clamp-modern {
+  line-clamp: 3;
+  overflow: hidden;
+}
+```
+
+### クロスブラウザ対応パターン
+
+最大限の互換性のために、両方のアプローチを組み合わせましょう：
+
+```css
+.line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 3;
+}
+```
+
+### 実用的なカードコンポーネント
+
+```css
+.card {
+  max-width: 320px;
+  padding: 1rem;
+}
+
+.card__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+```
+
+```html
+<article class="card">
+  <h3 class="card__title">A very long card title that might overflow</h3>
+  <p class="card__description">
+    Card description text that can span multiple lines but will be clamped to
+    exactly three lines with an ellipsis at the end of the third line.
+  </p>
+</article>
+```
+
+### 展開可能なクランプテキスト
+
+```css
+.expandable {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.expandable.is-expanded {
+  -webkit-line-clamp: unset;
+}
+```
+
+### クランプテキストのアクセシビリティ対応
+
+```html
+<p class="line-clamp-3" title="Full text content goes here for tooltip access">
+  Truncated visible content...
+</p>
+```
+
+## AIがよくやるミス
+
+- 1行切り詰めに必要な3つのプロパティのうち1つを忘れる — `white-space`、`overflow`、`text-overflow`のすべてを設定する必要がある
+- 複数行クランプで`display: -webkit-box`や`-webkit-box-orient: vertical`を忘れ、クランプがサイレントに失敗する
+- CSSの代わりにJavaScriptで文字数によるテキスト切り詰めを行う。これはフォントサイズや画面幅が異なると正しく動作しない
+- コンテナに幅の制約を設定しない — `text-overflow: ellipsis`は要素に制限された幅（明示的またはflex/gridの親からの暗黙的な幅）が必要
+- `text-overflow: ellipsis`なしで`overflow: hidden`を使い、視覚的なインジケーターなしにテキストが文字の途中でクリップされる
+- `-webkit-line-clamp`をインライン要素に適用する — `-webkit-box`ディスプレイモデルのブロックレベルボックスが必要
+- クランプされたテキストがスクリーンリーダーからコンテンツを隠すことを考慮しない — フルテキストはDOMに残っているが、視覚のみのユーザーはどれだけ隠されているかのコンテキストを失う
+
+## 使い分け
+
+### 1行の切り詰め
+
+- 動的なラベルを持つナビゲーション項目
+- 可変幅のコンテンツを含むテーブルセル
+- 幅が制約されたタグやバッジ
+- パンくずリンク
+
+### 複数行クランプ
+
+- グリッドレイアウトのカード説明文
+- ソーシャルインターフェースのコメントプレビュー
+- 一覧ページの商品説明
+- 記事の抜粋やティーザー
+
+### 切り詰めるべきでない場合
+
+- ユーザーが全文を読む必要がある主要コンテンツ
+- エラーメッセージやバリデーションテキスト
+- アクセシビリティ上重要なラベルや説明
+- 切り詰めた部分によって意味が変わるコンテンツ（例: 価格、日付）
+
+## Tailwind CSS
+
+Tailwindは1行の省略記号に`truncate`、複数行クランプに`line-clamp-*`ユーティリティを提供しています。
+
+<TailwindPreview client:load
+  title="Tailwind: truncateとline-clamp"
+  html={`    <div class="grid grid-cols-3 gap-4 p-6">
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <h3 class="text-xs font-semibold text-indigo-600 mb-3">truncate</h3>
+        <p class="truncate text-sm text-gray-700">This is a very long single line of text that will be truncated with an ellipsis at the end when it overflows</p>
+      </div>
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <h3 class="text-xs font-semibold text-indigo-600 mb-3">line-clamp-2</h3>
+        <p class="line-clamp-2 text-sm text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.</p>
+      </div>
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <h3 class="text-xs font-semibold text-indigo-600 mb-3">line-clamp-3</h3>
+        <p class="line-clamp-3 text-sm text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+    </div>`}
+  height={200} />
+
+## 参考リンク
+
+- [MDN: text-overflow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow)
+- [MDN: -webkit-line-clamp](https://developer.mozilla.org/en-US/docs/Web/CSS/-webkit-line-clamp)
+- [MDN: line-clamp](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/line-clamp)
+- [CSS-Tricks: line-clamp](https://css-tricks.com/almanac/properties/l/line-clamp/)
+- [How to use CSS line-clamp — LogRocket](https://blog.logrocket.com/css-line-clamp/)

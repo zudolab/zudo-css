@@ -1,0 +1,180 @@
+---
+title: clamp()によるフルイドデザイン
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+従来のレスポンシブデザインは離散的なブレークポイントに依存しています。特定のビューポート幅で固定値を設定し、その間で急激に変化します。これにより不自然な遷移が生じ、管理するために複数のメディアクエリが必要になります。AIエージェントは通常、フルイドスケーリングを使わず、硬直したブレークポイントベースの値（例：モバイルで `font-size: 1rem`、デスクトップで `font-size: 1.5rem`）を生成してしまい、コード量が増え、洗練されていない体験になります。
+
+## 解決方法
+
+CSS の `clamp()` 関数は、通常ビューポート単位を含む推奨値に基づいて、最小値と最大値の間でフルイドにスケールする値を定義します。これにより、多くのサイジングに関してブレークポイントが不要になります。
+
+```css
+/* clamp(minimum, preferred, maximum) */
+font-size: clamp(1rem, 0.5rem + 1.5vw, 2rem);
+```
+
+- **Minimum**: 値が取りうる最小サイズです。
+- **Preferred**: フルイドな中間値で、通常 `vw` と `rem` ベースを組み合わせます。
+- **Maximum**: 値が取りうる最大サイズです。
+
+<CssPreview client:load
+  title="clamp() によるフルイドサイジング — ビューポートボタンでスムーズなスケーリングを確認"
+  html={`
+    <div class="fluid-demo">
+      <h2 class="fluid-heading">Fluid Heading</h2>
+      <p class="fluid-text">This text and its container use clamp() for fluid sizing. The heading, paragraph text, padding, and container width all scale smoothly between minimum and maximum values based on viewport width. No breakpoints needed.</p>
+      <div class="fluid-box">
+        <span>Fluid padding &amp; width</span>
+      </div>
+    </div>
+    `}
+  css={`
+    .fluid-demo {
+      max-width: clamp(16rem, 90%, 50rem);
+      margin: 0 auto;
+      padding: clamp(0.75rem, 0.5rem + 2vw, 2.5rem);
+    }
+    
+    .fluid-heading {
+      font-size: clamp(1.25rem, 0.75rem + 2.5vw, 2.5rem);
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 0.75rem;
+      line-height: 1.2;
+    }
+    
+    .fluid-text {
+      font-size: clamp(0.875rem, 0.8rem + 0.25vw, 1.125rem);
+      line-height: 1.6;
+      color: #475569;
+      margin: 0 0 1.5rem;
+    }
+    
+    .fluid-box {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: clamp(0.75rem, 0.5rem + 1.5vw, 2rem);
+      border-radius: 0.5rem;
+      font-size: clamp(0.75rem, 0.65rem + 0.5vw, 1.125rem);
+      font-weight: 600;
+      text-align: center;
+    }
+    `} />
+
+## コード例
+
+### フルイドタイポグラフィ
+
+```css
+h1 {
+  font-size: clamp(1.75rem, 1rem + 2.5vw, 3rem);
+}
+
+h2 {
+  font-size: clamp(1.375rem, 0.875rem + 1.5vw, 2.25rem);
+}
+
+h3 {
+  font-size: clamp(1.125rem, 0.75rem + 1vw, 1.75rem);
+}
+
+p {
+  font-size: clamp(1rem, 0.875rem + 0.25vw, 1.125rem);
+}
+```
+
+### フルイドスペーシング
+
+```css
+.section {
+  padding-block: clamp(2rem, 1rem + 3vw, 5rem);
+  padding-inline: clamp(1rem, 0.5rem + 2vw, 3rem);
+}
+
+.stack > * + * {
+  margin-block-start: clamp(1rem, 0.5rem + 1vw, 2rem);
+}
+```
+
+### フルイドレイアウト寸法
+
+```css
+.container {
+  max-width: clamp(20rem, 90vw, 75rem);
+  margin-inline: auto;
+}
+
+.sidebar {
+  width: clamp(15rem, 25vw, 20rem);
+}
+
+.gap-fluid {
+  gap: clamp(0.5rem, 0.25rem + 1vw, 2rem);
+}
+```
+
+### フルイドな行の高さと文字間隔
+
+```css
+p {
+  font-size: clamp(1rem, 0.875rem + 0.25vw, 1.125rem);
+  line-height: clamp(1.5, 1.4 + 0.2vw, 1.8);
+  letter-spacing: clamp(0px, 0.02em + 0.01vw, 0.04em);
+}
+```
+
+### 推奨値の計算方法
+
+推奨値の計算式は以下のパターンに従います：
+
+```
+preferred = base-rem-value + viewport-unit-value
+```
+
+特定の2つのビューポート幅の間でスケールする値を計算するには：
+
+```css
+/*
+  Scale from 1rem at 320px to 2rem at 1200px:
+
+  Slope = (max - min) / (max-viewport - min-viewport)
+  Slope = (2 - 1) / (75 - 20) = 0.01818rem per rem of viewport
+  In vw: 0.01818 * 100 = 1.818vw
+
+  Intercept = min - slope * min-viewport
+  Intercept = 1 - 0.01818 * 20 = 0.636rem
+
+  Result: clamp(1rem, 0.636rem + 1.818vw, 2rem)
+*/
+.fluid-text {
+  font-size: clamp(1rem, 0.636rem + 1.818vw, 2rem);
+}
+```
+
+## AIがよくやるミス
+
+- **ブレークポイントだけに頼る**: 単一の `clamp()` 式で済む場面で、固定値を使った複数の `@media` クエリを生成してしまいます。
+- **`rem` なしで `vw` だけを使う**: `font-size: clamp(1rem, 3vw, 2rem)` のように推奨値が純粋な `vw` になっているケースです。これではユーザーのフォントサイズ設定に連動してスケールしません。必ず `vw` と `rem` ベースを組み合わせましょう。
+- **非現実的な最小値/最大値**: 範囲が狭すぎる（フルイドな変化が見えない）か、広すぎる（極端なサイズでテキストが読めなくなる）設定をしてしまいます。
+- **アクセシビリティを忘れる**: `vw` 単位を使ったフルイドタイポグラフィはブラウザのズームに干渉する可能性があります。200%ズームで必ずテストし、テキストが読めることを確認しましょう。
+- **単純な `max-width` で十分な場面で `clamp()` を使う**: すべての値をフルイドにする必要はありません。スムーズなスケーリングが体験を改善する場面で `clamp()` を使いましょう。
+- **最小値/最大値にピクセル値を使う**: ピクセルはユーザーのフォントサイズ設定に応じてスケールしません。最小値と最大値には `rem` を使いましょう。
+
+## 使い分け
+
+- **タイポグラフィ**: モバイルとデスクトップの間でスムーズにスケールすべき見出しや本文のフォントサイズに使いましょう。
+- **スペーシング**: ビューポートに比例して拡大すべきパディング、マージン、ギャップに使いましょう。
+- **レイアウト幅**: フルイドな挙動が必要なコンテナ幅、サイドバー幅、max-width に使いましょう。
+- **色や離散的な値には不向き**: `clamp()` は数値のCSS値で機能します。`display`、`color`、`grid-template-columns` パターンなどのプロパティには適用できません。
+
+## 参考リンク
+
+- [clamp() — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/clamp)
+- [Modern Fluid Typography Using CSS Clamp — Smashing Magazine](https://www.smashingmagazine.com/2022/01/modern-fluid-typography-css-clamp/)
+- [Fluid Typography with CSS Clamp — XenonStack](https://www.xenonstack.com/blog/fluid-typography-css-clamp)
+- [CSS Clamp Guide — Clamp Generator](https://clampgenerator.com/guides/css-clamp/)

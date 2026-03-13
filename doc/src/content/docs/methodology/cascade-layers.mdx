@@ -1,0 +1,384 @@
+---
+title: Cascade Layers
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+CSS specificity wars are one of the most common sources of bugs and frustration. Developers resort to overly specific selectors, `!important`, or naming conventions like BEM to manage specificity conflicts. When integrating third-party CSS (design systems, component libraries, resets), controlling which styles take precedence becomes increasingly difficult. AI agents often generate CSS that creates specificity conflicts or uses `!important` as a fix.
+
+## The Solution
+
+The `@layer` at-rule provides explicit control over the cascade. Layer priority is evaluated *before* selector specificity — a simple selector in a later-declared layer always wins over a complex selector in an earlier layer. This eliminates specificity wars by design.
+
+The full cascade evaluation order is: origin/importance > inline styles > cascade layers > specificity > source order.
+
+## Code Examples
+
+### Declaring Layer Order
+
+The order in which layers are first declared determines their priority. The last layer in the declaration list has the highest priority.
+
+```css
+/* Declare layer order upfront — this is the recommended pattern */
+@layer reset, base, components, utilities;
+
+/* Now populate layers in any order */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
+@layer base {
+  body {
+    font-family: system-ui, sans-serif;
+    line-height: 1.6;
+  }
+
+  a {
+    color: #2563eb;
+  }
+}
+
+@layer components {
+  .button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .button-primary {
+    background: #2563eb;
+    color: white;
+  }
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .text-center {
+    text-align: center;
+  }
+}
+```
+
+### Importing Third-Party CSS Into a Layer
+
+```css
+/* Put third-party styles in a low-priority layer */
+@import url("normalize.css") layer(reset);
+@import url("some-library.css") layer(vendor);
+
+@layer reset, vendor, base, components, utilities;
+```
+
+### Layer Priority Overrides Specificity
+
+```css
+@layer base, components;
+
+@layer base {
+  /* High specificity: (0, 2, 1) */
+  nav ul li.active a.nav-link {
+    color: black;
+  }
+}
+
+@layer components {
+  /* Low specificity: (0, 1, 0) — but this WINS because
+     'components' is declared after 'base' */
+  .nav-link {
+    color: blue;
+  }
+}
+```
+
+### Nested Layers
+
+```css
+@layer components {
+  @layer card {
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+  }
+
+  @layer button {
+    .button {
+      padding: 0.5rem 1rem;
+    }
+  }
+}
+
+/* Reference nested layers with dot notation */
+@layer components.card {
+  .card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+```
+
+### Using `revert-layer`
+
+The `revert-layer` keyword rolls back a property value to whatever was set in the previous layer.
+
+```css
+@layer base, theme, overrides;
+
+@layer base {
+  a {
+    color: blue;
+    text-decoration: underline;
+  }
+}
+
+@layer theme {
+  a {
+    color: #8b5cf6;
+    text-decoration: none;
+  }
+}
+
+@layer overrides {
+  /* Roll back to the base layer value */
+  .classic-link {
+    color: revert-layer;
+    text-decoration: revert-layer;
+    /* Result: color is #8b5cf6 from theme?
+       No — revert-layer goes to the PREVIOUS layer.
+       Actually: color reverts to theme's value first,
+       then theme could revert-layer to base's value. */
+  }
+}
+```
+
+A practical use case for `revert-layer`:
+
+```css
+@layer defaults, theme;
+
+@layer defaults {
+  button {
+    background: #e5e7eb;
+    color: #1f2937;
+  }
+}
+
+@layer theme {
+  button {
+    background: #2563eb;
+    color: white;
+  }
+
+  /* Opt specific buttons out of theming */
+  button.no-theme {
+    background: revert-layer; /* Falls back to #e5e7eb */
+    color: revert-layer;      /* Falls back to #1f2937 */
+  }
+}
+```
+
+### Unlayered Styles Have Highest Priority
+
+Styles not in any layer always win over layered styles.
+
+```css
+@layer base {
+  p {
+    color: gray;
+  }
+}
+
+/* Unlayered — this wins */
+p {
+  color: black;
+}
+```
+
+## Browser Support
+
+- Chrome 99+
+- Firefox 97+
+- Safari 15.4+
+- Edge 99+
+
+Global support exceeds 96%.
+
+## Common AI Mistakes
+
+- Using `!important` to override styles instead of managing priority with layers
+- Not declaring layer order upfront, leading to unpredictable priority based on first-appearance order
+- Placing third-party/vendor CSS outside of a layer (giving it the highest unlayered priority)
+- Not knowing that unlayered styles beat all layered styles
+- Confusing `revert-layer` with `revert` — `revert` rolls back to the user-agent stylesheet, while `revert-layer` rolls back to the previous cascade layer
+- Generating overly specific selectors when layer ordering solves the priority problem
+
+## When to Use
+
+- Managing specificity across a large codebase with multiple style sources
+- Integrating third-party CSS without specificity conflicts
+- Establishing a clear CSS architecture (reset, base, components, utilities, overrides)
+- Replacing `!important` usage with structured layer priority
+- Building design systems where consumers need to override component styles predictably
+
+## Live Previews
+
+<CssPreview client:load
+  title="Layer Order Determines Winner"
+  html={`
+    <div class="demo">
+      <p class="text">This text is styled by two layers with conflicting colors.</p>
+      <div class="legend">
+        <div><span class="swatch" style="background: #ef4444"></span> <code>base</code> layer says: red</div>
+        <div><span class="swatch" style="background: #3b82f6"></span> <code>theme</code> layer says: blue — <strong>wins</strong> (declared later)</div>
+      </div>
+    </div>
+    `}
+  css={`
+    @layer base, theme;
+    
+    @layer base {
+    .text {
+      color: #ef4444;
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 1rem;
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      border-radius: 6px;
+    }
+    }
+    
+    @layer theme {
+    .text {
+      color: #3b82f6;
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+    }
+    
+    .demo {
+      font-family: system-ui, sans-serif;
+    }
+    
+    .legend {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    
+    .legend div {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+    
+    code {
+      background: #f1f5f9;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    `} />
+
+<CssPreview client:load
+  title="Layer Priority Beats Specificity"
+  html={`
+    <nav>
+      <ul>
+        <li class="active">
+          <a class="nav-link" href="#">Home</a>
+        </li>
+        <li><a class="nav-link" href="#">About</a></li>
+        <li><a class="nav-link" href="#">Contact</a></li>
+      </ul>
+    </nav>
+    <p class="note">The <code>components</code> layer uses a simple <code>.nav-link</code> selector, but it <strong>wins</strong> over the high-specificity <code>base</code> layer selector because it is declared later.</p>
+    `}
+  css={`
+    @layer base, components;
+    
+    @layer base {
+      /* High specificity: (0, 2, 3) */
+    nav ul li.active a.nav-link {
+      color: #ef4444;
+      text-decoration: line-through;
+    }
+    }
+    
+    @layer components {
+      /* Low specificity: (0, 1, 0) — but WINS */
+    .nav-link {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    
+    .nav-link:hover {
+      background: #eff6ff;
+    }
+    }
+    
+    nav {
+      font-family: system-ui, sans-serif;
+    }
+    
+    ul {
+      list-style: none;
+      display: flex;
+      gap: 0.25rem;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .note {
+      font-family: system-ui, sans-serif;
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 1rem;
+      line-height: 1.5;
+    }
+    
+    code {
+      background: #f1f5f9;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    `} />
+
+## References
+
+- [@layer - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer)
+- [Cascade layers - MDN Learn](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Cascade_layers)
+- [Cascade Layers Guide - CSS-Tricks](https://css-tricks.com/css-cascade-layers/)
+- [revert-layer - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/revert-layer)
+- [Hello, CSS Cascade Layers - Ahmad Shadeed](https://ishadeed.com/article/cascade-layers/)

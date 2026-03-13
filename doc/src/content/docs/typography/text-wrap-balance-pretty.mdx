@@ -1,0 +1,619 @@
+---
+title: "Text Wrap: balance and pretty"
+sidebar_position: 7
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Headings and short text blocks often end up with awkward last lines — a single orphaned word dangling on its own line, creating an uneven visual shape. Developers traditionally worked around this with manual `&nbsp;` characters, explicit `<br>` tags, or JavaScript-based solutions that measure text width and reflow content. These approaches are brittle: they break at different viewport sizes, different font sizes, and in different languages. Now CSS handles this natively with the `text-wrap` property.
+
+## The Solution
+
+The `text-wrap` property offers three values beyond the default `wrap` that give fine-grained control over how text breaks across lines:
+
+- **`balance`** — Distributes text evenly across all lines so no single line is significantly longer or shorter than others. Ideal for headings, labels, and short text blocks.
+- **`pretty`** — Prevents orphaned words on the last line of a paragraph. The browser adjusts earlier line breaks to ensure the final line has at least two words. Designed for body text.
+- **`stable`** — Ensures lines that have already been laid out don't re-wrap when editable content changes. Useful for `contenteditable` areas and live editing interfaces.
+
+### Core Principles
+
+#### Use `balance` for Headings and Short Text
+
+`text-wrap: balance` works by making all lines roughly equal in width. The browser calculates the optimal line breaks so that the shortest line is as long as possible. This creates a visually centered, even block of text — perfect for headings, pull quotes, and captions.
+
+However, browsers limit balancing to approximately 6 lines for performance reasons. Beyond that threshold, the text falls back to normal wrapping.
+
+#### Use `pretty` for Body Text
+
+`text-wrap: pretty` focuses specifically on the last line. It prevents a single orphaned word from appearing alone on the final line by adjusting earlier line breaks. Unlike `balance`, it doesn't try to equalize all lines — it only ensures the ending looks clean.
+
+#### Use `stable` for Editable Content
+
+`text-wrap: stable` prevents previously laid-out lines from shifting when new content is typed after them. This avoids the jarring re-wrap effect in `contenteditable` elements and text editors.
+
+## Code Examples
+
+### Basic Usage
+
+```css
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+```
+
+### Production Typography System
+
+```css
+/* Balance all heading levels */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/* Prevent orphans in body text */
+p,
+li,
+blockquote {
+  text-wrap: pretty;
+}
+
+/* Stable wrapping for editable areas */
+[contenteditable] {
+  text-wrap: stable;
+}
+```
+
+<CssPreview client:load
+  title="Balance vs No Balance — Heading Comparison"
+  height={300}
+  html={`    <div class="comparison">
+      <div class="column">
+        <span class="label">Default wrapping</span>
+        <h2 class="heading-default">Designing Accessible User Interfaces for Modern Web Applications</h2>
+      </div>
+      <div class="column">
+        <span class="label">text-wrap: balance</span>
+        <h2 class="heading-balanced">Designing Accessible User Interfaces for Modern Web Applications</h2>
+      </div>
+    </div>`}
+  css={`.comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .column {
+      background: hsl(220 30% 96%);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: hsl(220 60% 50%);
+      background: hsl(220 60% 94%);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+    .heading-default {
+      font-size: 1.35rem;
+      line-height: 1.3;
+      color: hsl(220 20% 20%);
+      margin: 0;
+      text-wrap: wrap;
+    }
+    .heading-balanced {
+      font-size: 1.35rem;
+      line-height: 1.3;
+      color: hsl(220 20% 20%);
+      margin: 0;
+      text-wrap: balance;
+    }`} />
+
+<CssPreview client:load
+  title="Pretty for Body Text — Orphan Prevention"
+  height={320}
+  html={`    <div class="comparison">
+      <div class="column">
+        <span class="label">Default wrapping</span>
+        <p class="body-default">Performance optimization requires a careful balance between load time and interactivity. Users expect pages to render within two seconds, and every additional resource increases the risk of abandonment. Prioritize critical rendering paths and defer non-essential assets to improve the perceived speed of your application and keep users engaged.</p>
+      </div>
+      <div class="column">
+        <span class="label">text-wrap: pretty</span>
+        <p class="body-pretty">Performance optimization requires a careful balance between load time and interactivity. Users expect pages to render within two seconds, and every additional resource increases the risk of abandonment. Prioritize critical rendering paths and defer non-essential assets to improve the perceived speed of your application and keep users engaged.</p>
+      </div>
+    </div>`}
+  css={`.comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .column {
+      background: hsl(220 30% 96%);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: hsl(260 60% 50%);
+      background: hsl(260 60% 94%);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+    .body-default {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: hsl(220 10% 30%);
+      margin: 0;
+      text-wrap: wrap;
+    }
+    .body-pretty {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: hsl(220 10% 30%);
+      margin: 0;
+      text-wrap: pretty;
+    }`} />
+
+<CssPreview client:load
+  title="Balance Line Limit — Short vs Long Text"
+  height={420}
+  html={`    <div class="limit-demo">
+      <div class="block">
+        <span class="label">4 lines — balance works</span>
+        <p class="balanced-text">Building responsive layouts that adapt gracefully to any screen size is one of the most important skills in modern front-end development. Container queries and fluid typography make this easier than ever before.</p>
+      </div>
+      <div class="block">
+        <span class="label">10+ lines — balance stops working</span>
+        <p class="balanced-text">Building responsive layouts that adapt gracefully to any screen size is one of the most important skills in modern front-end development. Container queries and fluid typography make this easier than ever before. Developers should consider the full range of devices their users might have, from narrow mobile screens to ultra-wide desktop monitors. A robust layout system uses relative units, logical properties, and flexible grids rather than fixed pixel values. Testing across multiple viewport sizes during development catches layout issues early and ensures a consistent user experience. Progressive enhancement means the core content remains accessible even when advanced layout features are not supported by the browser.</p>
+      </div>
+    </div>`}
+  css={`.limit-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .block {
+      background: hsl(160 30% 96%);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: hsl(160 60% 35%);
+      background: hsl(160 50% 90%);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+    .balanced-text {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: hsl(160 10% 25%);
+      margin: 0;
+      text-wrap: balance;
+    }`} />
+
+<CssPreview client:load
+  title="Practical Typography System — Headings + Body Text"
+  height={420}
+  html={`    <article class="article">
+      <h1 class="article-title">Getting Started with CSS Container Queries for Responsive Components</h1>
+      <p class="article-lead">Container queries let you style elements based on the size of their parent container rather than the viewport. This enables truly reusable, context-aware components.</p>
+      <h2 class="article-heading">Why Container Queries Matter</h2>
+      <p class="article-body">Traditional media queries respond to the viewport width, which means the same component can look different depending on where it sits in the page layout. A card component in a narrow sidebar needs different styles than the same card in a wide content area, but viewport-based breakpoints cannot distinguish between the two contexts.</p>
+      <p class="article-body">Container queries solve this by letting the component respond to its own container size. This makes components self-contained and portable across different layout contexts without any modification.</p>
+    </article>`}
+  css={`.article {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .article-title {
+      font-size: 1.5rem;
+      line-height: 1.25;
+      color: hsl(220 25% 15%);
+      margin: 0 0 0.75rem;
+      text-wrap: balance;
+    }
+    .article-lead {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: hsl(220 15% 40%);
+      margin: 0 0 1.5rem;
+      text-wrap: pretty;
+      border-left: 3px solid hsl(220 60% 60%);
+      padding-left: 1rem;
+    }
+    .article-heading {
+      font-size: 1.15rem;
+      line-height: 1.3;
+      color: hsl(220 25% 20%);
+      margin: 1.25rem 0 0.5rem;
+      text-wrap: balance;
+    }
+    .article-body {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: hsl(220 10% 30%);
+      margin: 0 0 0.75rem;
+      text-wrap: pretty;
+    }`} />
+
+<CssPreview client:load
+  title="Progressive Enhancement — Graceful Degradation"
+  height={250}
+  html={`    <div class="enhancement-demo">
+      <div class="card">
+        <h3 class="card-heading">This heading uses text-wrap balance for even line distribution</h3>
+        <p class="card-body">In browsers that do not support text-wrap: balance or pretty, these properties are simply ignored. The text renders with default wrapping behavior — no errors, no broken layouts, just the normal line-breaking you would get without the property.</p>
+      </div>
+    </div>`}
+  css={`.enhancement-demo {
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      background: hsl(40 40% 96%);
+      border-radius: 8px;
+      padding: 1.25rem;
+      border: 1px solid hsl(40 30% 88%);
+    }
+    .card-heading {
+      font-size: 1.15rem;
+      line-height: 1.3;
+      color: hsl(40 50% 25%);
+      margin: 0 0 0.75rem;
+      /* Graceful degradation: ignored in unsupported browsers */
+      text-wrap: balance;
+    }
+    .card-body {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: hsl(40 10% 30%);
+      margin: 0;
+      /* Graceful degradation: ignored in unsupported browsers */
+      text-wrap: pretty;
+    }`} />
+
+## CJK and Japanese Text Considerations
+
+`text-wrap: balance` and `text-wrap: pretty` were designed with alphabetic languages in mind and behave unexpectedly with Japanese and other CJK (Chinese, Japanese, Korean) text. If you apply these properties globally to headings or paragraphs, Japanese text will often render with awkward line breaks and unusually large trailing whitespace on the right side.
+
+### Why It Breaks
+
+In alphabetic languages, the browser uses spaces and punctuation to identify word boundaries when redistributing line breaks. Japanese has no spaces between words — every character position is a valid break point. When `text-wrap: balance` tries to equalize line lengths, it splits text at arbitrary character positions, producing breaks that cut through the middle of natural phrases. The result is a heading where the first line ends mid-phrase, leaving a conspicuously large gap on the right.
+
+<CssPreview client:load
+  title="text-wrap: balance — English Works, Japanese Breaks"
+  height={380}
+  html={`    <div class="lang-comparison">
+      <div class="lang-block">
+        <span class="lang-label">English</span>
+        <div class="lang-cols">
+          <div class="lang-col">
+            <span class="variant-label">Default</span>
+            <h2 class="heading heading--default" lang="en">Designing Accessible User Interfaces for Modern Web Applications</h2>
+          </div>
+          <div class="lang-col">
+            <span class="variant-label">text-wrap: balance</span>
+            <h2 class="heading heading--balanced" lang="en">Designing Accessible User Interfaces for Modern Web Applications</h2>
+          </div>
+        </div>
+      </div>
+      <div class="lang-block">
+        <span class="lang-label">日本語</span>
+        <div class="lang-cols">
+          <div class="lang-col">
+            <span class="variant-label">Default</span>
+            <h2 class="heading heading--default" lang="ja">モダンウェブ開発のためのアクセシブルなユーザーインターフェース設計</h2>
+          </div>
+          <div class="lang-col">
+            <span class="variant-label">text-wrap: balance</span>
+            <h2 class="heading heading--balanced" lang="ja">モダンウェブ開発のためのアクセシブルなユーザーインターフェース設計</h2>
+          </div>
+        </div>
+      </div>
+    </div>`}
+  css={`.lang-comparison {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      font-family: system-ui, sans-serif;
+    }
+    .lang-block {
+      background: hsl(220 20% 97%);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+    .lang-label {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: hsl(220 50% 45%);
+      background: hsl(220 60% 92%);
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.6rem;
+    }
+    .lang-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .lang-col {
+      background: hsl(0 0% 100%);
+      border-radius: 6px;
+      padding: 0.75rem;
+      border: 1px solid hsl(220 20% 90%);
+    }
+    .variant-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: hsl(220 30% 55%);
+      margin-bottom: 0.4rem;
+      font-family: monospace;
+    }
+    .heading {
+      font-size: 1rem;
+      line-height: 1.4;
+      color: hsl(220 20% 20%);
+      margin: 0;
+    }
+    .heading--default {
+      text-wrap: wrap;
+    }
+    .heading--balanced {
+      text-wrap: balance;
+    }`} />
+
+The Japanese balanced version often breaks at an unnatural position — for example splitting after a particle like 「の」 or 「な」 — because the browser has no awareness of Japanese word boundaries. The line break feels arbitrary, and the right margin of the first line becomes conspicuously large.
+
+### The word-break: auto-phrase Workaround
+
+Chrome 119+ introduced `word-break: auto-phrase`, which uses the [BudouX](https://github.com/google/budoux) machine learning engine to identify natural phrase boundaries (文節) in Japanese text. When combined with `text-wrap: balance`, the browser balances around those phrase boundaries instead of arbitrary character positions.
+
+```css
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  word-break: auto-phrase; /* Chrome 119+ — improves Japanese line breaks */
+}
+```
+
+<CssPreview client:load
+  title="word-break: auto-phrase — Japanese Phrase-Aware Balancing (Chrome 119+)"
+  height={300}
+  html={`    <div class="autophrase-demo">
+      <div class="autophrase-col">
+        <span class="autophrase-label">balance only</span>
+        <h2 class="heading-balance" lang="ja">パフォーマンス最適化のためのレンダリングパイプラインの理解と改善手法</h2>
+      </div>
+      <div class="autophrase-col">
+        <span class="autophrase-label">balance + auto-phrase</span>
+        <h2 class="heading-autophrase" lang="ja">パフォーマンス最適化のためのレンダリングパイプラインの理解と改善手法</h2>
+      </div>
+    </div>`}
+  css={`.autophrase-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1.25rem;
+      font-family: system-ui, sans-serif;
+    }
+    .autophrase-col {
+      background: hsl(260 20% 97%);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid hsl(260 20% 90%);
+    }
+    .autophrase-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: hsl(260 50% 45%);
+      font-family: monospace;
+      margin-bottom: 0.5rem;
+    }
+    .heading-balance {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: hsl(260 20% 20%);
+      margin: 0;
+      text-wrap: balance;
+    }
+    .heading-autophrase {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: hsl(260 20% 20%);
+      margin: 0;
+      text-wrap: balance;
+      word-break: auto-phrase;
+    }`} />
+
+Note that `word-break: auto-phrase` requires `lang="ja"` on the element or an ancestor to activate Japanese phrase detection. Without the `lang` attribute, the property has no effect. Firefox does not yet support `auto-phrase`. Safari support is limited — check current browser compatibility before relying on it.
+
+### Locale-Scoped Fallback Pattern
+
+For Japanese or multilingual sites, the safest approach is to reset `text-wrap` for Japanese content via the `lang` attribute selector:
+
+```css
+/* Apply balance globally */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  word-break: auto-phrase; /* helps in Chrome */
+}
+
+/* Reset for Japanese where balance misbehaves without auto-phrase support */
+[lang="ja"] :is(h1, h2, h3) {
+  text-wrap: initial;
+}
+
+/* Re-enable balance in Chrome which supports auto-phrase */
+@supports (word-break: auto-phrase) {
+  [lang="ja"] :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+}
+```
+
+<CssPreview client:load
+  title="Locale-Scoped Pattern — Reset for Japanese, Balance for English"
+  height={340}
+  html={`    <div class="locale-demo">
+      <div class="locale-section">
+        <span class="locale-badge locale-badge--en">lang="en"</span>
+        <h2 class="article-heading" lang="en">Designing Accessible User Interfaces for Modern Applications</h2>
+        <p class="article-body" lang="en">Container queries let you style elements based on their parent size. This enables truly context-aware components that adapt to any layout without viewport-based media queries.</p>
+      </div>
+      <div class="locale-section">
+        <span class="locale-badge locale-badge--ja">lang="ja"</span>
+        <h2 class="article-heading" lang="ja">モダンアプリケーションのためのアクセシブルなインターフェース設計</h2>
+        <p class="article-body" lang="ja">コンテナクエリを使用すると、ビューポートではなく親要素のサイズに基づいてスタイルを適用できます。これにより、どのレイアウトにも適応できる、真にコンテキストに対応したコンポーネントが実現します。</p>
+      </div>
+    </div>`}
+  css={`.locale-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.25rem;
+      font-family: system-ui, sans-serif;
+    }
+    .locale-section {
+      background: hsl(220 20% 97%);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      border: 1px solid hsl(220 20% 91%);
+    }
+    .locale-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: monospace;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.6rem;
+    }
+    .locale-badge--en {
+      color: hsl(200 60% 35%);
+      background: hsl(200 60% 90%);
+    }
+    .locale-badge--ja {
+      color: hsl(20 60% 35%);
+      background: hsl(20 60% 90%);
+    }
+    .article-heading {
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: hsl(220 20% 20%);
+      margin: 0 0 0.5rem;
+    }
+    .article-heading[lang="en"] {
+      text-wrap: balance;
+    }
+    .article-heading[lang="ja"] {
+      text-wrap: initial;
+      word-break: auto-phrase;
+    }
+    @supports (word-break: auto-phrase) {
+    .article-heading[lang="ja"] {
+      text-wrap: balance;
+    }
+    }
+    .article-body {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: hsl(220 10% 35%);
+    margin: 0;
+    text-wrap: pretty;
+    }`} />
+
+### Summary
+
+| Property | English | Japanese |
+|---|---|---|
+| `text-wrap: balance` | Works well | Breaks at arbitrary character positions |
+| `text-wrap: pretty` | Works well | Largely harmless but orphan concept doesn't map well to CJK |
+| `word-break: auto-phrase` | No effect | Improves phrase-aware breaking (Chrome 119+ only) |
+
+**Recommendation**: For Japanese or multilingual projects, avoid applying `text-wrap: balance` to headings unconditionally. Either skip it for Japanese content, use the locale-scoped `@supports` pattern above, or accept that the improvement will only appear in Chrome.
+
+## Browser Support
+
+- **`text-wrap: balance`** — Supported in Chrome 114+, Edge 114+, Firefox 121+, and Safari 17.5+. Widely available as of 2025.
+- **`text-wrap: pretty`** — Supported in Chrome 117+, Edge 117+, and Safari 17.4+. Firefox support is still pending as of early 2026.
+- **`text-wrap: stable`** — Supported in Chrome 120+, Edge 120+, and Firefox 121+. Safari support is pending.
+
+All three values degrade gracefully — unsupported browsers simply use the default `text-wrap: wrap` behavior, so there is no risk in applying them today.
+
+## Common AI Mistakes
+
+- Applying `text-wrap: balance` to long body text paragraphs — it only works on blocks of approximately 6 lines or fewer, and even when it does apply, it creates an unnaturally narrow text block
+- Using JavaScript to calculate line breaks and insert `<br>` tags when `text-wrap: balance` solves the same problem natively
+- Inserting `&nbsp;` between the last two words to prevent orphans — this is fragile and breaks at different viewport widths. Use `text-wrap: pretty` instead
+- Confusing `text-wrap: balance` with `text-align: center` — balance adjusts line break positions to equalize line lengths, it does not change alignment
+- Not setting `text-wrap: balance` on heading elements by default — this should be a baseline style for all heading levels
+- Applying `text-wrap: balance` to elements that need a specific width, like navigation items or badges — balance can change the intrinsic width of the element unexpectedly
+
+## When to Use
+
+### text-wrap: balance
+
+- Headings (`h1` through `h6`)
+- Pull quotes and blockquote text
+- Captions and figcaptions
+- Card titles and hero text
+- Any short text block (6 lines or fewer) where visual symmetry matters
+
+### text-wrap: pretty
+
+- Body paragraphs
+- List items with wrapping text
+- Descriptions and summaries
+- Any long-form text where you want to avoid a single orphaned word on the last line
+
+### text-wrap: stable
+
+- `contenteditable` elements
+- Live text editors and input areas
+- Chat message composition fields
+- Any context where text is being actively edited and re-wrapping would be disruptive
+
+## References
+
+- [MDN: text-wrap](https://developer.mozilla.org/en-US/docs/Web/CSS/text-wrap)
+- [Chrome Developers: CSS text-wrap: balance](https://developer.chrome.com/blog/css-text-wrap-balance)
+- [Chrome Developers: CSS text-wrap: pretty](https://developer.chrome.com/blog/css-text-wrap-pretty)
+- [web.dev: CSS text-wrap: balance](https://web.dev/articles/css-text-wrap-balance)
+- [Ahmad Shadeed: CSS text-wrap balance](https://ishadeed.com/article/css-text-wrap-balance)

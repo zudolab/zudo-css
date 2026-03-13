@@ -1,0 +1,275 @@
+---
+title: センタリングテクニック
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+要素のセンタリングはCSSの最も基本的なタスクの1つですが、AIエージェントは過度に複雑な方法や不適切な方法を使いがちです。よくあるミスとしては、非インライン要素に `text-align: center` を使う、flexboxやgridで十分なのに `transform: translate(-50%, -50%)` を適用する、複数のセンタリング手法を重ねて使う、レイアウトが求めていないのに `position: absolute` に頼る、などがあります。
+
+## 解決方法
+
+モダンCSSには、目的に合った簡潔なセンタリング手法が用意されています。適切な手法はコンテキストによって異なります：何をセンタリングするのか、どの軸が必要か、親要素に高さが定義されているか、を考慮しましょう。
+
+## コード例
+
+### margin: auto による水平センタリング
+
+幅が定義されたブロックレベル要素には、`margin: auto` が最もシンプルな水平センタリング手法です。垂直方向のセンタリングはできません。
+
+```css
+.centered-block {
+  width: 600px;   /* or max-width */
+  margin-inline: auto;
+}
+```
+
+```html
+<div class="centered-block">
+  Horizontally centered block element.
+</div>
+```
+
+`margin-inline: auto` は `margin-left: auto; margin-right: auto` の論理プロパティ版で、すべての書字方向で正しく動作します。
+
+### インライン/テキストコンテンツの水平センタリング
+
+```css
+.text-center {
+  text-align: center;
+}
+```
+
+これはブロックコンテナ内のインラインコンテンツ（テキスト、`<span>`、`<img>`、inline-block要素）をセンタリングします。ブロックレベルの子要素はセンタリングされません。
+
+### Flexbox センタリング（両軸）
+
+```css
+.flex-center {
+  display: flex;
+  justify-content: center; /* horizontal */
+  align-items: center;     /* vertical */
+}
+```
+
+```html
+<div class="flex-center" style="min-height: 300px;">
+  <div>Centered both ways</div>
+</div>
+```
+
+垂直センタリングを見えるようにするには、親要素に高さ（または `min-height`）が必要です。
+
+### Grid センタリング（両軸、最も簡潔）
+
+```css
+.grid-center {
+  display: grid;
+  place-items: center;
+}
+```
+
+```html
+<div class="grid-center" style="min-height: 300px;">
+  <div>Centered with one line</div>
+</div>
+```
+
+`place-items: center` は `align-items: center; justify-items: center` のショートハンドです。CSSで最も簡潔なセンタリング手法です。
+
+### place-content を使った Grid センタリング
+
+単一の子要素をセンタリングする別の方法です：
+
+```css
+.grid-center-alt {
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
+}
+```
+
+違い：`place-items` はグリッドエリア内でアイテムを揃え、`place-content` はグリッドトラック自体を揃えます。単一の子要素のセンタリングでは、どちらも同じ結果になります。
+
+### Flex または Grid 内での margin: auto によるセンタリング
+
+```css
+.container {
+  display: flex; /* or display: grid */
+  min-height: 100vh;
+}
+
+.child {
+  margin: auto;
+}
+```
+
+flexまたはgridアイテムに `margin: auto` を設定すると、その軸の利用可能なスペースをすべて吸収し、水平・垂直の両方向にセンタリングされます。
+
+### 絶対配置と inset を使ったセンタリング
+
+位置指定された親要素の上にオーバーレイコンテンツをセンタリングする場合に使います：
+
+```css
+.overlay-parent {
+  position: relative;
+}
+
+.overlay-centered {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+}
+```
+
+### Transform テクニック（レガシー）
+
+```css
+.transform-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+```
+
+このテクニックは今でも有効ですが、モダンCSSではほとんどの場合最適な選択肢ではありません。非Retinaディスプレイではサブピクセルレンダリングによりテキストがぼやけることがあります。flexboxまたはgridを使いましょう。
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="Flexbox センタリング"
+  html={`
+    <div class="flex-center">
+      <div class="box">Centered with Flexbox</div>
+    </div>
+    `}
+  css={`
+    .flex-center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+      background: #f0f4f8;
+    }
+    .box {
+      padding: 16px 24px;
+      background: #3b82f6;
+      color: white;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+    }
+    `} />
+
+<CssPreview client:load
+  title="Grid place-items: center"
+  html={`
+    <div class="grid-center">
+      <div class="box">Centered with Grid</div>
+    </div>
+    `}
+  css={`
+    .grid-center {
+      display: grid;
+      place-items: center;
+      height: 200px;
+      background: #f0fdf4;
+    }
+    .box {
+      padding: 16px 24px;
+      background: #22c55e;
+      color: white;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+    }
+    `} />
+
+## クイックリファレンス
+
+| シナリオ | 手法 |
+| --- | --- |
+| ブロック要素、水平のみ | `margin-inline: auto`（幅の指定が必要） |
+| インライン/テキストコンテンツ、水平のみ | 親要素に `text-align: center` |
+| 単一の子要素、両軸 | `display: grid; place-items: center` |
+| 複数の子要素、両軸 | `display: flex; justify-content: center; align-items: center` |
+| flex/grid内の子要素、両軸 | 子要素に `margin: auto` |
+| 位置指定された親上のオーバーレイ | `position: absolute; inset: 0; margin: auto` |
+| レガシー / flexbox以前のコードベース | `transform: translate(-50%, -50%)` |
+
+## AIがよくやるミス
+
+- **`transform: translate(-50%, -50%)` をデフォルトとして使う。** このテクニックはレガシーなフォールバックです。モダンCSSにはflexboxやgridを使ったより簡潔な方法があります。
+- **親要素に高さを設定し忘れる。** 垂直センタリングには親要素に高さまたは min-height が必要です。これがないと、親要素がコンテンツの高さに縮み、センタリングが効いていないように見えます。
+- **ブロック要素に `text-align: center` を使う。** `text-align` はインラインコンテンツにのみ作用します。`<div>` の中で別の `<div>` をセンタリングすることはできません。
+- **複数のセンタリング手法を重ねる。** `margin: auto` と `justify-content: center` の両方を適用するのは冗長です。1つの方法を選びましょう。
+- **フロー内の要素に `position: absolute` を使う。** 絶対配置は要素をドキュメントフローから外すため、レイアウト内のコンテンツのセンタリングには通常不適切です。
+- **`margin-inline: auto` の代わりに `margin: 0 auto` を書く。** どちらも左右方向では動作しますが、物理プロパティ版は垂直方向のマージンを0にリセットしてしまい、意図したスペーシングを上書きする可能性があります。`margin-inline: auto` は水平方向のみに影響します。
+
+## 使い分け
+
+### Grid `place-items: center`
+
+単一の子要素をセンタリングするのに最適です。最も簡潔な構文です。親要素を他のレイアウト目的でflexコンテナにする必要がない場合に使いましょう。
+
+### Flexbox センタリング
+
+親要素がすでにflexコンテナである場合、または複数のアイテムを一方の軸でセンタリングしつつ別の軸で配置する場合に最適です。
+
+### margin-inline: auto
+
+既知の幅またはmax-widthを持つブロック要素を水平センタリングするのに最適です。親要素のdisplayタイプを変更する必要がありません。
+
+### 絶対配置
+
+オーバーレイ、モーダル、ツールチップ、およびドキュメントフローから外して他のコンテンツの上に配置する必要がある要素にのみ使いましょう。
+
+## Tailwind CSS
+
+Tailwindは、すべてのセンタリング手法に対応する簡潔なユーティリティクラスを提供しています。
+
+### Flexbox センタリング
+
+<TailwindPreview client:load
+  title="Tailwind: Flexbox センタリング"
+  html={`    <div class="flex justify-center items-center h-[200px] bg-blue-50">
+      <div class="px-6 py-4 bg-blue-500 text-white rounded-lg font-semibold">
+        Centered with Flexbox
+      </div>
+    </div>`}
+  height={220} />
+
+### Grid センタリング
+
+<TailwindPreview client:load
+  title="Tailwind: Grid place-items-center"
+  html={`    <div class="grid place-items-center h-[200px] bg-green-50">
+      <div class="px-6 py-4 bg-green-500 text-white rounded-lg font-semibold">
+        Centered with Grid
+      </div>
+    </div>`}
+  height={220} />
+
+### mx-auto による水平センタリング
+
+<TailwindPreview client:load
+  title="Tailwind: mx-auto センタリング"
+  html={`    <div class="p-6 bg-slate-100">
+      <div class="mx-auto w-fit bg-violet-500 text-white px-6 py-4 rounded-lg font-semibold">
+        Centered with mx-auto + w-fit
+      </div>
+    </div>`}
+  height={100} />
+
+## 参考リンク
+
+- [Centering in CSS - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/How_to/Layout_cookbook/Center_an_element)
+- [The Complete Guide to Centering in CSS - Modern CSS Solutions](https://moderncss.dev/complete-guide-to-centering-in-css/)
+- [Centering Things - CSS-Tricks](https://css-tricks.com/centering-css-complete-guide/)
+- [Learn CSS Box Alignment - web.dev](https://web.dev/learn/css/box-alignment)

@@ -1,0 +1,28 @@
+---
+import { buildNavTree, findNode, loadCategoryMeta } from "@/utils/docs";
+import { stripBase } from "@/utils/base";
+import { getCollectionName, getContentDir, detectLocaleFromPath, type Locale } from "@/config/i18n";
+import { getDocsCollection } from "@/utils/get-docs-collection";
+import NavCardGrid from "@/components/nav-card-grid.astro";
+
+interface Props {
+  category: string;
+  lang?: Locale;
+}
+
+const currentPath = Astro.url.pathname;
+const pathWithoutBase = stripBase(currentPath);
+const detectedLang: Locale = detectLocaleFromPath(pathWithoutBase);
+const { category, lang = detectedLang } = Astro.props;
+
+const collectionName = getCollectionName(lang);
+const allDocs = await getDocsCollection(collectionName);
+const contentDir = getContentDir(lang);
+const categoryMeta = loadCategoryMeta(contentDir);
+const tree = buildNavTree(allDocs, lang, categoryMeta);
+
+const categoryNode = findNode(tree, category);
+const children = categoryNode?.children ?? [];
+---
+
+<NavCardGrid children={children} locale={lang} class="mt-vsp-lg mb-vsp-md" />

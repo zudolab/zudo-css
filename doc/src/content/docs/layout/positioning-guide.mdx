@@ -1,0 +1,354 @@
+---
+title: Positioning Guide
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+CSS positioning is frequently misused by AI agents. The most common errors include using `position: absolute` for layout tasks that should use flexbox or grid, forgetting to set `position: relative` on the containing element, using `position: fixed` without considering mobile viewport issues, and failing to understand that `position: sticky` requires a scroll container and a threshold value.
+
+## The Solution
+
+CSS `position` removes or adjusts elements relative to their normal document flow. Each value serves a specific purpose, and choosing the wrong one creates fragile layouts that break across screen sizes.
+
+## Code Examples
+
+### static (Default)
+
+Elements are in the normal document flow. The `top`, `right`, `bottom`, `left`, and `z-index` properties have no effect.
+
+```css
+.element {
+  position: static; /* default, rarely needs to be written explicitly */
+}
+```
+
+### relative
+
+The element stays in the normal flow but can be offset from its original position. It creates a containing block for absolutely positioned children.
+
+```css
+.parent {
+  position: relative; /* Establishes containing block for children */
+}
+
+.badge {
+  position: relative;
+  top: -4px; /* Shifts up 4px from its normal position */
+}
+```
+
+Use `position: relative` primarily to establish a containing block for `position: absolute` children, or for minor visual offsets without affecting layout.
+
+### absolute
+
+The element is removed from the document flow and positioned relative to its nearest positioned ancestor (any ancestor with `position` other than `static`).
+
+```css
+.card {
+  position: relative; /* Containing block */
+}
+
+.card-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+```
+
+```html
+<div class="card">
+  <span class="card-badge">New</span>
+  <p>Card content</p>
+</div>
+```
+
+<CssPreview client:load
+  title="Positioning: relative + absolute (Badge on Card)"
+  html={`    <div class="card">
+      <span class="badge">New</span>
+      <p class="card-text">Card content goes here. The badge is absolutely positioned relative to this card.</p>
+    </div>`}
+  css={`.card {
+      position: relative;
+      background: #f1f5f9;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #ef4444;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .card-text {
+      margin: 0;
+      color: #334155;
+    }`} />
+
+### Absolute Centering with inset
+
+The `inset` shorthand replaces `top`, `right`, `bottom`, `left`.
+
+```css
+.overlay {
+  position: absolute;
+  inset: 0; /* top: 0; right: 0; bottom: 0; left: 0 */
+}
+
+.modal {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+}
+```
+
+### fixed
+
+The element is removed from the document flow and positioned relative to the viewport. It does not move when the page scrolls.
+
+```css
+.sticky-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+/* Prevent content from being hidden behind the fixed header */
+body {
+  padding-top: 60px; /* Match the header height */
+}
+```
+
+<CssPreview client:load
+  title="Positioning: Fixed Element (Floating Button)"
+  html={`    <div class="page">
+      <div class="content">
+        <p>This area represents a page with scrollable content. Notice the floating button in the bottom-right corner — it stays in place regardless of scroll position.</p>
+      </div>
+      <button class="fab">+</button>
+    </div>`}
+  css={`.page {
+      position: relative;
+      min-height: 200px;
+      background: #f1f5f9;
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+    .content {
+      color: #334155;
+    }
+    .content p {
+      margin: 0;
+      line-height: 1.6;
+    }
+    .fab {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }`} />
+
+### sticky
+
+The element acts as `relative` until it crosses a scroll threshold, then behaves as `fixed` within its containing block.
+
+```css
+.table-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+```
+
+```html
+<table>
+  <thead>
+    <tr class="table-header">
+      <th>Name</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- rows -->
+  </tbody>
+</table>
+```
+
+<CssPreview client:load
+  title="Positioning: Sticky Header (Scroll to See)"
+  html={`    <div class="scroll-container">
+      <div class="sticky-header">Sticky Header — scroll down</div>
+      <div class="content-block">Section 1 content</div>
+      <div class="content-block">Section 2 content</div>
+      <div class="content-block">Section 3 content</div>
+      <div class="content-block">Section 4 content</div>
+      <div class="content-block">Section 5 content</div>
+      <div class="content-block">Section 6 content</div>
+      <div class="content-block">Section 7 content</div>
+    </div>`}
+  css={`.scroll-container {
+      height: 280px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: #3b82f6;
+      color: #fff;
+      padding: 12px 20px;
+      font-weight: 600;
+      z-index: 10;
+    }
+    .content-block {
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+      min-height: 80px;
+    }`}
+  height={300} />
+
+### Sticky Sidebar
+
+```css
+.page {
+  display: flex;
+  align-items: flex-start; /* Critical: prevents sidebar from stretching */
+}
+
+.sidebar {
+  position: sticky;
+  top: 1rem;
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+```
+
+```html
+<div class="page">
+  <aside class="sidebar">Sticky sidebar</aside>
+  <main class="main-content">Scrollable content</main>
+</div>
+```
+
+## Why position: sticky Fails
+
+Sticky positioning fails silently in several situations:
+
+### No threshold set
+
+```css
+/* Broken: no top, bottom, left, or right value */
+.sticky-broken {
+  position: sticky;
+}
+
+/* Fixed: threshold tells the browser when to stick */
+.sticky-working {
+  position: sticky;
+  top: 0;
+}
+```
+
+### Parent has overflow: hidden or overflow: auto
+
+```css
+/* Broken: overflow on parent prevents sticking */
+.parent {
+  overflow: hidden; /* or overflow: auto, overflow: scroll */
+}
+
+.parent .sticky-child {
+  position: sticky;
+  top: 0;
+  /* This will not stick */
+}
+```
+
+### Parent has no scrollable height
+
+The sticky element sticks within its parent. If the parent is only as tall as the sticky element itself, there is nothing to scroll within.
+
+## Common AI Mistakes
+
+- **Using `position: absolute` for layout.** Absolute positioning removes elements from the flow, making layouts fragile. Use flexbox or grid for layout, and reserve absolute positioning for overlays, badges, and decorative elements.
+- **Forgetting `position: relative` on the parent.** Without a positioned ancestor, absolutely positioned elements are positioned relative to the initial containing block (typically the viewport), not the intended parent.
+- **Using `position: fixed` for sticky headers on mobile.** Fixed positioning on mobile can cause issues with virtual keyboards, address bar resizing, and scroll performance. Test on actual mobile devices.
+- **Not setting a threshold on `position: sticky`.** A sticky element requires at least one of `top`, `right`, `bottom`, or `left` to be set to a non-auto value. Without a threshold, it will not stick.
+- **Using `z-index` without understanding stacking contexts.** Setting `z-index: 9999` does not guarantee an element appears on top. It only controls stacking within the same stacking context. See the Stacking Context guide for details.
+- **Using `top: 0; right: 0; bottom: 0; left: 0` instead of `inset: 0`.** The `inset` shorthand is more concise and readable.
+- **Using absolute positioning with percentage widths for responsive design.** Absolutely positioned elements are sized relative to their containing block, not the viewport. This breaks when the containing block changes size unexpectedly.
+
+## When to Use
+
+### relative
+
+- Establishing a containing block for absolutely positioned children
+- Minor visual offsets without affecting layout
+- Creating a stacking context (when combined with z-index)
+
+### absolute
+
+- Badges, labels, close buttons on cards or modals
+- Overlay elements that sit on top of a positioned container
+- Tooltip arrows and popovers
+- Decorative elements that should not affect document flow
+
+### fixed
+
+- Navigation bars that remain visible during scrolling
+- "Back to top" buttons
+- Cookie consent banners
+- Floating action buttons
+
+### sticky
+
+- Table headers that stay visible while scrolling the table
+- Section headers in long scrollable lists
+- Sidebars that follow the user within their container
+- "Add to cart" bars on product pages
+
+## References
+
+- [position - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/position)
+- [CSS Position Property - web.dev](https://web.dev/learn/css/layout#positioning)
+- [position: sticky - CSS-Tricks](https://css-tricks.com/position-sticky-2/)
+- [CSS Positioning Explained - InterviewBuzz](https://interviewbuzz.com/blog/css-positioning-explained-master-relative-absolute-fixed-sticky)

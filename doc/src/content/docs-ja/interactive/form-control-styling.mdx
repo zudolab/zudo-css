@@ -1,0 +1,598 @@
+---
+title: フォームコントロールのスタイリング
+sidebar_position: 7
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+フォーム要素 — チェックボックス、ラジオボタン、レンジスライダー、テキストエリア — は、歴史的にウェブで最もスタイリングが難しい要素です。レンダリングはオペレーティングシステムに深く結びついており、ブラウザはCSSによる見た目の制御を制限しています。そのため、開発者はJavaScriptライブラリ、`<div>` 要素で構築されたカスタムトグルコンポーネント、または隠しinputと兄弟セレクタを使った複雑なCSSハックに頼ることになります。これらの回避策はバンドルを肥大化させ、ネイティブのアクセシビリティを壊し、本来のHTMLセマンティクスから逸脱してしまいます。
+
+モダンCSSは、フォームコントロールを置き換えることなくブランディングやカスタマイズを行うネイティブプロパティを提供しています。
+
+## 解決方法
+
+4つのモダンCSSプロパティが、JavaScriptベースのフォームカスタマイズの大部分を置き換えます：
+
+- **`accent-color`** — 単一の宣言でネイティブのチェックボックス、ラジオボタン、レンジスライダー、プログレスバーにテーマを適用します。ブラウザがコントラストを自動的に処理します。
+- **`appearance: none`** — フォームコントロールのOSネイティブレンダリングを除去し、CSSでゼロからスタイリングできる白紙の状態にします。
+- **`field-sizing: content`** — テキストエリアやinputをコンテンツに合わせて自動サイズ調整させ、JavaScriptの自動リサイズスクリプトを不要にします。
+- **`caret-color`** — inputやテキストエリアの点滅するテキストカーソルの色を変更し、ブランディングの繊細なアクセントになります。
+
+### 基本原則
+
+最初のツールとして `accent-color` を使いましょう — 単一プロパティ以外のカスタムCSSが不要で、完全なアクセシビリティを維持します。`accent-color` で表現できないデザインが必要な場合にのみ `appearance: none` を使いましょう。`appearance: none` を使用する場合は、Windows High Contrastモードでコントロールが表示されるよう、必ず `@media (forced-colors: active)` 内で復元してください。
+
+<CssPreview client:load
+  title="ネイティブコントロールの accent-color"
+  height={320}
+  html={`
+    <div class="accent-demo">
+      <h3 class="accent-heading">Default Browser Styling</h3>
+      <div class="accent-row">
+        <label class="accent-label"><input type="checkbox" checked /> Newsletter</label>
+        <label class="accent-label"><input type="radio" name="default" checked /> Option A</label>
+        <label class="accent-label"><input type="radio" name="default" /> Option B</label>
+        <label class="accent-label">Volume <input type="range" value="60" /></label>
+        <label class="accent-label">Progress <progress value="70" max="100">70%</progress></label>
+      </div>
+      <h3 class="accent-heading branded-heading">With accent-color</h3>
+      <div class="accent-row branded-row">
+        <label class="accent-label"><input type="checkbox" checked /> Newsletter</label>
+        <label class="accent-label"><input type="radio" name="branded" checked /> Option A</label>
+        <label class="accent-label"><input type="radio" name="branded" /> Option B</label>
+        <label class="accent-label">Volume <input type="range" value="60" /></label>
+        <label class="accent-label">Progress <progress value="70" max="100">70%</progress></label>
+      </div>
+    </div>
+    `}
+  css={`
+    .accent-demo {
+      padding: 1.5rem;
+    }
+    
+    .accent-heading {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+      color: hsl(215 15% 45%);
+    }
+    
+    .branded-heading {
+      margin-top: 1.25rem;
+      color: hsl(262 80% 50%);
+    }
+    
+    .accent-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .branded-row {
+      accent-color: hsl(262 80% 50%);
+    }
+    
+    .accent-label {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      color: hsl(215 15% 30%);
+      cursor: pointer;
+    }
+    
+    input[type="range"] {
+      width: 80px;
+    }
+    
+    progress {
+      height: 0.5rem;
+      width: 80px;
+    }
+    `} />
+
+たった1行のCSS — `accent-color: hsl(262 80% 50%)` — でコンテナ内のすべてのネイティブコントロールにテーマが適用されます。ブラウザがアクセントの背景に対してチェックマークやラジオドットの色を自動的にコントラスト調整します。
+
+<CssPreview client:load
+  title="appearance: none によるカスタムチェックボックス"
+  height={200}
+  html={`
+    <div class="custom-checkbox-demo">
+      <label class="custom-check">
+        <input type="checkbox" class="custom-check-input" />
+        <span class="custom-check-label">Enable notifications</span>
+      </label>
+      <label class="custom-check">
+        <input type="checkbox" class="custom-check-input" checked />
+        <span class="custom-check-label">Accept terms</span>
+      </label>
+      <label class="custom-check">
+        <input type="checkbox" class="custom-check-input" checked />
+        <span class="custom-check-label">Subscribe to updates</span>
+      </label>
+    </div>
+    `}
+  css={`
+    .custom-checkbox-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      padding: 1.5rem;
+    }
+    
+    .custom-check {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: hsl(215 15% 25%);
+    }
+    
+    .custom-check-input {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid hsl(215 20% 70%);
+      border-radius: 0.25rem;
+      background: hsl(0 0% 100%);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    
+    .custom-check-input::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      transform: scale(0);
+      transition: transform 0.12s ease-in-out;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      background: hsl(0 0% 100%);
+    }
+    
+    .custom-check-input:checked {
+      background: hsl(262 80% 50%);
+      border-color: hsl(262 80% 50%);
+    }
+    
+    .custom-check-input:checked::before {
+      transform: scale(1);
+    }
+    
+    .custom-check-input:focus-visible {
+      outline: 2px solid hsl(262 80% 50%);
+      outline-offset: 2px;
+    }
+    
+    .custom-check-input:hover {
+      border-color: hsl(262 60% 60%);
+    }
+    
+    @media (forced-colors: active) {
+    .custom-check-input {
+      appearance: auto;
+    }
+    }
+    `} />
+
+`appearance: none` 宣言はネイティブのチェックボックスレンダリングを除去し、CSSで再構築します：ボックスのボーダー、`::before` の `clip-path` ポリゴンでチェックマーク、チェック状態と非チェック状態のアニメーションに `transform: scale()` を使用します。`@media (forced-colors: active)` ブロックは `appearance: auto` を復元し、Windows High Contrastモードでチェックボックスが機能し続けるようにします。
+
+<CssPreview client:load
+  title="スムーズなトランジション付きカスタムラジオボタン"
+  height={200}
+  html={`
+    <fieldset class="custom-radio-demo">
+      <legend class="custom-radio-legend">Select a plan</legend>
+      <label class="custom-radio">
+        <input type="radio" name="plan" class="custom-radio-input" checked />
+        <span class="custom-radio-label">Free</span>
+      </label>
+      <label class="custom-radio">
+        <input type="radio" name="plan" class="custom-radio-input" />
+        <span class="custom-radio-label">Pro</span>
+      </label>
+      <label class="custom-radio">
+        <input type="radio" name="plan" class="custom-radio-input" />
+        <span class="custom-radio-label">Enterprise</span>
+      </label>
+    </fieldset>
+    `}
+  css={`
+    .custom-radio-demo {
+      border: none;
+      padding: 1.5rem;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .custom-radio-legend {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: hsl(215 15% 35%);
+      margin-bottom: 0.25rem;
+    }
+    
+    .custom-radio {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: hsl(215 15% 25%);
+    }
+    
+    .custom-radio-input {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid hsl(215 20% 70%);
+      border-radius: 50%;
+      background: hsl(0 0% 100%);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    
+    .custom-radio-input::before {
+      content: "";
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: hsl(262 80% 50%);
+      transform: scale(0);
+      transition: transform 0.15s ease-in-out;
+    }
+    
+    .custom-radio-input:checked {
+      border-color: hsl(262 80% 50%);
+    }
+    
+    .custom-radio-input:checked::before {
+      transform: scale(1);
+    }
+    
+    .custom-radio-input:focus-visible {
+      outline: 2px solid hsl(262 80% 50%);
+      outline-offset: 2px;
+    }
+    
+    .custom-radio-input:hover {
+      border-color: hsl(262 60% 60%);
+    }
+    
+    @media (forced-colors: active) {
+    .custom-radio-input {
+      appearance: auto;
+    }
+    }
+    `} />
+
+カスタムラジオボタンもチェックボックスと同じパターンに従います：`appearance: none` でネイティブレンダリングを除去し、`::before` 擬似要素で内側のドットを描画し、`transform: scale()` で選択をスムーズにアニメーションします。円形の `border-radius: 50%` と小さな内側のドットにより、従来のラジオボタンの視覚言語が保持され、ユーザーはコントロールをすぐに認識できます。
+
+<CssPreview client:load
+  title="field-sizing による自動拡張テキストエリア"
+  height={280}
+  html={`
+    <div class="field-sizing-demo">
+      <div class="field-sizing-col">
+        <label class="field-sizing-label">Fixed height (default)</label>
+        <textarea class="field-sizing-textarea fixed-textarea" rows="3">This textarea has a fixed height. If you type more text than fits, it scrolls internally. Users cannot see all their content at once.</textarea>
+      </div>
+      <div class="field-sizing-col">
+        <label class="field-sizing-label field-sizing-label-new">field-sizing: content</label>
+        <textarea class="field-sizing-textarea auto-textarea">This textarea grows with its content. No JavaScript needed — the browser handles resizing natively. Try typing more text here to see it expand.</textarea>
+      </div>
+    </div>
+    `}
+  css={`
+    .field-sizing-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      padding: 1.5rem;
+    }
+    
+    .field-sizing-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .field-sizing-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: hsl(215 15% 45%);
+    }
+    
+    .field-sizing-label-new {
+      color: hsl(150 60% 35%);
+    }
+    
+    .field-sizing-textarea {
+      font-family: inherit;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      padding: 0.625rem 0.75rem;
+      border: 1.5px solid hsl(215 20% 80%);
+      border-radius: 0.375rem;
+      color: hsl(215 15% 25%);
+      background: hsl(0 0% 100%);
+      resize: vertical;
+      transition: border-color 0.15s ease;
+    }
+    
+    .field-sizing-textarea:focus {
+      border-color: hsl(262 80% 50%);
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 3px hsl(262 80% 50% / 0.15);
+    }
+    
+    .fixed-textarea {
+      height: 5rem;
+    }
+    
+    .auto-textarea {
+      field-sizing: content;
+      min-height: 3rem;
+      max-height: 12rem;
+    }
+    `} />
+
+`field-sizing: content` プロパティにより、JavaScriptの自動リサイズライブラリが不要になります。テキストエリアはユーザーが入力すると拡張し、コンテンツが削除されると縮小します。`min-height` と `max-height` で範囲を設定し、テキストエリアが1行に縮小したりページ全体を埋め尽くしたりしないようにしましょう。
+
+**ブラウザサポートの注意：** `field-sizing` は Chrome 123+ と Edge 123+（2024年3月リリース）でサポートされています。Firefox と Safari はまだサポートしていません。プログレッシブエンハンスメントとして使用しましょう — 非対応ブラウザではテキストエリアがデフォルトの固定サイズにフォールバックします。
+
+<CssPreview client:load
+  title="統一されたフォームテーマ"
+  height={400}
+  html={`
+    <form class="themed-form" onsubmit="return false">
+      <h3 class="themed-form-title">Create Account</h3>
+      <div class="themed-field">
+        <label class="themed-label" for="tf-name">Full Name</label>
+        <input class="themed-input" type="text" id="tf-name" placeholder="Jane Doe" />
+      </div>
+      <div class="themed-field">
+        <label class="themed-label" for="tf-email">Email</label>
+        <input class="themed-input" type="email" id="tf-email" placeholder="jane@example.com" />
+      </div>
+      <div class="themed-field">
+        <label class="themed-label" for="tf-bio">Bio</label>
+        <textarea class="themed-input themed-textarea" id="tf-bio" placeholder="Tell us about yourself..."></textarea>
+      </div>
+      <div class="themed-checks">
+        <label class="themed-check">
+          <input type="checkbox" checked />
+          <span>I agree to the terms</span>
+        </label>
+        <label class="themed-check">
+          <input type="checkbox" />
+          <span>Subscribe to newsletter</span>
+        </label>
+      </div>
+      <button class="themed-submit" type="submit">Create Account</button>
+    </form>
+    `}
+  css={`
+    .themed-form {
+      --form-accent: hsl(262 80% 50%);
+      --form-accent-hover: hsl(262 80% 42%);
+      --form-accent-light: hsl(262 80% 50% / 0.15);
+      --form-border: hsl(215 20% 82%);
+      --form-text: hsl(215 15% 20%);
+      --form-text-muted: hsl(215 15% 50%);
+    
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 360px;
+    }
+    
+    .themed-form-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--form-text);
+      margin: 0 0 0.25rem;
+    }
+    
+    .themed-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    
+    .themed-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--form-text);
+    }
+    
+    .themed-input {
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid var(--form-border);
+      border-radius: 0.375rem;
+      color: var(--form-text);
+      background: hsl(0 0% 100%);
+      caret-color: var(--form-accent);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    
+    .themed-input::placeholder {
+      color: var(--form-text-muted);
+    }
+    
+    .themed-input:focus {
+      border-color: var(--form-accent);
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 3px var(--form-accent-light);
+    }
+    
+    .themed-textarea {
+      resize: vertical;
+      min-height: 4rem;
+    }
+    
+    .themed-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      accent-color: var(--form-accent);
+    }
+    
+    .themed-check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--form-text);
+      cursor: pointer;
+    }
+    
+    .themed-submit {
+      background: var(--form-accent);
+      color: hsl(0 0% 100%);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    
+    .themed-submit:hover {
+      background: var(--form-accent-hover);
+    }
+    
+    .themed-submit:focus-visible {
+      outline: 2px solid var(--form-accent);
+      outline-offset: 2px;
+    }
+    
+    .themed-submit:active {
+      transform: scale(0.98);
+    }
+    `} />
+
+このフォームは4つのプロパティすべてを組み合わせて統一されたブランド体験を実現しています：`accent-color` でネイティブチェックボックスにテーマを適用し、`caret-color` で点滅カーソルをブランドのパープルに合わせ、`box-shadow` を使用したカスタムフォーカスリングでテキスト入力とテキストエリア全体に一貫したフォーカス処理を提供します。送信ボタンも同じカラーパレットに従い、適切な `:hover`、`:focus-visible`、`:active` 状態を備えています。
+
+## コード例
+
+### accent-color による手軽なブランディング
+
+```css
+form {
+  accent-color: hsl(262 80% 50%);
+}
+```
+
+この1行でフォーム内のすべてのチェックボックス、ラジオボタン、レンジスライダー、プログレスバーにテーマが適用されます。追加のセレクタは不要です。
+
+### ゼロからのカスタムチェックボックス
+
+```css
+.checkbox {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid hsl(215 20% 70%);
+  border-radius: 0.25rem;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.checkbox::before {
+  content: "";
+  width: 0.65rem;
+  height: 0.65rem;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background: white;
+  transform: scale(0);
+  transition: transform 0.12s ease-in-out;
+}
+
+.checkbox:checked {
+  background: hsl(262 80% 50%);
+  border-color: hsl(262 80% 50%);
+}
+
+.checkbox:checked::before {
+  transform: scale(1);
+}
+
+/* Restore native appearance in Windows High Contrast mode */
+@media (forced-colors: active) {
+  .checkbox {
+    appearance: auto;
+  }
+}
+```
+
+### 自動サイジングテキストエリア
+
+```css
+.auto-textarea {
+  field-sizing: content;
+  min-height: 3rem;
+  max-height: 20rem;
+}
+```
+
+### 統一されたフォーム変数
+
+```css
+.form {
+  --accent: hsl(262 80% 50%);
+  --accent-ring: hsl(262 80% 50% / 0.15);
+  accent-color: var(--accent);
+  caret-color: var(--accent);
+}
+
+.form input:focus,
+.form textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  outline: 2px solid transparent;
+}
+```
+
+## AIがよくやるミス
+
+- **ネイティブコントロールを `<div>` 要素で置き換える**：`<input>` に `appearance: none` を使う代わりに、`<div>` と `<span>` で偽のチェックボックスやラジオボタンを構築します。偽のコントロールはキーボードナビゲーション、フォーム送信、スクリーンリーダーのセマンティクスを欠いています。
+- **`@media (forced-colors: active)` を忘れる**：`appearance: none` で構築されたカスタムチェックボックスやラジオボタンは、Windows High Contrastモードで見えなくなります。`forced-colors` メディアクエリ内で常に `appearance: auto` を復元しましょう。
+- **自動拡張テキストエリアにJavaScriptを使用する**：`field-sizing: content` がネイティブで処理できる（グレースフルデグラデーション付き）のに、リサイズオブザーバーやinputイベントリスナーを追加します。
+- **`accent-color` で十分な場合にすべてのフォームスタイルをオーバーライドする**：ネイティブコントロールにブランドカラーを適用するだけで済むデザインに、数十行のカスタムチェックボックスCSSを書きます。
+- **カスタムコントロールにフォーカスインジケーターを提供しない**：`appearance` を除去しながら `:focus-visible` スタイルを追加せず、キーボードユーザーに視覚的フォーカス状態がなくなります。
+- **CSSカスタムプロパティの代わりに色をハードコードする**：変数の単一セットを定義する代わりに、セレクタ全体に色の値を散在させ、フォームテーマの柔軟性を失わせます。
+
+## 使い分け
+
+- **`accent-color`**：ネイティブフォームコントロールにブランディングが必要で、デザインがカスタムの形状やレイアウトを要求しない場合に使います。これがデフォルトの正しい選択です。
+- **`appearance: none`**：`accent-color` では表現できない完全にカスタムなチェックボックス、ラジオボタン、セレクトの外観がデザインで求められる場合に使います。必ず `forced-colors` の復元とペアにしましょう。
+- **`field-sizing: content`**：テキストエリアやテキストinputがコンテンツに合わせて拡大すべき場合に使います。`min-height` / `max-height` の範囲を設定してプログレッシブエンハンスメントとして使用しましょう。
+- **`caret-color`**：テキストinputやテキストエリアの点滅カーソルをブランドカラーに合わせるべき場合に使います。洗練されたデザインを示す小さなディテールです。
+
+## 参考リンク
+
+- [accent-color — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/accent-color)
+- [appearance — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/appearance)
+- [field-sizing — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing)
+- [caret-color — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/caret-color)
+- [Simplifying Form Styles with accent-color — web.dev](https://web.dev/articles/accent-color)
+- [Custom Checkbox Styling — Modern CSS Solutions](https://moderncss.dev/pure-css-custom-checkbox-style/)
+- [forced-colors Media Query — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors)

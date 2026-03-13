@@ -1,0 +1,154 @@
+---
+title: Writing Style
+sidebar_position: 1
+---
+
+This document defines the writing style for CSS Best Practices articles. Follow these rules to keep every article consistent, direct, and useful for AI agents.
+
+## Audience
+
+The primary readers are **AI agents** that consume these articles to learn CSS patterns. Human developers also read and maintain the docs. Write for both audiences: be precise enough for machines, clear enough for humans.
+
+## Tone
+
+- Professional, educational, and direct
+- No filler words, unnecessary hedging, or conversational padding
+- Active voice over passive voice
+- Short sentences over long ones
+- State facts; do not editorialize
+
+### OK/NG: Tone
+
+**OK (direct):**
+
+> Flexbox centering requires a defined height on the parent container.
+
+**NG (hedging, filler):**
+
+> It's worth noting that you might want to consider setting a defined height on the parent container when using flexbox centering.
+
+**OK (active voice):**
+
+> Use `margin-inline: auto` to center block elements horizontally.
+
+**NG (passive voice):**
+
+> Block elements can be horizontally centered by using `margin-inline: auto`.
+
+## Article Structure
+
+Every article follows this section order. Not all sections are required, but the order must be preserved.
+
+### 1. The Problem
+
+Open with the common mistakes or misunderstandings the article addresses. State what goes wrong and why it matters. This section grounds the reader in a real problem before presenting solutions.
+
+### 2. The Solution
+
+Explain the approach at a high level. Keep it brief — the details belong in code examples.
+
+### 3. Code Examples
+
+Show the CSS (and HTML when needed) with inline commentary. Each distinct technique gets its own sub-heading. Follow each code block with a `CssPreview` demo.
+
+### 4. Live Previews
+
+Group `CssPreview` components here if they are not already inline with the code examples above. Prefer placing demos inline alongside the code they demonstrate.
+
+### 5. Quick Reference
+
+A summary table mapping scenarios to recommended techniques. Use a two-column table with "Scenario" and "Technique" columns.
+
+### 6. Common AI Mistakes
+
+List specific mistakes AI agents make when applying the techniques in this article. Use bold for the mistake, followed by an explanation.
+
+### 7. When to Use
+
+Decision guidance organized by technique. Use sub-headings for each technique and keep descriptions to one or two sentences.
+
+### 8. Tailwind CSS
+
+Tailwind equivalents using `TailwindPreview` components. Optional — include only when the article covers CSS properties that have direct Tailwind utility counterparts.
+
+### 9. References
+
+External links to MDN, web.dev, CSS-Tricks, and other authoritative sources.
+
+## CssPreview Demos
+
+Every CSS concept must have a corresponding `CssPreview` demo. Demos are the most valuable part of each article. Prefer more demos over more prose.
+
+Rules for demos:
+
+- CssPreview renders in an iframe with no JavaScript — all interactions must be CSS-only (`:hover`, `:focus`, `:checked`, etc.)
+- Use `hsl()` colors, not hex
+- Use descriptive BEM-ish CSS class names (e.g., `.card__title`, `.flex-center`, `.grid-sidebar`)
+- Keep demos minimal — show only the technique being explained
+- Every demo needs a descriptive `title` prop
+
+### OK/NG: Demo Colors
+
+**OK:**
+
+```css
+background: hsl(210, 50%, 95%);
+color: hsl(210, 80%, 40%);
+```
+
+**NG:**
+
+```css
+background: #f0f4f8;
+color: #2563eb;
+```
+
+## Writing Rules
+
+### Lead with Problems
+
+Start articles with what goes wrong, not with what works. AI agents learn better from "do not do X because Y" than from "here is how to do X."
+
+### One Concept Per Article
+
+Each article covers one CSS technique or pattern. If the topic has enough depth, use the deep article pattern (folder with `index.mdx` + sub-pages).
+
+### No Subjective Judgment
+
+Do not write "this is elegant" or "this is the best approach." State what the technique does, when to use it, and what the trade-offs are.
+
+### OK/NG: Subjective Language
+
+**OK (factual):**
+
+> `place-items: center` is the most concise centering syntax — a single declaration replaces two.
+
+**NG (subjective):**
+
+> `place-items: center` is an elegant and beautiful solution to the centering problem.
+
+### Do Not Repeat Generic CSS Knowledge
+
+Assume the reader knows basic CSS. Do not explain what `display: flex` does from scratch. Focus on patterns, trade-offs, and common mistakes specific to the article's topic.
+
+### Use Tables for Comparisons
+
+When comparing multiple approaches, use tables instead of prose. Tables are easier for AI agents to parse.
+
+### Code Before Prose
+
+Show the code first, then explain it. Readers (especially AI agents) can often understand the code without the explanation. The prose adds context that the code alone does not convey.
+
+## Deep Article Pattern
+
+When a topic has enough depth to warrant multiple sub-pages, convert the flat `.mdx` file into a folder:
+
+```
+docs/layout/centering-techniques/
+  index.mdx          # Overview + navigation
+  margin-auto.mdx    # Sub-page for margin: auto
+  flexbox.mdx        # Sub-page for flexbox centering
+  grid.mdx           # Sub-page for grid centering
+```
+
+The `index.mdx` links to each sub-page and provides a brief overview.

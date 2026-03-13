@@ -1,0 +1,5 @@
+{
+  "formatMultiLineJsx": {
+    "ignoreComponents": ["CssPreview", "TailwindPreview"]
+  }
+}

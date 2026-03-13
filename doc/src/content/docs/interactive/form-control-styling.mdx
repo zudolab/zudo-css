@@ -1,0 +1,598 @@
+---
+title: Form Control Styling
+sidebar_position: 7
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Form elements — checkboxes, radio buttons, range sliders, textareas — have historically been the hardest parts of the web to style. Their rendering is deeply tied to the operating system, and browsers give CSS limited control over their appearance. As a result, developers reach for JavaScript libraries, custom toggle components built from `<div>` elements, or complex CSS hacks involving hidden inputs with sibling selectors. These workarounds bloat the bundle, break native accessibility, and diverge from the underlying HTML semantics.
+
+Modern CSS now provides native properties to brand and customize form controls without replacing them.
+
+## The Solution
+
+Four modern CSS properties replace most JavaScript-based form customization:
+
+- **`accent-color`** — Themes native checkboxes, radios, range sliders, and progress bars with a single declaration. The browser handles contrast automatically.
+- **`appearance: none`** — Strips the OS-native rendering of a form control, giving you a blank canvas to style from scratch with CSS.
+- **`field-sizing: content`** — Makes textareas and inputs automatically size to their content, eliminating the need for JavaScript auto-resize scripts.
+- **`caret-color`** — Changes the color of the blinking text cursor in inputs and textareas, providing a subtle branding touch.
+
+### Core Principles
+
+Use `accent-color` as your first tool — it requires zero custom CSS beyond a single property and preserves full accessibility. Only reach for `appearance: none` when you need a design that goes beyond what `accent-color` can express. When you do use `appearance: none`, always restore it inside `@media (forced-colors: active)` so the control remains visible in Windows High Contrast mode.
+
+<CssPreview client:load
+  title="accent-color on Native Controls"
+  height={320}
+  html={`
+    <div class="accent-demo">
+      <h3 class="accent-heading">Default Browser Styling</h3>
+      <div class="accent-row">
+        <label class="accent-label"><input type="checkbox" checked /> Newsletter</label>
+        <label class="accent-label"><input type="radio" name="default" checked /> Option A</label>
+        <label class="accent-label"><input type="radio" name="default" /> Option B</label>
+        <label class="accent-label">Volume <input type="range" value="60" /></label>
+        <label class="accent-label">Progress <progress value="70" max="100">70%</progress></label>
+      </div>
+      <h3 class="accent-heading branded-heading">With accent-color</h3>
+      <div class="accent-row branded-row">
+        <label class="accent-label"><input type="checkbox" checked /> Newsletter</label>
+        <label class="accent-label"><input type="radio" name="branded" checked /> Option A</label>
+        <label class="accent-label"><input type="radio" name="branded" /> Option B</label>
+        <label class="accent-label">Volume <input type="range" value="60" /></label>
+        <label class="accent-label">Progress <progress value="70" max="100">70%</progress></label>
+      </div>
+    </div>
+    `}
+  css={`
+    .accent-demo {
+      padding: 1.5rem;
+    }
+    
+    .accent-heading {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+      color: hsl(215 15% 45%);
+    }
+    
+    .branded-heading {
+      margin-top: 1.25rem;
+      color: hsl(262 80% 50%);
+    }
+    
+    .accent-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .branded-row {
+      accent-color: hsl(262 80% 50%);
+    }
+    
+    .accent-label {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      color: hsl(215 15% 30%);
+      cursor: pointer;
+    }
+    
+    input[type="range"] {
+      width: 80px;
+    }
+    
+    progress {
+      height: 0.5rem;
+      width: 80px;
+    }
+    `} />
+
+One line of CSS — `accent-color: hsl(262 80% 50%)` — themes every native control in the container. The browser automatically adjusts the checkmark and radio dot colors for contrast against the accent background.
+
+<CssPreview client:load
+  title="Custom Checkbox with appearance: none"
+  height={200}
+  html={`
+    <div class="custom-checkbox-demo">
+      <label class="custom-check">
+        <input type="checkbox" class="custom-check-input" />
+        <span class="custom-check-label">Enable notifications</span>
+      </label>
+      <label class="custom-check">
+        <input type="checkbox" class="custom-check-input" checked />
+        <span class="custom-check-label">Accept terms</span>
+      </label>
+      <label class="custom-check">
+        <input type="checkbox" class="custom-check-input" checked />
+        <span class="custom-check-label">Subscribe to updates</span>
+      </label>
+    </div>
+    `}
+  css={`
+    .custom-checkbox-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      padding: 1.5rem;
+    }
+    
+    .custom-check {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: hsl(215 15% 25%);
+    }
+    
+    .custom-check-input {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid hsl(215 20% 70%);
+      border-radius: 0.25rem;
+      background: hsl(0 0% 100%);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    
+    .custom-check-input::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      transform: scale(0);
+      transition: transform 0.12s ease-in-out;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+      background: hsl(0 0% 100%);
+    }
+    
+    .custom-check-input:checked {
+      background: hsl(262 80% 50%);
+      border-color: hsl(262 80% 50%);
+    }
+    
+    .custom-check-input:checked::before {
+      transform: scale(1);
+    }
+    
+    .custom-check-input:focus-visible {
+      outline: 2px solid hsl(262 80% 50%);
+      outline-offset: 2px;
+    }
+    
+    .custom-check-input:hover {
+      border-color: hsl(262 60% 60%);
+    }
+    
+    @media (forced-colors: active) {
+    .custom-check-input {
+      appearance: auto;
+    }
+    }
+    `} />
+
+The `appearance: none` declaration strips the native checkbox rendering, then CSS rebuilds it: a border for the box, a `clip-path` polygon for the checkmark on `::before`, and `transform: scale()` for the animation between unchecked and checked states. The `@media (forced-colors: active)` block restores `appearance: auto` so the checkbox remains functional in Windows High Contrast mode.
+
+<CssPreview client:load
+  title="Custom Radio Buttons with Smooth Transitions"
+  height={200}
+  html={`
+    <fieldset class="custom-radio-demo">
+      <legend class="custom-radio-legend">Select a plan</legend>
+      <label class="custom-radio">
+        <input type="radio" name="plan" class="custom-radio-input" checked />
+        <span class="custom-radio-label">Free</span>
+      </label>
+      <label class="custom-radio">
+        <input type="radio" name="plan" class="custom-radio-input" />
+        <span class="custom-radio-label">Pro</span>
+      </label>
+      <label class="custom-radio">
+        <input type="radio" name="plan" class="custom-radio-input" />
+        <span class="custom-radio-label">Enterprise</span>
+      </label>
+    </fieldset>
+    `}
+  css={`
+    .custom-radio-demo {
+      border: none;
+      padding: 1.5rem;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .custom-radio-legend {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: hsl(215 15% 35%);
+      margin-bottom: 0.25rem;
+    }
+    
+    .custom-radio {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: hsl(215 15% 25%);
+    }
+    
+    .custom-radio-input {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid hsl(215 20% 70%);
+      border-radius: 50%;
+      background: hsl(0 0% 100%);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    
+    .custom-radio-input::before {
+      content: "";
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: hsl(262 80% 50%);
+      transform: scale(0);
+      transition: transform 0.15s ease-in-out;
+    }
+    
+    .custom-radio-input:checked {
+      border-color: hsl(262 80% 50%);
+    }
+    
+    .custom-radio-input:checked::before {
+      transform: scale(1);
+    }
+    
+    .custom-radio-input:focus-visible {
+      outline: 2px solid hsl(262 80% 50%);
+      outline-offset: 2px;
+    }
+    
+    .custom-radio-input:hover {
+      border-color: hsl(262 60% 60%);
+    }
+    
+    @media (forced-colors: active) {
+    .custom-radio-input {
+      appearance: auto;
+    }
+    }
+    `} />
+
+Custom radios follow the same pattern as checkboxes: `appearance: none` strips the native rendering, a `::before` pseudo-element draws the inner dot, and `transform: scale()` smoothly animates the selection. The circular `border-radius: 50%` and smaller inner dot preserve the conventional radio button visual language so users immediately recognize the control.
+
+<CssPreview client:load
+  title="Auto-Expanding Textarea with field-sizing"
+  height={280}
+  html={`
+    <div class="field-sizing-demo">
+      <div class="field-sizing-col">
+        <label class="field-sizing-label">Fixed height (default)</label>
+        <textarea class="field-sizing-textarea fixed-textarea" rows="3">This textarea has a fixed height. If you type more text than fits, it scrolls internally. Users cannot see all their content at once.</textarea>
+      </div>
+      <div class="field-sizing-col">
+        <label class="field-sizing-label field-sizing-label-new">field-sizing: content</label>
+        <textarea class="field-sizing-textarea auto-textarea">This textarea grows with its content. No JavaScript needed — the browser handles resizing natively. Try typing more text here to see it expand.</textarea>
+      </div>
+    </div>
+    `}
+  css={`
+    .field-sizing-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      padding: 1.5rem;
+    }
+    
+    .field-sizing-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .field-sizing-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: hsl(215 15% 45%);
+    }
+    
+    .field-sizing-label-new {
+      color: hsl(150 60% 35%);
+    }
+    
+    .field-sizing-textarea {
+      font-family: inherit;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      padding: 0.625rem 0.75rem;
+      border: 1.5px solid hsl(215 20% 80%);
+      border-radius: 0.375rem;
+      color: hsl(215 15% 25%);
+      background: hsl(0 0% 100%);
+      resize: vertical;
+      transition: border-color 0.15s ease;
+    }
+    
+    .field-sizing-textarea:focus {
+      border-color: hsl(262 80% 50%);
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 3px hsl(262 80% 50% / 0.15);
+    }
+    
+    .fixed-textarea {
+      height: 5rem;
+    }
+    
+    .auto-textarea {
+      field-sizing: content;
+      min-height: 3rem;
+      max-height: 12rem;
+    }
+    `} />
+
+The `field-sizing: content` property eliminates the need for JavaScript auto-resize libraries. The textarea expands as the user types and shrinks when content is removed. Use `min-height` and `max-height` to set bounds so the textarea does not collapse to a single line or grow to fill the entire page.
+
+**Browser support note:** `field-sizing` is supported in Chrome 123+ and Edge 123+ (released March 2024). Firefox and Safari do not yet support it. Use it as a progressive enhancement — the textarea falls back to its default fixed size in unsupported browsers.
+
+<CssPreview client:load
+  title="Coordinated Form Theme"
+  height={400}
+  html={`
+    <form class="themed-form" onsubmit="return false">
+      <h3 class="themed-form-title">Create Account</h3>
+      <div class="themed-field">
+        <label class="themed-label" for="tf-name">Full Name</label>
+        <input class="themed-input" type="text" id="tf-name" placeholder="Jane Doe" />
+      </div>
+      <div class="themed-field">
+        <label class="themed-label" for="tf-email">Email</label>
+        <input class="themed-input" type="email" id="tf-email" placeholder="jane@example.com" />
+      </div>
+      <div class="themed-field">
+        <label class="themed-label" for="tf-bio">Bio</label>
+        <textarea class="themed-input themed-textarea" id="tf-bio" placeholder="Tell us about yourself..."></textarea>
+      </div>
+      <div class="themed-checks">
+        <label class="themed-check">
+          <input type="checkbox" checked />
+          <span>I agree to the terms</span>
+        </label>
+        <label class="themed-check">
+          <input type="checkbox" />
+          <span>Subscribe to newsletter</span>
+        </label>
+      </div>
+      <button class="themed-submit" type="submit">Create Account</button>
+    </form>
+    `}
+  css={`
+    .themed-form {
+      --form-accent: hsl(262 80% 50%);
+      --form-accent-hover: hsl(262 80% 42%);
+      --form-accent-light: hsl(262 80% 50% / 0.15);
+      --form-border: hsl(215 20% 82%);
+      --form-text: hsl(215 15% 20%);
+      --form-text-muted: hsl(215 15% 50%);
+    
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 360px;
+    }
+    
+    .themed-form-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--form-text);
+      margin: 0 0 0.25rem;
+    }
+    
+    .themed-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    
+    .themed-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--form-text);
+    }
+    
+    .themed-input {
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid var(--form-border);
+      border-radius: 0.375rem;
+      color: var(--form-text);
+      background: hsl(0 0% 100%);
+      caret-color: var(--form-accent);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    
+    .themed-input::placeholder {
+      color: var(--form-text-muted);
+    }
+    
+    .themed-input:focus {
+      border-color: var(--form-accent);
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 3px var(--form-accent-light);
+    }
+    
+    .themed-textarea {
+      resize: vertical;
+      min-height: 4rem;
+    }
+    
+    .themed-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      accent-color: var(--form-accent);
+    }
+    
+    .themed-check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--form-text);
+      cursor: pointer;
+    }
+    
+    .themed-submit {
+      background: var(--form-accent);
+      color: hsl(0 0% 100%);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    
+    .themed-submit:hover {
+      background: var(--form-accent-hover);
+    }
+    
+    .themed-submit:focus-visible {
+      outline: 2px solid var(--form-accent);
+      outline-offset: 2px;
+    }
+    
+    .themed-submit:active {
+      transform: scale(0.98);
+    }
+    `} />
+
+This form combines all four properties into a cohesive branded experience: `accent-color` themes the native checkboxes, `caret-color` matches the blinking cursor to the brand purple, and custom focus rings using `box-shadow` provide a consistent focus treatment across text inputs and textareas. The submit button follows the same color palette with proper `:hover`, `:focus-visible`, and `:active` states.
+
+## Code Examples
+
+### Quick Branding with accent-color
+
+```css
+form {
+  accent-color: hsl(262 80% 50%);
+}
+```
+
+This single line themes every checkbox, radio, range slider, and progress bar inside the form. No additional selectors needed.
+
+### Custom Checkbox from Scratch
+
+```css
+.checkbox {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid hsl(215 20% 70%);
+  border-radius: 0.25rem;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.checkbox::before {
+  content: "";
+  width: 0.65rem;
+  height: 0.65rem;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background: white;
+  transform: scale(0);
+  transition: transform 0.12s ease-in-out;
+}
+
+.checkbox:checked {
+  background: hsl(262 80% 50%);
+  border-color: hsl(262 80% 50%);
+}
+
+.checkbox:checked::before {
+  transform: scale(1);
+}
+
+/* Restore native appearance in Windows High Contrast mode */
+@media (forced-colors: active) {
+  .checkbox {
+    appearance: auto;
+  }
+}
+```
+
+### Auto-Sizing Textarea
+
+```css
+.auto-textarea {
+  field-sizing: content;
+  min-height: 3rem;
+  max-height: 20rem;
+}
+```
+
+### Coordinated Form Variables
+
+```css
+.form {
+  --accent: hsl(262 80% 50%);
+  --accent-ring: hsl(262 80% 50% / 0.15);
+  accent-color: var(--accent);
+  caret-color: var(--accent);
+}
+
+.form input:focus,
+.form textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  outline: 2px solid transparent;
+}
+```
+
+## Common AI Mistakes
+
+- **Replacing native controls with `<div>` elements**: Building fake checkboxes and radios from `<div>` and `<span>` instead of using `<input>` with `appearance: none`. The fake controls lack keyboard navigation, form submission, and screen reader semantics.
+- **Forgetting `@media (forced-colors: active)`**: Custom checkboxes and radios built with `appearance: none` become invisible in Windows High Contrast mode. Always restore `appearance: auto` inside a `forced-colors` media query.
+- **Using JavaScript for auto-expanding textareas**: Adding resize observers or input event listeners when `field-sizing: content` handles it natively (with graceful degradation).
+- **Overriding all form styles when `accent-color` suffices**: Writing dozens of lines of custom checkbox CSS when the design only needs a brand color applied to the native control.
+- **Not providing focus indicators on custom controls**: Stripping `appearance` without adding `:focus-visible` styles, leaving keyboard users with no visible focus state.
+- **Hardcoding colors instead of using CSS custom properties**: Making form theming inflexible by scattering color values throughout selectors instead of defining a single set of variables.
+
+## When to Use
+
+- **`accent-color`**: When you need to brand native form controls and the design does not require a custom shape or layout. This is the right default choice.
+- **`appearance: none`**: When the design demands a fully custom checkbox, radio, or select appearance that `accent-color` cannot express. Always pair with `forced-colors` restoration.
+- **`field-sizing: content`**: When textareas or text inputs should grow with their content. Use as progressive enhancement with `min-height` / `max-height` bounds.
+- **`caret-color`**: When the blinking cursor should match the brand color in text inputs and textareas. A small detail that signals a polished design.
+
+## References
+
+- [accent-color — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/accent-color)
+- [appearance — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/appearance)
+- [field-sizing — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing)
+- [caret-color — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/caret-color)
+- [Simplifying Form Styles with accent-color — web.dev](https://web.dev/articles/accent-color)
+- [Custom Checkbox Styling — Modern CSS Solutions](https://moderncss.dev/pure-css-custom-checkbox-style/)
+- [forced-colors Media Query — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors)

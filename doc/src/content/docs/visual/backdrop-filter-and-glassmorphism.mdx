@@ -1,0 +1,343 @@
+---
+title: Backdrop Filter and Glassmorphism
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## The Problem
+
+Glassmorphism — the frosted-glass aesthetic popularized by Apple's iOS and macOS — requires `backdrop-filter: blur()` combined with a semi-transparent background. AI agents frequently get this wrong in several ways: they apply blur to the element itself instead of the backdrop, use fully opaque backgrounds that hide the blur entirely, forget the `-webkit-` prefix needed for Safari, or apply the effect on solid-colored backgrounds where there is nothing interesting to blur.
+
+## The Solution
+
+Use `backdrop-filter: blur()` on a semi-transparent element positioned over a visually rich background (gradients, images, or colorful content). The blur applies to everything **behind** the element, not the element's own content. Keep blur values between 8–16px for the best balance of aesthetics and performance, and always include the `-webkit-` prefix for Safari compatibility.
+
+### Core Principles
+
+#### Semi-Transparent Background Required
+
+The element must have a semi-transparent `background-color` so the blurred backdrop shows through. A fully opaque background defeats the entire purpose.
+
+#### Rich Content Behind
+
+`backdrop-filter` blurs what is behind the element. Over a solid white page, there is nothing to blur and the effect is invisible. Always use glassmorphism over gradients, images, or layered colorful content.
+
+#### Performance Budget
+
+Each glassmorphic element triggers a separate GPU blur calculation. Limit to 2–3 glass elements per viewport. Avoid animating `backdrop-filter` values directly.
+
+## Code Examples
+
+### Basic Frosted Glass Card
+
+```css
+.glass-card {
+  background: hsl(0deg 0% 100% / 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(0deg 0% 100% / 0.2);
+  border-radius: 16px;
+  padding: 24px;
+}
+```
+
+```html
+<div class="vibrant-background">
+  <div class="glass-card">
+    <h2>Frosted Glass</h2>
+    <p>Content is readable over a blurred background.</p>
+  </div>
+</div>
+```
+
+### Vibrant Background Setup
+
+The glass effect only works when there is rich visual content behind it.
+
+```css
+.vibrant-background {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 80%, hsl(280deg 80% 60% / 0.6), transparent 50%),
+    radial-gradient(circle at 80% 20%, hsl(200deg 80% 60% / 0.6), transparent 50%),
+    linear-gradient(135deg, hsl(220deg 60% 20%), hsl(280deg 60% 30%));
+  display: grid;
+  place-items: center;
+  padding: 40px;
+}
+```
+
+### Dark Theme Glassmorphism
+
+```css
+.glass-dark {
+  background: hsl(220deg 20% 10% / 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(0deg 0% 100% / 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px hsl(0deg 0% 0% / 0.3);
+}
+```
+
+### Light Theme Glassmorphism
+
+```css
+.glass-light {
+  background: hsl(0deg 0% 100% / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(0deg 0% 100% / 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px hsl(0deg 0% 0% / 0.08);
+}
+```
+
+### Frosted Glass Navigation Bar
+
+```css
+.glass-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: hsl(0deg 0% 100% / 0.7);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-bottom: 1px solid hsl(0deg 0% 0% / 0.06);
+  padding: 12px 24px;
+}
+```
+
+Adding `saturate(180%)` alongside `blur()` intensifies the colors of the blurred content, mimicking the vibrancy of Apple's glass effect.
+
+### Glass Modal Overlay
+
+```css
+.glass-overlay {
+  position: fixed;
+  inset: 0;
+  background: hsl(0deg 0% 0% / 0.3);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 200;
+}
+
+.glass-modal {
+  background: hsl(0deg 0% 100% / 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsl(0deg 0% 100% / 0.15);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 16px 48px hsl(0deg 0% 0% / 0.2);
+}
+```
+
+```html
+<div class="glass-overlay">
+  <div class="glass-modal">
+    <h2>Modal Title</h2>
+    <p>Modal content over a frosted backdrop.</p>
+  </div>
+</div>
+```
+
+### Performant Alternative with Pre-Blurred Background
+
+When performance is critical (mobile, many glass elements), use a pre-blurred image instead of runtime `backdrop-filter`.
+
+```css
+.faux-glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.faux-glass::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background: url("background-preblurred.jpg") center / cover;
+  filter: blur(0); /* image is already blurred */
+  z-index: -1;
+}
+
+.faux-glass-content {
+  position: relative;
+  background: hsl(0deg 0% 100% / 0.15);
+  padding: 24px;
+}
+```
+
+## Live Previews
+
+<CssPreview client:load
+  title="Frosted Glass Card"
+  html={`    <div class="vibrant-bg"><div class="glass-card"><h2>Frosted Glass</h2><p>Content is readable over a blurred, colorful background.</p></div></div>`}
+  css={`
+    .vibrant-bg {
+      width: 100%;
+      height: 100%;
+      background:
+      radial-gradient(circle at 20% 80%, hsl(280deg 80% 60% / 0.8), transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(200deg 80% 60% / 0.8), transparent 50%),
+      radial-gradient(circle at 50% 50%, hsl(340deg 80% 50% / 0.5), transparent 60%),
+      linear-gradient(135deg, hsl(220deg 60% 20%), hsl(280deg 60% 30%));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .glass-card {
+      background: hsl(0deg 0% 100% / 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid hsl(0deg 0% 100% / 0.25);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 340px;
+      color: white;
+    }
+    .glass-card h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .glass-card p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    `}
+  height={280} />
+
+<CssPreview client:load
+  title="Glassmorphism Panel (Dark Theme)"
+  html={`    <div class="vibrant-bg"><div class="glass-panel"><h3>Settings</h3><div class="item"><span>Notifications</span><span class="toggle">ON</span></div><div class="item"><span>Dark Mode</span><span class="toggle">ON</span></div><div class="item"><span>Auto-save</span><span class="toggle off">OFF</span></div></div></div>`}
+  css={`
+    .vibrant-bg {
+      width: 100%;
+      height: 100%;
+      background:
+      radial-gradient(circle at 70% 30%, hsl(330deg 80% 50% / 0.6), transparent 50%),
+      radial-gradient(circle at 30% 70%, hsl(180deg 80% 50% / 0.5), transparent 50%),
+      linear-gradient(135deg, #0f172a, #1e1b4b);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .glass-panel {
+      background: hsl(220deg 20% 10% / 0.4);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid hsl(0deg 0% 100% / 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      width: 280px;
+      color: white;
+      box-shadow: 0 8px 32px hsl(0deg 0% 0% / 0.3);
+    }
+    .glass-panel h3 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid hsl(0deg 0% 100% / 0.08);
+      font-size: 14px;
+    }
+    .item:last-child {
+      border-bottom: none;
+    }
+    .toggle {
+      background: hsl(150deg 60% 45% / 0.3);
+      color: hsl(150deg 60% 70%);
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .toggle.off {
+      background: hsl(0deg 0% 50% / 0.3);
+      color: hsl(0deg 0% 70%);
+    }
+    `}
+  height={300} />
+
+## Common AI Mistakes
+
+- **Using `filter: blur()` instead of `backdrop-filter: blur()`** — `filter` blurs the element itself and all its content, making text unreadable. `backdrop-filter` blurs only what is behind the element.
+- **Fully opaque background** — Setting `background: white` or `background: rgba(255, 255, 255, 1)` completely covers the blurred backdrop, making the effect invisible.
+- **Forgetting the `-webkit-` prefix** — Safari requires `-webkit-backdrop-filter` alongside the standard `backdrop-filter`. Without it, Safari users see no blur.
+- **Applying over solid backgrounds** — Glass over a single flat color produces no visible effect. There must be visual variation behind the element for the blur to be meaningful.
+- **Too many glass elements** — Each `backdrop-filter` triggers an expensive GPU blur pass. Using it on every card, button, and nav item causes severe frame drops.
+- **Excessive blur values** — Using `blur(40px)` or higher. Values above 16px are exponentially more expensive and rarely look better than 12–16px.
+- **Not adjusting for light and dark themes** — A glass effect tuned for a dark background looks washed out on a light background and vice versa. Background opacity and border need theme-specific adjustment.
+
+## When to Use
+
+- Fixed navigation bars that scroll over varying page content
+- Modal overlays that need to maintain context of the underlying page
+- Hero section cards or overlays positioned over vibrant images or gradients
+- Sidebar panels in applications with rich visual content beneath
+- Tooltip or popover elements where maintaining spatial context matters
+
+## Tailwind CSS
+
+Tailwind provides `backdrop-blur-*`, `backdrop-brightness-*`, and `backdrop-saturate-*` utilities for glassmorphism effects without writing custom CSS.
+
+### Frosted Glass Card
+
+<TailwindPreview client:load
+  title="Tailwind: Frosted Glass Card"
+  html={`    <div class="min-h-[280px] flex justify-center items-center p-6" style="background: radial-gradient(circle at 20% 80%, hsl(280deg 80% 60% / 0.8), transparent 50%), radial-gradient(circle at 80% 20%, hsl(200deg 80% 60% / 0.8), transparent 50%), radial-gradient(circle at 50% 50%, hsl(340deg 80% 50% / 0.5), transparent 60%), linear-gradient(135deg, hsl(220deg 60% 20%), hsl(280deg 60% 30%));">
+      <div class="backdrop-blur-xl bg-white/15 border border-white/25 rounded-2xl p-8 max-w-xs text-white">
+        <h2 class="text-xl font-bold mb-2">Frosted Glass</h2>
+        <p class="text-sm opacity-90">Content is readable over a blurred, colorful background.</p>
+      </div>
+    </div>`}
+  height={300} />
+
+### Dark Glass Panel
+
+<TailwindPreview client:load
+  title="Tailwind: Dark Glassmorphism Panel"
+  html={`    <div class="min-h-[300px] flex justify-center items-center p-6" style="background: radial-gradient(circle at 70% 30%, hsl(330deg 80% 50% / 0.6), transparent 50%), radial-gradient(circle at 30% 70%, hsl(180deg 80% 50% / 0.5), transparent 50%), linear-gradient(135deg, #0f172a, #1e1b4b);">
+      <div class="backdrop-blur-2xl backdrop-saturate-[1.8] bg-slate-900/40 border border-white/10 rounded-2xl p-6 w-72 text-white shadow-[0_8px_32px_hsl(0deg_0%_0%/0.3)]">
+        <h3 class="text-lg font-semibold mb-4">Settings</h3>
+        <div class="flex justify-between items-center py-2.5 border-b border-white/[0.08] text-sm">
+          <span>Notifications</span>
+          <span class="bg-green-500/30 text-green-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">ON</span>
+        </div>
+        <div class="flex justify-between items-center py-2.5 border-b border-white/[0.08] text-sm">
+          <span>Dark Mode</span>
+          <span class="bg-green-500/30 text-green-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">ON</span>
+        </div>
+        <div class="flex justify-between items-center py-2.5 text-sm">
+          <span>Auto-save</span>
+          <span class="bg-gray-500/30 text-gray-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">OFF</span>
+        </div>
+      </div>
+    </div>`}
+  height={320} />
+
+## References
+
+- [backdrop-filter — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter)
+- [Next-level Frosted Glass with backdrop-filter — Josh W. Comeau](https://www.joshwcomeau.com/css/backdrop-filter/)
+- [Glassmorphism Design Trend: Implementation Guide — Developer Playground](https://playground.halfaccessible.com/blog/glassmorphism-design-trend-implementation-guide)
+- [Blending Modes in CSS — Ahmad Shadeed](https://ishadeed.com/article/blending-modes-css/)

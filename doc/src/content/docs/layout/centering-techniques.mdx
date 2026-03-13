@@ -1,0 +1,275 @@
+---
+title: Centering Techniques
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## The Problem
+
+Centering elements is one of the most fundamental CSS tasks, yet AI agents frequently produce overcomplicated or inappropriate solutions. Common mistakes include using `text-align: center` on non-inline elements, applying `transform: translate(-50%, -50%)` when flexbox or grid would suffice, stacking multiple centering techniques on top of each other, and reaching for `position: absolute` when the layout does not require it.
+
+## The Solution
+
+Modern CSS provides clean, purpose-built centering techniques. The right choice depends on the context: what you are centering, which axes you need, and whether the parent has a defined height.
+
+## Code Examples
+
+### Horizontal Centering with margin: auto
+
+For block-level elements with a defined width, `margin: auto` is the simplest horizontal centering technique. It does not center vertically.
+
+```css
+.centered-block {
+  width: 600px;   /* or max-width */
+  margin-inline: auto;
+}
+```
+
+```html
+<div class="centered-block">
+  Horizontally centered block element.
+</div>
+```
+
+`margin-inline: auto` is the logical-property equivalent of `margin-left: auto; margin-right: auto` and works correctly in all writing directions.
+
+### Horizontal Centering of Inline/Text Content
+
+```css
+.text-center {
+  text-align: center;
+}
+```
+
+This centers inline content (text, `<span>`, `<img>`, inline-block elements) within a block container. It does not center block-level children.
+
+### Flexbox Centering (Both Axes)
+
+```css
+.flex-center {
+  display: flex;
+  justify-content: center; /* horizontal */
+  align-items: center;     /* vertical */
+}
+```
+
+```html
+<div class="flex-center" style="min-height: 300px;">
+  <div>Centered both ways</div>
+</div>
+```
+
+The parent needs a defined height (or `min-height`) for vertical centering to be visible.
+
+### Grid Centering (Both Axes, Most Concise)
+
+```css
+.grid-center {
+  display: grid;
+  place-items: center;
+}
+```
+
+```html
+<div class="grid-center" style="min-height: 300px;">
+  <div>Centered with one line</div>
+</div>
+```
+
+`place-items: center` is shorthand for `align-items: center; justify-items: center`. This is the most concise centering technique in CSS.
+
+### Grid Centering with place-content
+
+An alternative for single-child centering:
+
+```css
+.grid-center-alt {
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
+}
+```
+
+The difference: `place-items` aligns items within their grid area, while `place-content` aligns the grid tracks themselves. For single-child centering, both produce the same result.
+
+### Centering with margin: auto inside Flex or Grid
+
+```css
+.container {
+  display: flex; /* or display: grid */
+  min-height: 100vh;
+}
+
+.child {
+  margin: auto;
+}
+```
+
+When a flex or grid item has `margin: auto`, it absorbs all available space on that axis, centering the item both horizontally and vertically.
+
+### Absolute Positioning with Inset
+
+For overlay content that needs to be centered over a positioned parent:
+
+```css
+.overlay-parent {
+  position: relative;
+}
+
+.overlay-centered {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+}
+```
+
+### Transform Technique (Legacy)
+
+```css
+.transform-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+```
+
+This technique is still valid but is rarely the best choice in modern CSS. It can cause blurry text on non-retina displays due to sub-pixel rendering. Prefer flexbox or grid.
+
+## Live Previews
+
+<CssPreview client:load
+  title="Flexbox Centering"
+  html={`
+    <div class="flex-center">
+      <div class="box">Centered with Flexbox</div>
+    </div>
+    `}
+  css={`
+    .flex-center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+      background: #f0f4f8;
+    }
+    .box {
+      padding: 16px 24px;
+      background: #3b82f6;
+      color: white;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+    }
+    `} />
+
+<CssPreview client:load
+  title="Grid place-items: center"
+  html={`
+    <div class="grid-center">
+      <div class="box">Centered with Grid</div>
+    </div>
+    `}
+  css={`
+    .grid-center {
+      display: grid;
+      place-items: center;
+      height: 200px;
+      background: #f0fdf4;
+    }
+    .box {
+      padding: 16px 24px;
+      background: #22c55e;
+      color: white;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+    }
+    `} />
+
+## Quick Reference
+
+| Scenario | Technique |
+|---|---|
+| Block element, horizontal only | `margin-inline: auto` (requires width) |
+| Inline/text content, horizontal only | `text-align: center` on parent |
+| Single child, both axes | `display: grid; place-items: center` |
+| Multiple children, both axes | `display: flex; justify-content: center; align-items: center` |
+| Child inside flex/grid, both axes | `margin: auto` on child |
+| Overlay on positioned parent | `position: absolute; inset: 0; margin: auto` |
+| Legacy / pre-flexbox codebases | `transform: translate(-50%, -50%)` |
+
+## Common AI Mistakes
+
+- **Using `transform: translate(-50%, -50%)` as the default.** This technique is a legacy fallback. Modern CSS has cleaner options with flexbox and grid.
+- **Forgetting to set height on the parent.** Vertical centering requires the parent to have a defined height or min-height. Without it, the parent collapses to the content height and centering appears to do nothing.
+- **Using `text-align: center` on block elements.** `text-align` only affects inline content. It does not center a `<div>` inside another `<div>`.
+- **Stacking multiple centering techniques.** Applying both `margin: auto` and `justify-content: center` is redundant. Pick one approach.
+- **Using `position: absolute` when the element is part of the flow.** Absolute positioning removes the element from the document flow, which is usually undesirable for centering content within a layout.
+- **Writing `margin: 0 auto` instead of `margin-inline: auto`.** While both work in left-to-right languages, the physical property version resets vertical margins to 0, which may override intended spacing. `margin-inline: auto` only affects the horizontal axis.
+
+## When to Use
+
+### Grid `place-items: center`
+
+Best for centering a single child element. The most concise syntax. Use when you do not need the parent to also be a flex container for other layout purposes.
+
+### Flexbox centering
+
+Best when the parent is already a flex container, or when you need to center multiple items along one axis and distribute them along another.
+
+### margin-inline: auto
+
+Best for horizontally centering a block element with a known width or max-width. Does not require changing the parent's display type.
+
+### Absolute positioning
+
+Only for overlays, modals, tooltips, and elements that must be removed from the document flow and positioned over other content.
+
+## Tailwind CSS
+
+Tailwind provides concise utility classes for all centering techniques.
+
+### Flexbox Centering
+
+<TailwindPreview client:load
+  title="Tailwind: Flexbox Centering"
+  html={`    <div class="flex justify-center items-center h-[200px] bg-blue-50">
+      <div class="px-6 py-4 bg-blue-500 text-white rounded-lg font-semibold">
+        Centered with Flexbox
+      </div>
+    </div>`}
+  height={220} />
+
+### Grid Centering
+
+<TailwindPreview client:load
+  title="Tailwind: Grid place-items-center"
+  html={`    <div class="grid place-items-center h-[200px] bg-green-50">
+      <div class="px-6 py-4 bg-green-500 text-white rounded-lg font-semibold">
+        Centered with Grid
+      </div>
+    </div>`}
+  height={220} />
+
+### Horizontal Centering with mx-auto
+
+<TailwindPreview client:load
+  title="Tailwind: mx-auto Centering"
+  html={`    <div class="p-6 bg-slate-100">
+      <div class="mx-auto w-fit bg-violet-500 text-white px-6 py-4 rounded-lg font-semibold">
+        Centered with mx-auto + w-fit
+      </div>
+    </div>`}
+  height={100} />
+
+## References
+
+- [Centering in CSS - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/How_to/Layout_cookbook/Center_an_element)
+- [The Complete Guide to Centering in CSS - Modern CSS Solutions](https://moderncss.dev/complete-guide-to-centering-in-css/)
+- [Centering Things - CSS-Tricks](https://css-tricks.com/centering-css-complete-guide/)
+- [Learn CSS Box Alignment - web.dev](https://web.dev/learn/css/box-alignment)

@@ -1,0 +1,264 @@
+---
+title: Text Overflow and Line Clamping
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## The Problem
+
+Truncating text to fit constrained UI areas — cards, list items, navigation — is a common requirement. AI agents often reach for JavaScript-based solutions or generate incomplete CSS that only handles single-line truncation. Multi-line clamping, in particular, requires specific property combinations that are easy to get wrong. The legacy `-webkit-line-clamp` approach has three required co-dependent properties, and omitting any one of them causes silent failure.
+
+## The Solution
+
+CSS provides two main truncation patterns: single-line ellipsis using `text-overflow` and multi-line clamping using `-webkit-line-clamp` (with the standard `line-clamp` property arriving for broader adoption).
+
+## Code Examples
+
+### Single-Line Ellipsis
+
+```css
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+```
+
+All three properties are required:
+
+- `white-space: nowrap` prevents line wrapping
+- `overflow: hidden` clips the overflowing content
+- `text-overflow: ellipsis` displays the `...` indicator
+
+```html
+<p class="truncate">
+  This is a very long text that will be truncated with an ellipsis at the end
+</p>
+```
+
+### Multi-Line Clamping (Legacy Syntax)
+
+```css
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+```
+
+All four properties are required for this pattern to work. This syntax, despite using `-webkit-` prefixes, is supported across all major browsers (Chrome, Firefox, Safari, Edge) and is a fully specified behavior.
+
+```html
+<div class="card">
+  <h3>Card Title</h3>
+  <p class="line-clamp-3">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+    tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+    quis nostrud exercitation ullamco laboris.
+  </p>
+</div>
+```
+
+<CssPreview client:load
+  title="Text Overflow — Single-line Ellipsis and Multi-line Clamping"
+  html={`    <div class="overflow-demo">
+      <div class="demo-card">
+        <h3>Single-line Ellipsis</h3>
+        <p class="truncate">This is a very long single line of text that will be truncated with an ellipsis at the end when it overflows the container width</p>
+      </div>
+      <div class="demo-card">
+        <h3>2-line Clamp</h3>
+        <p class="clamp-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+      <div class="demo-card">
+        <h3>3-line Clamp</h3>
+        <p class="clamp-3">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+      </div>
+    </div>`}
+  css={`.overflow-demo {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .demo-card {
+      background: #f0f4ff;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .demo-card h3 {
+      font-size: 0.85rem;
+      color: #4f46e5;
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    .demo-card p {
+      font-size: 0.9rem;
+      color: #333;
+      margin: 0;
+    }
+    .truncate {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }`}
+  height={260} />
+
+### Modern `line-clamp` Property
+
+The standard `line-clamp` property simplifies the syntax. As of 2025, Chromium-based browsers support this.
+
+```css
+.line-clamp-modern {
+  line-clamp: 3;
+  overflow: hidden;
+}
+```
+
+### Cross-Browser Safe Pattern
+
+For maximum compatibility, combine both approaches:
+
+```css
+.line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 3;
+}
+```
+
+### Practical Card Component
+
+```css
+.card {
+  max-width: 320px;
+  padding: 1rem;
+}
+
+.card__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+```
+
+```html
+<article class="card">
+  <h3 class="card__title">A very long card title that might overflow</h3>
+  <p class="card__description">
+    Card description text that can span multiple lines but will be clamped to
+    exactly three lines with an ellipsis at the end of the third line.
+  </p>
+</article>
+```
+
+### Expandable Clamped Text
+
+```css
+.expandable {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.expandable.is-expanded {
+  -webkit-line-clamp: unset;
+}
+```
+
+### Handling Clamped Text Accessibility
+
+```html
+<p class="line-clamp-3" title="Full text content goes here for tooltip access">
+  Truncated visible content...
+</p>
+```
+
+## Common AI Mistakes
+
+- Forgetting one of the three required properties for single-line truncation — all of `white-space`, `overflow`, and `text-overflow` must be set
+- Missing `display: -webkit-box` or `-webkit-box-orient: vertical` in multi-line clamping, causing the clamp to silently fail
+- Using JavaScript to truncate text by character count instead of CSS, which breaks at different font sizes and screen widths
+- Not setting a width constraint on the container — `text-overflow: ellipsis` requires the element to have a bounded width (either explicit or from a flex/grid parent)
+- Using `overflow: hidden` without `text-overflow: ellipsis`, which clips text mid-character without any visual indicator
+- Applying `-webkit-line-clamp` to inline elements — it requires a block-level box with the `-webkit-box` display model
+- Not considering that clamped text hides content from screen readers — the full text is still in the DOM, but visual-only users lose context about how much is hidden
+
+## When to Use
+
+### Single-line truncation
+
+- Navigation items with dynamic labels
+- Table cells with variable-width content
+- Tags and badges with constrained widths
+- Breadcrumb links
+
+### Multi-line clamping
+
+- Card descriptions in grid layouts
+- Comment previews in social interfaces
+- Product descriptions in listing pages
+- Article excerpts or teasers
+
+### When NOT to truncate
+
+- Primary content that users need to read in full
+- Error messages and validation text
+- Accessibility-critical labels and instructions
+- Content where the truncated portion changes meaning (e.g., prices, dates)
+
+## Tailwind CSS
+
+Tailwind provides `truncate` for single-line ellipsis and `line-clamp-*` utilities for multi-line clamping.
+
+<TailwindPreview client:load
+  title="Tailwind: truncate and line-clamp"
+  html={`    <div class="grid grid-cols-3 gap-4 p-6">
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <h3 class="text-xs font-semibold text-indigo-600 mb-3">truncate</h3>
+        <p class="truncate text-sm text-gray-700">This is a very long single line of text that will be truncated with an ellipsis at the end when it overflows</p>
+      </div>
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <h3 class="text-xs font-semibold text-indigo-600 mb-3">line-clamp-2</h3>
+        <p class="line-clamp-2 text-sm text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.</p>
+      </div>
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <h3 class="text-xs font-semibold text-indigo-600 mb-3">line-clamp-3</h3>
+        <p class="line-clamp-3 text-sm text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+    </div>`}
+  height={200} />
+
+## References
+
+- [MDN: text-overflow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow)
+- [MDN: -webkit-line-clamp](https://developer.mozilla.org/en-US/docs/Web/CSS/-webkit-line-clamp)
+- [MDN: line-clamp](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/line-clamp)
+- [CSS-Tricks: line-clamp](https://css-tricks.com/almanac/properties/l/line-clamp/)
+- [How to use CSS line-clamp — LogRocket](https://blog.logrocket.com/css-line-clamp/)

@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+cd doc && pnpm dlx lint-staged

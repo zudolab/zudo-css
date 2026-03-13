@@ -1,0 +1,459 @@
+---
+title: Noto Sans Webfont Guide
+sidebar_position: 10
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+AI agents loading Noto Sans (especially Noto Sans JP for Japanese content) commonly make a few mistakes: loading all nine weights when only two or three are needed, omitting `font-display: swap`, or not using subsetting — resulting in megabytes of font data blocking page render. For Japanese, the default Noto Sans JP file is several MB; without subsetting it can be the single largest asset on the page.
+
+A subtler problem: AI agents default to using `font-weight: bold` for headings and `font-weight: normal` for body text, missing the more refined hierarchy that Noto Sans's wide weight range enables — such as light (300) body text with regular (400) headings, or regular body with medium (500) headings. This approach creates visual differentiation through weight contrast rather than just bold vs. normal.
+
+## The Solution
+
+Use Noto Sans with deliberate weight selection, proper subsetting, and `font-display: swap`. Define your font stack as a CSS custom property so it can be reused consistently, and choose weights that create the hierarchy you want — not just bold vs. normal.
+
+## Code Examples
+
+### Loading via Google Fonts CDN
+
+The simplest approach. Google Fonts automatically handles subsetting and returns only the glyphs needed for the language detected in the request.
+
+```html
+<!-- Efficient: request only the weights you need -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&display=swap"
+  rel="stylesheet"
+/>
+```
+
+```css
+:root {
+  --font-noto: 'Noto Sans JP', 'Noto Sans', ui-sans-serif, system-ui,
+    -apple-system, 'Hiragino Sans', sans-serif;
+}
+
+body {
+  font-family: var(--font-noto);
+  font-weight: 300; /* Light — creates breathing room in body text */
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-noto);
+  font-weight: 400; /* Regular — stands out against light body without going bold */
+}
+```
+
+### Loading via @fontsource (Self-hosted)
+
+@fontsource packages allow self-hosting with subsetting. Install only the weights you need:
+
+```bash
+# Install Noto Sans JP — only weights 300 and 400
+npm install @fontsource/noto-sans-jp
+```
+
+```css
+/* Import only the weights you actually use */
+@import '@fontsource/noto-sans-jp/300.css';
+@import '@fontsource/noto-sans-jp/400.css';
+@import '@fontsource/noto-sans-jp/500.css';
+```
+
+### Loading via Next.js `next/font/google`
+
+Next.js `next/font/google` automatically optimizes the font: self-hosts it, eliminates the external request, and inlines critical CSS.
+
+```tsx
+import { Noto_Sans_JP } from 'next/font/google';
+
+const notoSans = Noto_Sans_JP({
+  weight: ['300', '400', '500'], // Only load what you use
+  subsets: ['latin'],
+  variable: '--font-noto',
+  display: 'swap',
+});
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="ja">
+      <body className={notoSans.variable}>{children}</body>
+    </html>
+  );
+}
+```
+
+```css
+body {
+  font-family: var(--font-noto), 'Hiragino Sans', sans-serif;
+}
+```
+
+### Loading in Docusaurus
+
+In Docusaurus, add the font link to your `docusaurus.config.ts` and apply it via `custom.css`:
+
+```ts
+// docusaurus.config.ts
+const config = {
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'preconnect',
+        href: 'https://fonts.googleapis.com',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossorigin: 'anonymous',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&display=swap',
+      },
+    },
+  ],
+};
+```
+
+```css
+/* src/css/custom.css */
+:root {
+  --ifm-font-family-base: 'Noto Sans JP', 'Noto Sans', ui-sans-serif,
+    system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  --ifm-font-weight-base: 300;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 400;
+}
+```
+
+### Font Weight Hierarchy Patterns
+
+<CssPreview client:load
+  title="Light Body (300) + Regular Headings (400)"
+  html={`    <article class="article">
+      <h1 class="article__title">見出し：Noto Sans JP で読みやすいタイポグラフィ</h1>
+      <p class="article__body">本文テキスト：ウェイト300（Light）を使うと、文章が軽やかに見えます。長い段落でも目が疲れにくく、読みやすい印象を与えます。見出しはウェイト400（Regular）で、本文との差をつけています。</p>
+      <h2 class="article__heading">セクション見出し（Regular / 400）</h2>
+      <p class="article__body">このパターンは、コンテンツが多いサイトや、長文記事に適しています。ウェイトの差が控えめなので、洗練された印象を与えます。The quick brown fox jumps over the lazy dog.</p>
+    </article>`}
+  css={`@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400&display=swap');
+    
+    .article {
+      padding: 2rem;
+      max-width: 600px;
+      font-family: 'Noto Sans JP', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+      background: hsl(0 0% 99%);
+      border-radius: 8px;
+    }
+    
+    .article__title {
+      font-size: 1.5rem;
+      font-weight: 400;
+      line-height: 1.4;
+      margin: 0 0 1rem;
+      color: hsl(220 20% 15%);
+    }
+    
+    .article__heading {
+      font-size: 1.1rem;
+      font-weight: 400;
+      margin: 1.5rem 0 0.5rem;
+      color: hsl(220 20% 15%);
+    }
+    
+    .article__body {
+      font-size: 1rem;
+      font-weight: 300;
+      line-height: 1.75;
+      color: hsl(220 15% 30%);
+      margin: 0 0 1rem;
+    }`}
+  height={380} />
+
+<CssPreview client:load
+  title="Regular Body (400) + Medium Headings (500)"
+  html={`    <article class="article">
+      <h1 class="article__title">見出し：Noto Sans JP で読みやすいタイポグラフィ</h1>
+      <p class="article__body">本文テキスト：ウェイト400（Regular）は最も標準的な本文ウェイトです。見出しにウェイト500（Medium）を使うと、太字ほど主張せずに、しっかりした階層を表現できます。</p>
+      <h2 class="article__heading">セクション見出し（Medium / 500）</h2>
+      <p class="article__body">このパターンは、ダッシュボードやUIが多いアプリに適しています。情報密度が高い画面でも、見出しが適切に目立ちます。The quick brown fox jumps over the lazy dog.</p>
+    </article>`}
+  css={`@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&display=swap');
+    
+    .article {
+      padding: 2rem;
+      max-width: 600px;
+      font-family: 'Noto Sans JP', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+      background: hsl(220 20% 97%);
+      border-radius: 8px;
+    }
+    
+    .article__title {
+      font-size: 1.5rem;
+      font-weight: 500;
+      line-height: 1.4;
+      margin: 0 0 1rem;
+      color: hsl(220 20% 15%);
+    }
+    
+    .article__heading {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin: 1.5rem 0 0.5rem;
+      color: hsl(220 20% 15%);
+    }
+    
+    .article__body {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.75;
+      color: hsl(220 15% 30%);
+      margin: 0 0 1rem;
+    }`}
+  height={380} />
+
+### Weight Comparison across the Full Range
+
+<CssPreview client:load
+  title="Noto Sans JP — All Available Weights"
+  html={`    <div class="weight-showcase">
+      <div class="weight-row">
+        <span class="weight-row__label">100 Thin</span>
+        <span class="weight-row__sample" style="font-weight:100">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">200 ExtraLight</span>
+        <span class="weight-row__sample" style="font-weight:200">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">300 Light</span>
+        <span class="weight-row__sample" style="font-weight:300">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">400 Regular</span>
+        <span class="weight-row__sample" style="font-weight:400">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">500 Medium</span>
+        <span class="weight-row__sample" style="font-weight:500">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">600 SemiBold</span>
+        <span class="weight-row__sample" style="font-weight:600">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">700 Bold</span>
+        <span class="weight-row__sample" style="font-weight:700">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">800 ExtraBold</span>
+        <span class="weight-row__sample" style="font-weight:800">Typography · タイポグラフィ · 활자</span>
+      </div>
+      <div class="weight-row">
+        <span class="weight-row__label">900 Black</span>
+        <span class="weight-row__sample" style="font-weight:900">Typography · タイポグラフィ · 활자</span>
+      </div>
+    </div>`}
+  css={`@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400;500;600;700;800;900&display=swap');
+    
+    .weight-showcase {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-family: 'Noto Sans JP', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+      background: hsl(0 0% 99%);
+    }
+    
+    .weight-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1.25rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      background: hsl(220 15% 96%);
+    }
+    
+    .weight-row__label {
+      font-size: 0.7rem;
+      color: hsl(260 60% 55%);
+      font-weight: 600;
+      min-width: 120px;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+    
+    .weight-row__sample {
+      font-size: 1.05rem;
+      color: hsl(220 20% 15%);
+    }`}
+  height={480} />
+
+### CSS Variable Approach for Easy Switching
+
+<CssPreview client:load
+  title="CSS Variable Font Stack — Easy Theming"
+  html={`    <div class="theme-demo">
+      <div class="theme-demo__card theme-demo__card--sans">
+        <h3 class="theme-demo__card-title">Noto Sans JP</h3>
+        <p class="theme-demo__card-body">本文テキストのサンプルです。CSS変数を使うことで、フォントファミリーをまとめて管理できます。The quick brown fox.</p>
+        <code class="theme-demo__card-code">font-family: var(--font-sans)</code>
+      </div>
+      <div class="theme-demo__card theme-demo__card--mono">
+        <h3 class="theme-demo__card-title">Monospace Fallback</h3>
+        <p class="theme-demo__card-body">コードブロックや等幅表示には別のCSS変数を使います。Consistent spacing in code examples.</p>
+        <code class="theme-demo__card-code">font-family: var(--font-mono)</code>
+      </div>
+    </div>`}
+  css={`@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&display=swap');
+    
+    :root {
+      --font-sans: 'Noto Sans JP', 'Noto Sans', ui-sans-serif, system-ui,
+      -apple-system, 'Hiragino Sans', sans-serif;
+      --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo,
+      Consolas, monospace;
+      --font-weight-body: 300;
+      --font-weight-heading: 400;
+    }
+    
+    .theme-demo {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: hsl(0 0% 99%);
+    }
+    
+    .theme-demo__card {
+      padding: 1.25rem;
+      border-radius: 8px;
+      border-left: 4px solid hsl(260 60% 55%);
+      background: hsl(220 15% 96%);
+    }
+    
+    .theme-demo__card--mono {
+      border-left-color: hsl(200 70% 50%);
+    }
+    
+    .theme-demo__card-title {
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: hsl(260 60% 50%);
+      font-family: var(--font-sans);
+    }
+    
+    .theme-demo__card--mono .theme-demo__card-title {
+      color: hsl(200 70% 45%);
+    }
+    
+    .theme-demo__card-body {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+      line-height: 1.7;
+      font-family: var(--font-sans);
+      font-weight: var(--font-weight-body);
+      color: hsl(220 15% 25%);
+    }
+    
+    .theme-demo__card--mono .theme-demo__card-body {
+      font-family: var(--font-mono);
+      font-weight: 400;
+    }
+    
+    .theme-demo__card-code {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+      background: hsl(220 15% 88%);
+      border-radius: 4px;
+      color: hsl(220 15% 35%);
+    }`}
+  height={340} />
+
+### Performance: Subsetting Japanese Fonts
+
+Noto Sans JP covers all Japanese characters — this makes the full font file large (several MB). Google Fonts handles subsetting automatically based on the text on the page. For self-hosted fonts, use `unicode-range` to split by script:
+
+```css
+/* Latin characters — small subset */
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('/fonts/noto-sans-jp-latin.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+
+/* Japanese characters — larger file, loaded only when Japanese text is present */
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('/fonts/noto-sans-jp-japanese.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+  unicode-range: U+3000-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}
+```
+
+For Google Fonts with `display=swap` already appended, the URL approach handles this automatically — you don't need to manage `unicode-range` manually.
+
+## Common AI Mistakes
+
+- Loading all 9 weights (`wght@100;200;300;400;500;600;700;800;900`) when the design only uses 2–3 — this wastes bandwidth and slows page load significantly for Japanese fonts
+- Omitting `display=swap` in Google Fonts URLs, which causes FOIT (Flash of Invisible Text) on slow connections
+- Using `font-weight: bold` (700) for headings when the body is `font-weight: normal` (400) — this creates an abrupt jump; more refined designs use smaller weight increments like 300/400 or 400/500
+- Not including the `preconnect` hints before the Google Fonts `<link>`, adding unnecessary latency to font requests
+- Referencing Noto Sans without the JP variant (`'Noto Sans'` instead of `'Noto Sans JP'`) when the page contains Japanese text — the base Noto Sans does not include Japanese glyphs
+- Using a flat font family string without a CSS variable, making it hard to change the font stack consistently across the codebase
+- Self-hosting Noto Sans JP without subsetting — the full file can be 4–8 MB per weight, making self-hosting impractical without a build tool that handles subsetting
+
+## When to Use
+
+### Light body (300) + Regular headings (400)
+
+- Long-form content, editorial sites, documentation
+- Designs aiming for an elegant, refined appearance
+- Dark-on-light color schemes where lighter text reduces visual fatigue
+
+### Regular body (400) + Medium headings (500)
+
+- UI-heavy applications, dashboards, admin interfaces
+- Designs where information density is high and clear hierarchy matters
+- Pages where both body and heading text need to be readable at small sizes
+
+### Using Noto Sans JP specifically
+
+- Any page containing Japanese, Korean, or CJK characters
+- Multilingual sites that need consistent rendering across scripts
+- Projects where a neutral, highly legible typeface is preferred over a distinctive design voice
+
+## References
+
+- [Noto Sans — Google Fonts](https://fonts.google.com/noto/specimen/Noto+Sans+JP)
+- [Optimize WebFont loading — web.dev](https://web.dev/articles/optimize-webfont-loading)
+- [Font best practices — web.dev](https://web.dev/articles/font-best-practices)
+- [@fontsource/noto-sans-jp — npm](https://www.npmjs.com/package/@fontsource/noto-sans-jp)
+- [next/font — Next.js docs](https://nextjs.org/docs/app/api-reference/components/font)

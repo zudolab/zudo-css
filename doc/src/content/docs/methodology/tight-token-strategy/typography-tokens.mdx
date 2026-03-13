@@ -1,0 +1,463 @@
+---
+title: Typography Token Patterns
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Tailwind CSS ships with 13 font-size steps (`text-xs` through `text-9xl`), 9 font-weight values (`font-thin` through `font-black`), 6+ line-height values, and multiple font-family options. Teams end up using `text-sm`, `text-base`, and `text-lg` interchangeably for body text, and `font-semibold` in one component while another uses `font-bold` for the same visual emphasis.
+
+This typography drift is harder to spot than spacing or color drift because the differences are subtle — 14px vs 16px body text, or `font-medium` vs `font-semibold` — but they accumulate into an interface that feels inconsistent without anyone being able to pinpoint why.
+
+## The Solution
+
+Reset all default typography tokens and define a small semantic set:
+
+- **Font sizes**: 5 sizes — `caption`, `body`, `subheading`, `heading`, `display`
+- **Font weights**: 3 weights — `normal`, `medium`, `bold`
+- **Line heights**: 3 values — `tight`, `normal`, `relaxed`
+- **Font families**: 2 families — `sans`, `mono`
+
+### The @theme Typography Block
+
+If you use [Approach B](/docs/methodology/tight-token-strategy#approach-b-skip-the-default-theme-recommended) (separate imports without the default theme), no reset lines are needed — just define your tokens directly. If you use Approach A (`@import "tailwindcss"`), add the reset lines shown in comments below.
+
+```css
+@theme {
+  /* If using Approach A (@import "tailwindcss"), uncomment these resets:
+  --font-size-*: initial;
+  --font-weight-*: initial;
+  --line-height-*: initial;
+  --font-family-*: initial;
+  --letter-spacing-*: initial;
+  */
+
+  /* ── Font sizes (5 steps) ── */
+  --font-size-caption: 0.75rem;    /* 12px */
+  --font-size-body: 1rem;          /* 16px */
+  --font-size-subheading: 1.25rem; /* 20px */
+  --font-size-heading: 1.75rem;    /* 28px */
+  --font-size-display: 2.5rem;     /* 40px */
+
+  /* ── Font weights (3 steps) ── */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* ── Line heights (3 steps) ── */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ── Font families (2 families) ── */
+  --font-family-sans: "Inter", system-ui, sans-serif;
+  --font-family-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+```
+
+After this configuration:
+
+- `text-sm` — **build error** (no `--font-size-sm` token exists)
+- `font-semibold` — **build error** (no `--font-weight-semibold` token exists)
+- `text-body` — **works** (resolves to `font-size: 1rem`)
+- `font-bold` — **works** (resolves to `font-weight: 700`)
+- `leading-normal` — **works** (resolves to `line-height: 1.5`)
+
+## Demos
+
+### Default Font Sizes vs Semantic Typography Tokens
+
+The left column shows Tailwind's 13 default font-size steps — from `text-xs` to `text-9xl`. The right column shows the 5 semantic sizes that replace them. Each semantic token maps to a specific role in the type hierarchy.
+
+<CssPreview client:load
+  title="13 Default Sizes vs 5 Semantic Sizes"
+  height={380}
+  html={`    <div class="demo">
+      <div class="col">
+        <div class="heading">Default sizes (all 13)</div>
+        <div class="size-list">
+          <div class="size-row"><span class="token">text-xs</span><span class="sample" style="font-size: 12px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-sm</span><span class="sample" style="font-size: 14px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-base</span><span class="sample" style="font-size: 16px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-lg</span><span class="sample" style="font-size: 18px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-xl</span><span class="sample" style="font-size: 20px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-2xl</span><span class="sample" style="font-size: 24px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-3xl</span><span class="sample" style="font-size: 30px">The quick brown fox</span></div>
+          <div class="size-row"><span class="token">text-4xl</span><span class="sample" style="font-size: 36px">Quick brown</span></div>
+          <div class="size-row"><span class="token">text-5xl</span><span class="sample" style="font-size: 48px">Quick</span></div>
+          <div class="size-row dim"><span class="token">text-6xl</span><span class="hint">60px</span></div>
+          <div class="size-row dim"><span class="token">text-7xl</span><span class="hint">72px</span></div>
+          <div class="size-row dim"><span class="token">text-8xl</span><span class="hint">96px</span></div>
+          <div class="size-row dim"><span class="token">text-9xl</span><span class="hint">128px</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="heading">Semantic sizes (5)</div>
+        <div class="size-list semantic">
+          <div class="size-row-lg">
+            <span class="sample" style="font-size: 12px">Caption text</span>
+            <span class="token-right">caption — 12px</span>
+            <span class="role">Labels, timestamps, fine print</span>
+          </div>
+          <div class="size-row-lg">
+            <span class="sample" style="font-size: 16px">Body text</span>
+            <span class="token-right">body — 16px</span>
+            <span class="role">Paragraphs, descriptions, UI text</span>
+          </div>
+          <div class="size-row-lg">
+            <span class="sample" style="font-size: 20px">Subheading</span>
+            <span class="token-right">subheading — 20px</span>
+            <span class="role">Card titles, section labels</span>
+          </div>
+          <div class="size-row-lg">
+            <span class="sample" style="font-size: 28px">Heading</span>
+            <span class="token-right">heading — 28px</span>
+            <span class="role">Page headings, major sections</span>
+          </div>
+          <div class="size-row-lg">
+            <span class="sample" style="font-size: 40px">Display</span>
+            <span class="token-right">display — 40px</span>
+            <span class="role">Hero text, landing pages</span>
+          </div>
+        </div>
+      </div>
+    </div>`}
+  css={`.demo {
+      display: flex;
+      gap: 24px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .col { flex: 1; min-width: 0; }
+    .heading {
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: hsl(215 16% 47%);
+      margin-bottom: 10px;
+    }
+    .size-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .size-list.semantic {
+      gap: 8px;
+    }
+    .size-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-height: 22px;
+    }
+    .size-row.dim { opacity: 0.4; }
+    .token {
+      font-size: 10px;
+      font-family: monospace;
+      color: hsl(215 16% 47%);
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .hint {
+      font-size: 11px;
+      color: hsl(215 16% 47%);
+    }
+    .sample {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+    
+    /* Semantic column */
+    .size-row-lg {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 6px 10px;
+      border-left: 3px solid hsl(221 83% 53%);
+    }
+    .token-right {
+      font-size: 10px;
+      font-family: monospace;
+      color: hsl(221 83% 53%);
+      font-weight: 600;
+    }
+    .role {
+      font-size: 10px;
+      color: hsl(215 16% 47%);
+    }`} />
+
+### Typography Scale Card
+
+A visual hierarchy card showing all 5 semantic sizes with their corresponding weights and line-heights. This is the complete typographic vocabulary of the project.
+
+<CssPreview client:load
+  title="Typography Scale — All 5 Sizes in Hierarchy"
+  height={360}
+  html={`    <div class="scale-card">
+      <div class="scale-header">Typography Scale</div>
+      <div class="scale-body">
+        <div class="scale-row">
+          <span class="scale-sample display">Display</span>
+          <div class="scale-meta">
+            <span class="scale-specs">40px · bold · tight</span>
+            <span class="scale-use">Hero sections, landing pages</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="scale-row">
+          <span class="scale-sample heading">Heading</span>
+          <div class="scale-meta">
+            <span class="scale-specs">28px · bold · tight</span>
+            <span class="scale-use">Page titles, major sections</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="scale-row">
+          <span class="scale-sample subheading">Subheading</span>
+          <div class="scale-meta">
+            <span class="scale-specs">20px · medium · normal</span>
+            <span class="scale-use">Card titles, section labels</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="scale-row">
+          <span class="scale-sample body">Body text for paragraphs and descriptions.</span>
+          <div class="scale-meta">
+            <span class="scale-specs">16px · normal · relaxed</span>
+            <span class="scale-use">Paragraphs, descriptions, forms</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="scale-row">
+          <span class="scale-sample caption">Caption text for labels and timestamps</span>
+          <div class="scale-meta">
+            <span class="scale-specs">12px · normal · normal</span>
+            <span class="scale-use">Labels, timestamps, fine print</span>
+          </div>
+        </div>
+      </div>
+    </div>`}
+  css={`.scale-card {
+      max-width: 560px;
+      margin: 16px auto;
+      border: 1px solid hsl(214 32% 91%);
+      border-radius: 10px;
+      overflow: hidden;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .scale-header {
+      padding: 12px 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: hsl(215 16% 47%);
+      background: hsl(210 40% 96%);
+      border-bottom: 1px solid hsl(214 32% 91%);
+    }
+    .scale-body {
+      padding: 16px 20px;
+    }
+    .scale-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 0;
+    }
+    .divider {
+      height: 1px;
+      background: hsl(214 32% 91%);
+    }
+    .scale-sample {
+      line-height: 1.2;
+    }
+    .scale-sample.display {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .scale-sample.heading {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .scale-sample.subheading {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .scale-sample.body {
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.75;
+    }
+    .scale-sample.caption {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: hsl(215 16% 47%);
+    }
+    .scale-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .scale-specs {
+      font-size: 11px;
+      font-family: monospace;
+      color: hsl(221 83% 53%);
+      font-weight: 600;
+    }
+    .scale-use {
+      font-size: 11px;
+      color: hsl(215 16% 47%);
+    }`} />
+
+### Article Layout with Semantic Typography
+
+A complete article layout using only the 5 semantic font sizes, 3 weights, and 3 line-heights. No numeric Tailwind classes like `text-lg` or `font-semibold` are used — everything maps to a semantic token.
+
+<CssPreview client:load
+  title="Article Layout with Semantic Typography Tokens"
+  height={420}
+  html={`    <article class="article">
+      <header class="article-header">
+        <span class="article-date">March 4, 2026</span>
+        <h1 class="article-title">Building Consistent Interfaces</h1>
+        <p class="article-subtitle">How semantic typography tokens eliminate visual drift across teams</p>
+      </header>
+      <div class="article-body">
+        <p class="article-paragraph">When every developer on the team reaches for different font sizes, the interface develops subtle inconsistencies. One component uses 14px body text, another uses 16px, and a third uses 18px. None are wrong — they are all valid Tailwind utilities — but the result feels fragmented.</p>
+        <h2 class="article-h2">The Five-Size Approach</h2>
+        <p class="article-paragraph">By constraining the type scale to five semantic sizes, every text element in the interface maps to a clear role. There is no ambiguity about which size to use for a card title versus a page heading.</p>
+        <div class="article-callout">
+          <div class="callout-label">Key Insight</div>
+          <p class="callout-text">Five font sizes, three weights, and three line-heights produce a type system that covers every common UI pattern — from timestamps to hero text.</p>
+        </div>
+        <p class="article-paragraph">The result is an interface where typography feels intentional and cohesive, even when dozens of developers contribute to the codebase.</p>
+      </div>
+      <footer class="article-footer">
+        <span class="footer-tag">Design Systems</span>
+        <span class="footer-tag">Typography</span>
+        <span class="footer-read">5 min read</span>
+      </footer>
+    </article>`}
+  css={`.article {
+      max-width: 540px;
+      margin: 16px auto;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+      border: 1px solid hsl(214 32% 91%);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .article-header {
+      padding: 24px 24px 16px;
+    }
+    .article-date {
+      font-size: 12px;            /* caption */
+      font-weight: 400;           /* normal */
+      line-height: 1.5;           /* normal */
+      color: hsl(215 16% 47%);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .article-title {
+      font-size: 28px;            /* heading */
+      font-weight: 700;           /* bold */
+      line-height: 1.25;          /* tight */
+      margin: 0 0 6px 0;
+    }
+    .article-subtitle {
+      font-size: 20px;            /* subheading */
+      font-weight: 500;           /* medium */
+      line-height: 1.5;           /* normal */
+      color: hsl(215 16% 47%);
+      margin: 0;
+    }
+    
+    .article-body {
+      padding: 0 24px 20px;
+    }
+    .article-paragraph {
+      font-size: 16px;            /* body */
+      font-weight: 400;           /* normal */
+      line-height: 1.75;          /* relaxed */
+      margin: 0 0 16px 0;
+      color: hsl(222 47% 11%);
+    }
+    .article-h2 {
+      font-size: 20px;            /* subheading */
+      font-weight: 700;           /* bold */
+      line-height: 1.25;          /* tight */
+      margin: 20px 0 10px 0;
+    }
+    
+    .article-callout {
+      background: hsl(210 40% 96%);
+      border-left: 3px solid hsl(221 83% 53%);
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 16px 0;
+    }
+    .callout-label {
+      font-size: 12px;            /* caption */
+      font-weight: 700;           /* bold */
+      line-height: 1.5;           /* normal */
+      color: hsl(221 83% 53%);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .callout-text {
+      font-size: 16px;            /* body */
+      font-weight: 400;           /* normal */
+      line-height: 1.75;          /* relaxed */
+      margin: 0;
+      color: hsl(222 47% 11%);
+    }
+    
+    .article-footer {
+      padding: 12px 24px;
+      background: hsl(210 40% 96%);
+      border-top: 1px solid hsl(214 32% 91%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-tag {
+      font-size: 12px;            /* caption */
+      font-weight: 500;           /* medium */
+      background: hsl(221 83% 53%);
+      color: hsl(210 40% 98%);
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+    .footer-read {
+      font-size: 12px;            /* caption */
+      font-weight: 400;           /* normal */
+      color: hsl(215 16% 47%);
+      margin-left: auto;
+    }`} />
+
+## When to Use
+
+Typography tokens pair naturally with [color tokens](./color-tokens) and the [spacing strategy](./index.mdx) from the parent article. Together, they form the core of a tight design token system that constrains the three most common sources of visual drift.
+
+Apply typography tokens when:
+
+- The project uses more than 3 font sizes in practice — constrain them to exactly 5
+- Multiple developers write markup and each reaches for different text sizes
+- The design system defines a type scale by name (e.g., "body," "heading") rather than by pixel value
+
+## References
+
+- [Tailwind CSS v4 Theme Configuration](https://tailwindcss.com/docs/theme)
+- [Tailwind CSS v4 @theme Directive](https://tailwindcss.com/docs/functions-and-directives#theme-directive)

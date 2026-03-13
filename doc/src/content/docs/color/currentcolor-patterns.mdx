@@ -1,0 +1,275 @@
+---
+title: currentColor Patterns
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+AI agents tend to hard-code color values for every property — separate hex values for `color`, `border-color`, `box-shadow`, `outline`, and SVG `fill` — even when all of them should match the element's text color. This creates maintenance headaches: changing a component's color means updating multiple declarations. Worse, when parent components change text color (e.g., in hover states or theme switches), the borders, icons, and shadows don't follow along because they're pinned to a specific hex value.
+
+## The Solution
+
+`currentColor` is a CSS keyword that resolves to the element's computed `color` value. It makes borders, shadows, outlines, SVG fills, and other color properties automatically follow the text color. This is one of the most under-used patterns in CSS — it has been supported since CSS3 and works in every browser.
+
+### Key behavior
+
+- `currentColor` inherits through the cascade — if an element doesn't set its own `color`, it inherits from its parent
+- `border-color` defaults to `currentColor` implicitly, but other properties require it explicitly
+- It works with CSS custom properties and `color-mix()`
+
+## Code Examples
+
+### Borders That Follow Text Color
+
+```css
+/* VERBOSE: separate color declarations */
+.card {
+  color: #1a365d;
+  border: 1px solid #1a365d;
+}
+
+.card:hover {
+  color: #2b6cb0;
+  border-color: #2b6cb0; /* Must update separately */
+}
+
+/* BETTER: currentColor keeps them in sync */
+.card {
+  color: #1a365d;
+  border: 1px solid currentColor;
+}
+
+.card:hover {
+  color: #2b6cb0;
+  /* Border color updates automatically */
+}
+```
+
+<CssPreview client:load
+  title="currentColor — Change Parent Color to Update Everything"
+  html={`    <div class="cc-demo">
+      <div class="card" style="color: #4f46e5;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <h4>Indigo Component</h4>
+        <p>Border, icon, and shadow all use currentColor — they match the text automatically.</p>
+      </div>
+      <div class="card" style="color: #0d9488;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <h4>Teal Component</h4>
+        <p>Same CSS — only the parent color changed. Everything else followed via currentColor.</p>
+      </div>
+      <div class="card" style="color: #dc2626;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <h4>Red Component</h4>
+        <p>One color declaration controls text, border, icon stroke, and box shadow together.</p>
+      </div>
+    </div>`}
+  css={`.cc-demo {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      border: 2px solid currentColor;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px color-mix(in srgb, currentColor 20%, transparent);
+      background: white;
+    }
+    .card svg {
+      margin-bottom: 0.5rem;
+    }
+    .card h4 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+    }
+    .card p {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      opacity: 0.8;
+    }`}
+  height={260} />
+
+### SVG Icons That Match Text Color
+
+This is where `currentColor` provides the most value. Inline SVGs with `fill="currentColor"` automatically adopt the text color of their parent:
+
+```html
+<button class="btn-primary">
+  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <path fill="currentColor" d="M8 0l2.5 5.3L16 6.2l-4 3.8L13 16 8 13.2 3 16l1-6L0 6.2l5.5-.9z" />
+  </svg>
+  Add to favorites
+</button>
+```
+
+```css
+.btn-primary {
+  color: white;
+  background: oklch(50% 0.22 264);
+}
+
+.btn-primary:hover {
+  color: oklch(90% 0.05 264);
+  /* SVG fill automatically updates to the new color */
+}
+```
+
+### Box Shadows
+
+```css
+.tag {
+  color: oklch(45% 0.2 264);
+  border: 1px solid currentColor;
+  box-shadow: 0 1px 3px currentColor;
+}
+
+/* Semi-transparent shadow using color-mix with currentColor */
+.card {
+  color: oklch(30% 0.05 264);
+  box-shadow: 0 4px 12px color-mix(in oklch, currentColor 25%, transparent);
+}
+```
+
+### Outlines and Focus Rings
+
+```css
+/* Focus ring that matches the element's text color */
+.input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Link focus ring that matches the link color */
+a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+```
+
+### Text Decorations
+
+```css
+/* Underline color automatically matches text */
+a {
+  color: oklch(50% 0.2 264);
+  text-decoration-color: currentColor;
+}
+
+/* Subtle underline using semi-transparent currentColor */
+a {
+  color: oklch(50% 0.2 264);
+  text-decoration-color: color-mix(in oklch, currentColor 40%, transparent);
+}
+
+a:hover {
+  text-decoration-color: currentColor; /* Full opacity on hover */
+}
+```
+
+### Multi-Colored Component Variants
+
+```css
+.badge {
+  color: var(--badge-color, oklch(45% 0.15 264));
+  border: 1px solid currentColor;
+  background: color-mix(in oklch, currentColor 10%, transparent);
+}
+
+/* All color properties follow from one custom property */
+.badge--success {
+  --badge-color: oklch(45% 0.15 145);
+}
+
+.badge--warning {
+  --badge-color: oklch(55% 0.18 85);
+}
+
+.badge--danger {
+  --badge-color: oklch(50% 0.2 25);
+}
+```
+
+```html
+<span class="badge badge--success">Active</span>
+<span class="badge badge--warning">Pending</span>
+<span class="badge badge--danger">Failed</span>
+```
+
+### Dividers and Separators
+
+```css
+.divider {
+  border: none;
+  border-block-start: 1px solid currentColor;
+  opacity: 0.2;
+}
+
+/* The divider inherits the section's text color */
+.dark-section {
+  color: white;
+}
+
+.light-section {
+  color: #333;
+}
+```
+
+### Combining with CSS Custom Properties
+
+```css
+:root {
+  --link-color: oklch(50% 0.2 264);
+}
+
+a {
+  color: var(--link-color);
+  text-decoration-color: color-mix(in oklch, currentColor 50%, transparent);
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: oklch(40% 0.25 264);
+  /* text-decoration-color updates through currentColor */
+}
+
+a svg {
+  fill: currentColor; /* Icon follows link color */
+}
+```
+
+## Common AI Mistakes
+
+- Hard-coding the same color value in `color`, `border-color`, `box-shadow`, and SVG `fill` instead of using `currentColor` to keep them in sync
+- Not setting `fill="currentColor"` on inline SVG icons, then writing JavaScript to change SVG colors on state changes
+- Writing separate `:hover` rules to update border, shadow, and icon colors individually when `currentColor` would propagate the change from a single `color` update
+- Using `currentColor` where the element's `color` is inherited from a distant ancestor and might unexpectedly change — be intentional about which element sets the `color`
+- Forgetting that `border-color` already defaults to `currentColor` — explicitly setting `border-color: currentColor` is valid but redundant
+- Not leveraging `currentColor` with `color-mix()` for semi-transparent variants (e.g., `color-mix(in oklch, currentColor 25%, transparent)` for subtle shadows)
+- Using `currentColor` for `background-color` and making text invisible against its own background — `currentColor` is for accents, not backgrounds
+
+## When to Use
+
+- **SVG icons in buttons and links**: The icon color automatically follows the text color through all states (default, hover, active, disabled, focus)
+- **Component borders**: A single `color` change updates the text and border together
+- **Focus indicators**: `outline: 2px solid currentColor` creates focus rings that always match the element's context
+- **Color-coordinated components**: Badges, tags, and alerts where border, background-tint, and text should derive from one color
+- **Text decorations**: Subtle underlines that match or partially match the text color
+
+### When to avoid
+
+- **Backgrounds**: `background: currentColor` makes text invisible unless you set a different `color` on a child element
+- **Colors that should NOT change with the text**: Logos, brand marks, or icons that need a fixed color regardless of context
+- **Complex multi-color components**: When borders, icons, and text intentionally use different colors
+
+## References
+
+- [MDN: currentColor](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/currentcolor)
+- [CSS-Tricks: currentColor](https://css-tricks.com/currentcolor/)
+- [currentColor and SVGs — Go Make Things](https://gomakethings.com/currentcolor-and-svgs/)
+- [Using the currentColor CSS Property with SVG — Echobind](https://echobind.com/post/currentcolor-css-property-with-svg)

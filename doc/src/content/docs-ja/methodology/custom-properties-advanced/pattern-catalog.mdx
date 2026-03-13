@@ -1,0 +1,464 @@
+---
+title: カスタムプロパティパターンカタログ
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+堅牢なデザインシステム、レスポンシブレイアウト、コンポーネントアーキテクチャを構築するためのCSSカスタムプロパティパターンの包括的なコレクションです — すべてインタラクティブなデモ付きです。
+
+## レスポンシブカスタムプロパティ
+
+`@media`でブレークポイントごとに変化するカスタムプロパティは、ユーティリティクラスなしのレスポンシブデザインシステムを作成します。トークンを一度定義すれば、メディアクエリがそれを適応させます。
+
+```css
+:root {
+  --content-padding: 1rem;
+}
+@media (min-width: 768px) {
+  :root {
+    --content-padding: 2rem;
+  }
+}
+```
+
+`--content-padding`を参照するすべての要素がブレークポイントで自動的に更新されます — コンポーネントごとのオーバーライドは不要です。
+
+<CssPreview client:load
+  title="レスポンシブカスタムプロパティ"
+  height={280}
+  html={`
+    <div class="page">
+      <div class="container">
+        <h2>Responsive Container</h2>
+        <p>This container's padding, gap, and font size all adapt via custom properties at breakpoints. Resize the viewport toggle to see them change.</p>
+        <div class="grid">
+          <div class="card">Card A</div>
+          <div class="card">Card B</div>
+          <div class="card">Card C</div>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    :root {
+      --content-padding: 1rem;
+      --content-gap: 0.75rem;
+      --content-font: 0.875rem;
+    }
+    
+    @media (min-width: 768px) {
+    :root {
+      --content-padding: 2rem;
+      --content-gap: 1.5rem;
+      --content-font: 1rem;
+    }
+    }
+    
+    .page {
+    font-family: system-ui, sans-serif;
+    }
+    
+    .container {
+    background: hsl(220 20% 97%);
+    border: 1px solid hsl(220 15% 88%);
+    border-radius: 12px;
+    padding: var(--content-padding);
+    font-size: var(--content-font);
+    }
+    
+    .container h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.15em;
+    color: hsl(220 30% 30%);
+    }
+    
+    .container p {
+    margin: 0 0 1rem;
+    color: hsl(220 15% 50%);
+    line-height: 1.5;
+    }
+    
+    .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--content-gap);
+    }
+    
+    .card {
+    background: white;
+    border: 1px solid hsl(220 15% 88%);
+    border-radius: 8px;
+    padding: var(--content-padding);
+    text-align: center;
+    font-weight: 600;
+    color: hsl(220 30% 40%);
+    }
+    `} />
+
+## CSSカウンターとカスタムプロパティ
+
+CSSカウンターは自動番号付けを生成します。カスタムプロパティと組み合わせることで、カウンターのスタイリングを設定可能にします — 親要素から色、サイズ、形状を変更できます。
+
+<CssPreview client:load
+  title="CSSカウンターとカスタムプロパティ"
+  height={320}
+  html={`
+    <div class="counter-demo">
+      <ol class="steps">
+        <li class="step">Define your base custom properties on the root element</li>
+        <li class="step">Create fallback chains for component-level overrides</li>
+        <li class="step">Use scoped properties for variant styling</li>
+        <li class="step">Add calc() for computed relationships between values</li>
+      </ol>
+    </div>
+    `}
+  css={`
+    .counter-demo {
+      font-family: system-ui, sans-serif;
+      --counter-bg: hsl(250 80% 60%);
+      --counter-color: white;
+      --counter-size: 2rem;
+    }
+    
+    .steps {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: step-counter;
+    }
+    
+    .step {
+      counter-increment: step-counter;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid hsl(250 20% 92%);
+      color: hsl(250 20% 30%);
+      line-height: 1.5;
+    }
+    
+    .step:last-child {
+      border-bottom: none;
+    }
+    
+    .step::before {
+      content: counter(step-counter);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: var(--counter-size);
+      height: var(--counter-size);
+      background: var(--counter-bg);
+      color: var(--counter-color);
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+    }
+    `} />
+
+## コンポーネントツリーのカスタムプロパティ継承
+
+親コンポーネントがカスタムプロパティを設定し、深くネストされた子が自動的にそれを継承します — プロップドリリングも追加クラスも不要です。これはコンポーネントテーマの最も強力なパターンの一つです。
+
+<CssPreview client:load
+  title="カスタムプロパティの継承"
+  height={260}
+  html={`
+    <div class="card-list">
+      <div class="themed-card" style="--card-accent: hsl(250 70% 55%);">
+        <h3 class="themed-card-title">Purple Theme</h3>
+        <p class="themed-card-body">The badge below inherits from the card.</p>
+        <div class="themed-card-footer">
+          <span class="tag">Inherited Color</span>
+          <span class="tag">No Prop Drilling</span>
+        </div>
+      </div>
+      <div class="themed-card" style="--card-accent: hsl(160 70% 40%);">
+        <h3 class="themed-card-title">Teal Theme</h3>
+        <p class="themed-card-body">Same card structure, different accent.</p>
+        <div class="themed-card-footer">
+          <span class="tag">Cascade Power</span>
+          <span class="tag">Zero JS</span>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .card-list {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    .themed-card {
+      --_accent: var(--card-accent, hsl(220 70% 55%));
+      background: white;
+      border: 2px solid var(--_accent);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    
+    .themed-card-title {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: var(--_accent);
+    }
+    
+    .themed-card-body {
+      margin: 0 0 1rem;
+      font-size: 0.85rem;
+      color: hsl(220 15% 45%);
+      line-height: 1.5;
+    }
+    
+    .themed-card-footer {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    /* Tags inherit --_accent from the card ancestor */
+    .tag {
+      background: var(--_accent);
+      color: white;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    `} />
+
+## calcベースのスペーシングスケール
+
+単一のベーススペーシング単位を定義し、`calc()`でスケール全体を導出します。ベース値を変更すると、すべてのスペーシングトークンが一度に再構成されます。
+
+```css
+:root {
+  --space-unit: 8px;
+  --space-xs: calc(var(--space-unit) * 0.5);
+  --space-sm: var(--space-unit);
+  --space-md: calc(var(--space-unit) * 2);
+  --space-lg: calc(var(--space-unit) * 3);
+  --space-xl: calc(var(--space-unit) * 5);
+}
+```
+
+<CssPreview client:load
+  title="calcベースのスペーシングスケール"
+  height={300}
+  html={`
+    <div class="spacing-demo">
+      <h3 class="spacing-title">Spacing Scale (base: 8px)</h3>
+      <div class="scale-row">
+        <span class="scale-label">xs (4px)</span>
+        <div class="scale-bar scale-xs"></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-label">sm (8px)</span>
+        <div class="scale-bar scale-sm"></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-label">md (16px)</span>
+        <div class="scale-bar scale-md"></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-label">lg (24px)</span>
+        <div class="scale-bar scale-lg"></div>
+      </div>
+      <div class="scale-row">
+        <span class="scale-label">xl (40px)</span>
+        <div class="scale-bar scale-xl"></div>
+      </div>
+      <div class="card-demo">
+        <div class="space-card">
+          <h4>Card using the scale</h4>
+          <p>Padding: md, gap: sm</p>
+        </div>
+        <div class="space-card">
+          <h4>Same scale, same rhythm</h4>
+          <p>Consistent spacing everywhere</p>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    :root {
+      --space-unit: 8px;
+      --space-xs: calc(var(--space-unit) * 0.5);
+      --space-sm: var(--space-unit);
+      --space-md: calc(var(--space-unit) * 2);
+      --space-lg: calc(var(--space-unit) * 3);
+      --space-xl: calc(var(--space-unit) * 5);
+    }
+    
+    .spacing-demo {
+      font-family: system-ui, sans-serif;
+    }
+    
+    .spacing-title {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      color: hsl(220 30% 30%);
+    }
+    
+    .scale-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .scale-label {
+      font-size: 0.8rem;
+      color: hsl(220 15% 50%);
+      min-width: 5.5rem;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    .scale-bar {
+      height: 1.25rem;
+      background: hsl(220 80% 60%);
+      border-radius: 4px;
+    }
+    
+    .scale-xs { width: var(--space-xs); }
+    .scale-sm { width: var(--space-sm); }
+    .scale-md { width: var(--space-md); }
+    .scale-lg { width: var(--space-lg); }
+    .scale-xl { width: var(--space-xl); }
+    
+    .card-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+    }
+    
+    .space-card {
+      background: hsl(220 30% 96%);
+      border: 1px solid hsl(220 20% 88%);
+      border-radius: 8px;
+      padding: var(--space-md);
+    }
+    
+    .space-card h4 {
+      margin: 0 0 var(--space-xs);
+      font-size: 0.9rem;
+      color: hsl(220 30% 30%);
+    }
+    
+    .space-card p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: hsl(220 15% 55%);
+    }
+    `} />
+
+## カスタムプロパティによるカラーシステム
+
+HSLコンポーネントを個別のカスタムプロパティに分離することで、最大の柔軟性を得られます。1つの色定義からホバー状態、明るい/暗いバリアント、透明度を導出できます。
+
+```css
+:root {
+  --primary-h: 220;
+  --primary-s: 80%;
+  --primary-l: 50%;
+}
+.button {
+  background: hsl(var(--primary-h) var(--primary-s) var(--primary-l));
+}
+.button:hover {
+  background: hsl(var(--primary-h) var(--primary-s) calc(var(--primary-l) - 10%));
+}
+```
+
+<CssPreview client:load
+  title="HSLカラーシステム"
+  height={200}
+  html={`
+    <div class="color-demo">
+      <div class="button-row">
+        <button class="btn btn-primary">Primary</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-accent">Accent</button>
+      </div>
+      <p class="color-hint">Hover each button — the darkened hover state is computed from the same HSL base using calc()</p>
+    </div>
+    `}
+  css={`
+    :root {
+      --primary-h: 220;
+      --primary-s: 80%;
+      --primary-l: 50%;
+    
+      --secondary-h: 160;
+      --secondary-s: 60%;
+      --secondary-l: 42%;
+    
+      --accent-h: 340;
+      --accent-s: 75%;
+      --accent-l: 55%;
+    }
+    
+    .color-demo {
+      font-family: system-ui, sans-serif;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      border: none;
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: white;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    
+    .btn-primary {
+      background: hsl(var(--primary-h) var(--primary-s) var(--primary-l));
+    }
+    
+    .btn-primary:hover {
+      background: hsl(var(--primary-h) var(--primary-s) calc(var(--primary-l) - 10%));
+    }
+    
+    .btn-secondary {
+      background: hsl(var(--secondary-h) var(--secondary-s) var(--secondary-l));
+    }
+    
+    .btn-secondary:hover {
+      background: hsl(var(--secondary-h) var(--secondary-s) calc(var(--secondary-l) - 10%));
+    }
+    
+    .btn-accent {
+      background: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+    }
+    
+    .btn-accent:hover {
+      background: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) - 10%));
+    }
+    
+    .color-hint {
+      font-size: 0.8rem;
+      color: hsl(220 15% 55%);
+      margin-top: 1rem;
+    }
+    `} />
+
+## 参考リンク
+
+- [Using CSS custom properties (variables) - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Cascading_variables/Using_custom_properties)
+- [A Complete Guide to Custom Properties - CSS-Tricks](https://css-tricks.com/a-complete-guide-to-custom-properties/)
+- [Custom Properties as State - Chris Coyier](https://css-tricks.com/custom-properties-as-state/)

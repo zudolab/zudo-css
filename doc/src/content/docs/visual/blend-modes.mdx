@@ -1,0 +1,369 @@
+---
+title: Blend Modes
+sidebar_position: 7
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+AI agents rarely reach for CSS blend modes, even when the design clearly calls for them. Text over images gets a solid overlay `div` instead of a blend mode. Image tinting is done with `filter` when `background-blend-mode` would be simpler. When blend modes are used, AI often forgets the `isolation` property and accidentally blends elements with unrelated backgrounds further up the DOM.
+
+## The Solution
+
+CSS provides two blend mode properties:
+
+- **`mix-blend-mode`** — Controls how an element's colors blend with the content directly behind it in the stacking order
+- **`background-blend-mode`** — Controls how an element's multiple background layers blend with each other
+
+Both accept the same set of blend mode values (e.g., `multiply`, `screen`, `overlay`, `darken`, `lighten`, `color-dodge`, `color-burn`, `difference`, `exclusion`, `soft-light`). Use `isolation: isolate` on a container to prevent its children's blend modes from leaking into parent backgrounds.
+
+## Code Examples
+
+### Darkening Image Overlay
+
+The classic use case: readable text over a photograph. Instead of a semi-transparent black overlay, use `multiply` to darken the image while preserving contrast.
+
+```css
+.hero-overlay {
+  position: relative;
+  background: url("hero.jpg") center / cover;
+}
+
+.hero-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(220deg 60% 20%);
+  mix-blend-mode: multiply;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+}
+```
+
+```html
+<section class="hero-overlay">
+  <div class="hero-content">
+    <h1>Hero Title</h1>
+    <p>Text is readable without a flat black overlay.</p>
+  </div>
+</section>
+```
+
+`multiply` darkens light areas while preserving the image's contrast and color variation, unlike a uniform `rgba(0,0,0,0.5)` overlay that flattens everything.
+
+### Image Color Tinting with background-blend-mode
+
+```css
+/* Duotone effect */
+.duotone {
+  background:
+    url("photo.jpg") center / cover,
+    linear-gradient(#1a1a2e, #3b82f6);
+  background-blend-mode: luminosity;
+}
+
+/* Warm tint */
+.warm-tint {
+  background:
+    url("photo.jpg") center / cover,
+    hsl(30deg 80% 50%);
+  background-blend-mode: overlay;
+}
+
+/* Cool monochrome */
+.cool-mono {
+  background:
+    url("photo.jpg") center / cover,
+    hsl(220deg 80% 30%);
+  background-blend-mode: color;
+}
+```
+
+### Text That Adapts to Background
+
+`mix-blend-mode: difference` on text inverts its color relative to the background, keeping it readable over both light and dark regions.
+
+```css
+.adaptive-text {
+  color: white;
+  mix-blend-mode: difference;
+  font-size: 3rem;
+  font-weight: 700;
+}
+```
+
+### Knockout Text Effect
+
+Using `screen` to create text that "cuts through" to reveal a background.
+
+```css
+.knockout-container {
+  background: url("texture.jpg") center / cover;
+  isolation: isolate;
+}
+
+.knockout-text {
+  background: black;
+  color: white;
+  mix-blend-mode: screen;
+  font-size: 4rem;
+  font-weight: 900;
+  padding: 20px;
+}
+```
+
+`screen` makes the black areas transparent and white areas opaque, so white text reveals the texture while the black background vanishes.
+
+### The `isolation` Property
+
+Without `isolation: isolate`, blend modes propagate up the DOM and blend with all content behind the element, including unrelated backgrounds. Setting `isolation: isolate` on a container creates a new stacking context that confines blending to its children.
+
+```css
+/* Without isolation — text blends with page background too */
+.card-broken {
+  background: white;
+}
+
+.card-broken .blend-text {
+  mix-blend-mode: multiply;
+  /* Multiplies with everything behind, including page background */
+}
+
+/* With isolation — blending stops at the card */
+.card-fixed {
+  background: white;
+  isolation: isolate;
+}
+
+.card-fixed .blend-text {
+  mix-blend-mode: multiply;
+  /* Only multiplies with the card's white background */
+}
+```
+
+### Blended Background Patterns
+
+```css
+/* Plaid pattern using blended gradients */
+.plaid {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      hsl(220deg 80% 60% / 0.3) 0px,
+      hsl(220deg 80% 60% / 0.3) 20px,
+      transparent 20px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      hsl(350deg 80% 60% / 0.3) 0px,
+      hsl(350deg 80% 60% / 0.3) 20px,
+      transparent 20px,
+      transparent 40px
+    ),
+    hsl(0deg 0% 95%);
+  background-blend-mode: multiply;
+}
+```
+
+### Hover Effect with Blend Mode
+
+```css
+.image-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-card img {
+  width: 100%;
+  display: block;
+  transition: filter 0.3s ease;
+}
+
+.image-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(220deg 80% 50%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-card:hover::after {
+  opacity: 1;
+}
+```
+
+### Quick Reference: Common Blend Modes
+
+```css
+/* Darken family — result is darker than both layers */
+.darken     { mix-blend-mode: darken; }
+.multiply   { mix-blend-mode: multiply; }    /* most useful */
+.color-burn { mix-blend-mode: color-burn; }
+
+/* Lighten family — result is lighter than both layers */
+.lighten      { mix-blend-mode: lighten; }
+.screen       { mix-blend-mode: screen; }     /* most useful */
+.color-dodge  { mix-blend-mode: color-dodge; }
+
+/* Contrast family — darkens darks, lightens lights */
+.overlay    { mix-blend-mode: overlay; }      /* most useful */
+.soft-light { mix-blend-mode: soft-light; }   /* subtle version */
+.hard-light { mix-blend-mode: hard-light; }
+
+/* Difference family — inverts based on brightness */
+.difference { mix-blend-mode: difference; }
+.exclusion  { mix-blend-mode: exclusion; }    /* softer version */
+```
+
+## Live Previews
+
+<CssPreview client:load
+  title="mix-blend-mode: Text Over Colorful Background"
+  html={`<div class="demo"><div class="blend-container"><h1 class="blend-text">BLEND</h1></div></div>`}
+  css={`
+    .demo {
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+    }
+    .blend-container {
+      width: 100%;
+      height: 100%;
+      background:
+      linear-gradient(135deg, #3b82f6 0%, #ec4899 50%, #f59e0b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      isolation: isolate;
+    }
+    .blend-text {
+      font-size: 80px;
+      font-weight: 900;
+      color: white;
+      mix-blend-mode: difference;
+      margin: 0;
+      letter-spacing: 8px;
+    }
+    `}
+  height={250} />
+
+<CssPreview client:load
+  title="background-blend-mode: Duotone Effect"
+  html={`<div class="demo"><div class="duotone"><span class="label">luminosity blend</span></div><div class="no-blend"><span class="label">no blend (normal)</span></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 16px;
+      height: 100%;
+      padding: 16px;
+      background: #0f172a;
+      font-family: system-ui, sans-serif;
+    }
+    .duotone, .no-blend {
+      flex: 1;
+      border-radius: 12px;
+      background:
+      linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6, #06b6d4),
+      linear-gradient(45deg, #000 0%, #fff 100%);
+      background-size: cover;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+      position: relative;
+    }
+    .duotone {
+      background-blend-mode: luminosity;
+    }
+    .no-blend {
+      background-blend-mode: normal;
+    }
+    .label {
+      background: hsl(0deg 0% 0% / 0.5);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    `}
+  height={250} />
+
+<CssPreview client:load
+  title="Isolation Property Demo"
+  html={`<div class="demo"><div class="card no-isolate"><div class="overlay"></div><p>Without isolation — blend leaks to page background</p></div><div class="card with-isolate"><div class="overlay"></div><p>With isolation: isolate — blend contained to card</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background:
+      repeating-linear-gradient(
+        45deg,
+        #e2e8f0 0px,
+        #e2e8f0 10px,
+        #f1f5f9 10px,
+        #f1f5f9 20px
+      );
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      position: relative;
+      width: 200px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      padding-bottom: 16px;
+    }
+    .with-isolate {
+      isolation: isolate;
+    }
+    .overlay {
+      height: 80px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      mix-blend-mode: multiply;
+    }
+    .card p {
+      font-size: 12px;
+      color: #334155;
+      padding: 0 12px;
+      line-height: 1.5;
+      margin: 8px 0 0;
+    }
+    `}
+  height={240} />
+
+## Common AI Mistakes
+
+- **Using `rgba(0,0,0,0.5)` overlays instead of blend modes** — A semi-transparent black overlay flattens the image uniformly. `multiply` preserves contrast and color variation.
+- **Forgetting `isolation: isolate`** — Without it, blend modes propagate up the DOM and blend with unrelated backgrounds, producing unexpected results.
+- **Confusing `mix-blend-mode` and `background-blend-mode`** — `mix-blend-mode` blends the element with what is behind it. `background-blend-mode` blends the element's own background layers with each other.
+- **Using blend modes on invisible elements** — Setting `mix-blend-mode` on an element with `opacity: 0` or `display: none` has no effect and is wasted code.
+- **Not accounting for text readability** — Blend modes like `difference` or `exclusion` produce unpredictable text contrast. Always test over both light and dark regions of the background.
+- **Applying blend modes to interactive elements** — Blend modes can make button and link colors unpredictable over varying backgrounds, harming accessibility.
+
+## When to Use
+
+- **Image overlays** — Darken or tint hero images for readable text without flattening contrast
+- **Duotone and color effects** — `background-blend-mode` with a color and `luminosity` or `color` mode for Instagram-like image treatments
+- **Knockout text** — Reveal a background texture through text shapes using `screen`
+- **Adaptive text** — `difference` for text that stays readable over both light and dark image regions
+- **Decorative backgrounds** — Blend multiple gradient layers for rich patterns without images
+
+## References
+
+- [mix-blend-mode — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode)
+- [background-blend-mode — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/background-blend-mode)
+- [Blending Modes in CSS — Ahmad Shadeed](https://ishadeed.com/article/blending-modes-css/)
+- [Blend Modes — web.dev](https://web.dev/learn/css/blend-modes)
+- [Creative Text Styling with mix-blend-mode — LogRocket](https://blog.logrocket.com/creative-text-styling-with-the-css-mix-blend-mode-property/)

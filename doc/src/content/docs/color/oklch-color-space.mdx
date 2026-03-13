@@ -1,0 +1,252 @@
+---
+title: OKLCH Color Space
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+AI agents almost always generate colors in `hex`, `rgb()`, or `hsl()` format. These older color spaces have a fundamental flaw: they are not perceptually uniform. In HSL, two colors with the same lightness value (e.g., `hsl(60, 100%, 50%)` yellow and `hsl(240, 100%, 50%)` blue) appear drastically different in perceived brightness. This makes it nearly impossible to create consistent, accessible color palettes by simply adjusting hue values. AI-generated palettes in HSL often have inconsistent contrast ratios, muddy mid-tones, and colors that "jump" in perceived brightness across the spectrum.
+
+## The Solution
+
+OKLCH (`oklch()`) is a CSS color function based on the Oklab perceptual color model. It uses three components:
+
+- **L** — Lightness (0% = black, 100% = white), perceptually linear
+- **C** — Chroma (0 = gray, higher = more vivid), represents colorfulness
+- **H** — Hue (0–360 degrees), the color angle on the color wheel
+
+The key advantage: if you keep L constant and change H, the perceived brightness stays the same. This makes palette creation predictable — you can generate a set of colors that look equally bright to the human eye.
+
+### Why OKLCH Beats HSL
+
+```css
+/* HSL: These "look" like the same lightness, but they're not */
+.yellow {
+  color: hsl(60, 100%, 50%); /* Appears very bright */
+}
+
+.blue {
+  color: hsl(240, 100%, 50%); /* Appears much darker */
+}
+
+/* OKLCH: Same lightness = same perceived brightness */
+.yellow {
+  color: oklch(80% 0.18 90); /* Visually bright */
+}
+
+.blue {
+  color: oklch(80% 0.18 264); /* Equally bright */
+}
+```
+
+## Code Examples
+
+### Basic OKLCH Syntax
+
+```css
+:root {
+  /* oklch(lightness chroma hue) */
+  --brand-primary: oklch(55% 0.25 264); /* Vivid blue */
+  --brand-secondary: oklch(65% 0.2 150); /* Teal-green */
+  --brand-accent: oklch(70% 0.22 30); /* Warm orange */
+
+  /* With alpha transparency */
+  --overlay: oklch(20% 0 0 / 0.5); /* Semi-transparent black */
+}
+```
+
+### Creating a Perceptually Uniform Palette
+
+By fixing lightness and chroma and only rotating hue, every color has the same visual weight:
+
+```css
+:root {
+  /* Categorical palette — all colors appear equally prominent */
+  --chart-1: oklch(65% 0.2 30); /* Red-orange */
+  --chart-2: oklch(65% 0.2 90); /* Yellow */
+  --chart-3: oklch(65% 0.2 150); /* Green */
+  --chart-4: oklch(65% 0.2 210); /* Cyan */
+  --chart-5: oklch(65% 0.2 270); /* Blue */
+  --chart-6: oklch(65% 0.2 330); /* Magenta */
+}
+```
+
+<CssPreview client:load
+  title="OKLCH Uniform Lightness vs HSL Inconsistent Lightness"
+  html={`    <div class="color-demo">
+      <div>
+        <h3>OKLCH — Same lightness (65%), different hues</h3>
+        <div class="swatches">
+          <div class="swatch" style="background: oklch(65% 0.2 30)"><span>Red H:30</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 90)"><span>Yellow H:90</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 150)"><span>Green H:150</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 210)"><span>Cyan H:210</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 270)"><span>Blue H:270</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 330)"><span>Magenta H:330</span></div>
+        </div>
+        <p class="note">All colors appear equally bright — perceptually uniform</p>
+      </div>
+      <div>
+        <h3>HSL — Same lightness (50%), different hues</h3>
+        <div class="swatches">
+          <div class="swatch" style="background: hsl(0, 80%, 50%)"><span>Red H:0</span></div>
+          <div class="swatch" style="background: hsl(60, 80%, 50%)"><span>Yellow H:60</span></div>
+          <div class="swatch" style="background: hsl(120, 80%, 50%)"><span>Green H:120</span></div>
+          <div class="swatch" style="background: hsl(180, 80%, 50%)"><span>Cyan H:180</span></div>
+          <div class="swatch" style="background: hsl(240, 80%, 50%)"><span>Blue H:240</span></div>
+          <div class="swatch" style="background: hsl(300, 80%, 50%)"><span>Magenta H:300</span></div>
+        </div>
+        <p class="note">Yellow appears much brighter than blue — not perceptually uniform</p>
+      </div>
+    </div>`}
+  css={`.color-demo {
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .color-demo h3 {
+      font-size: 0.85rem;
+      color: #444;
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+    }
+    .swatch {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0.25rem;
+    }
+    .swatch span {
+      font-size: 0.65rem;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      font-weight: 600;
+    }
+    .note {
+      font-size: 0.8rem;
+      color: #666;
+      margin: 0.5rem 0 0;
+      font-style: italic;
+    }`}
+  height={340} />
+
+### Lightness Scale for a Single Hue
+
+```css
+:root {
+  --blue-hue: 264;
+  --blue-chroma: 0.15;
+
+  --blue-50: oklch(97% var(--blue-chroma) var(--blue-hue));
+  --blue-100: oklch(93% var(--blue-chroma) var(--blue-hue));
+  --blue-200: oklch(85% var(--blue-chroma) var(--blue-hue));
+  --blue-300: oklch(75% var(--blue-chroma) var(--blue-hue));
+  --blue-400: oklch(65% var(--blue-chroma) var(--blue-hue));
+  --blue-500: oklch(55% var(--blue-chroma) var(--blue-hue));
+  --blue-600: oklch(45% var(--blue-chroma) var(--blue-hue));
+  --blue-700: oklch(37% var(--blue-chroma) var(--blue-hue));
+  --blue-800: oklch(30% var(--blue-chroma) var(--blue-hue));
+  --blue-900: oklch(22% var(--blue-chroma) var(--blue-hue));
+}
+```
+
+### Theming with OKLCH Custom Properties
+
+```css
+:root {
+  --hue: 264;
+  --chroma: 0.2;
+
+  --color-primary: oklch(55% var(--chroma) var(--hue));
+  --color-primary-light: oklch(75% var(--chroma) var(--hue));
+  --color-primary-dark: oklch(35% var(--chroma) var(--hue));
+  --color-primary-subtle: oklch(95% 0.03 var(--hue));
+
+  --color-surface: oklch(99% 0.005 var(--hue));
+  --color-text: oklch(20% 0.02 var(--hue));
+  --color-text-muted: oklch(45% 0.02 var(--hue));
+}
+
+/* Change the entire theme by adjusting one variable */
+.theme-green {
+  --hue: 150;
+}
+
+.theme-red {
+  --hue: 25;
+}
+```
+
+### Accessible Color Pairs
+
+With OKLCH, you can guarantee contrast by controlling the lightness delta:
+
+```css
+:root {
+  /* A lightness difference of ~45-50% in oklch roughly maps to WCAG AA 4.5:1 */
+  --bg: oklch(97% 0.01 264);
+  --text: oklch(25% 0.02 264);
+
+  --btn-bg: oklch(50% 0.2 264);
+  --btn-text: oklch(98% 0.01 264);
+}
+```
+
+### OKLCH vs HSL — Real Comparison
+
+```css
+/* Creating "same lightness" grays in HSL — they're not truly equal */
+.hsl-problem {
+  --gray-warm: hsl(30, 10%, 50%);
+  --gray-cool: hsl(210, 10%, 50%);
+  /* These two grays have visibly different perceived brightness */
+}
+
+/* OKLCH grays are genuinely perceptually matched */
+.oklch-solution {
+  --gray-warm: oklch(55% 0.02 60);
+  --gray-cool: oklch(55% 0.02 250);
+  /* These two grays actually look equally bright */
+}
+```
+
+## Common AI Mistakes
+
+- Defaulting to `hex` or `hsl()` for all color values when `oklch()` would produce more consistent palettes
+- Assuming HSL lightness is perceptually uniform — `hsl(60, 100%, 50%)` and `hsl(240, 100%, 50%)` look vastly different in brightness despite identical lightness values
+- Using chroma values that exceed the gamut for certain hue/lightness combinations — the browser will clip them, but the result may differ from intent
+- Not taking advantage of OKLCH's hue rotation for generating multi-color palettes — AI often hard-codes each color independently instead of rotating hue
+- Creating color scales by evenly spacing lightness values (10%, 20%, 30%...) without considering that very high chroma at extreme lightness is out of gamut
+- Using `oklch(0% 0 0)` and `oklch(100% 0 0)` for black and white when simpler `black` and `white` keywords suffice
+
+## When to Use
+
+- **Design system color tokens**: OKLCH makes it straightforward to generate consistent lightness scales across different hues
+- **Data visualization palettes**: Categorical colors at the same perceived brightness prevent one color from dominating visually
+- **Accessible theming**: Controlling the lightness delta between background and text ensures predictable contrast
+- **Dynamic theming**: Rotating the hue custom property shifts the entire palette while preserving visual harmony
+
+### When to stay with hex/rgb
+
+- When targeting older browsers that don't support OKLCH (pre-2023) and a fallback is impractical
+- When interfacing with design tools or APIs that only accept hex or rgb values
+- Single-color declarations where perceptual uniformity is irrelevant
+
+## References
+
+- [MDN: oklch()](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/oklch)
+- [OKLCH in CSS: why we moved from RGB and HSL — Evil Martians](https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl)
+- [OKLCH Color Picker & Converter](https://oklch.com/)
+- [CSS-Tricks: oklch()](https://css-tricks.com/almanac/functions/o/oklch/)
+- [Oklab color space — Wikipedia](https://en.wikipedia.org/wiki/Oklab_color_space)

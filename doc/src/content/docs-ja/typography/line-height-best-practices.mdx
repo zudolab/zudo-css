@@ -1,0 +1,201 @@
+---
+title: line-heightのベストプラクティス
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+line-heightは、CSSで最も誤解されているプロパティの一つです。AIエージェントは単位付きの値（`line-height: 24px`や`line-height: 1.5em`）を頻繁に使用しますが、これは子要素のフォントサイズが異なる場合に継承の問題を引き起こします。その結果、見出し・本文・小さなテキストの間でフォントサイズが異なるコンポーネントにおいて、テキストが詰まりすぎたり間延びしたりします。
+
+## 解決方法
+
+単位なしの`line-height`値を使いましょう。単位なしの値は比率として継承されるため、各要素が自身のフォントサイズに基づいて実際のline-heightを再計算します。これにより、親要素のピクセル単位で計算された`line-height`が異なるフォントサイズの子要素に継承されるという一般的なバグを防げます。
+
+### 単位なしと単位付きの継承の仕組み
+
+```css
+/* 問題あり: 単位付きのline-height */
+.parent {
+  font-size: 16px;
+  line-height: 24px; /* 計算値: 24px */
+}
+
+.parent h2 {
+  font-size: 32px;
+  /* line-height: 24pxを継承 — テキストが重なる！ */
+}
+
+/* 正しい: 単位なしのline-height */
+.parent {
+  font-size: 16px;
+  line-height: 1.5; /* 計算値: 24px (16 × 1.5) */
+}
+
+.parent h2 {
+  font-size: 32px;
+  /* line-height比率1.5を継承 → 計算値: 48px (32 × 1.5) */
+}
+```
+
+## コード例
+
+### 要素タイプ別の推奨値
+
+```css
+:root {
+  /* 本文テキストのベースline-height */
+  line-height: 1.5;
+}
+
+/* 本文テキスト: 最適な可読性のために1.5〜1.6 */
+p,
+li,
+dd,
+blockquote {
+  line-height: 1.5;
+}
+
+/* 見出し: 大きなテキストはleadingが少なくて済むためタイトに */
+h1 {
+  line-height: 1.1;
+}
+
+h2 {
+  line-height: 1.2;
+}
+
+h3 {
+  line-height: 1.3;
+}
+
+h4,
+h5,
+h6 {
+  line-height: 1.4;
+}
+
+/* 小さなテキスト / キャプション: 可読性のためにやや広めのline-height */
+small,
+.caption,
+.footnote {
+  line-height: 1.6;
+}
+
+/* コードブロック: コンパクトに保つためタイトに */
+pre,
+code {
+  line-height: 1.4;
+}
+```
+
+<CssPreview client:load
+  title="line-heightの比較 — タイト (1.2) vs 標準 (1.5) vs ルーズ (2.0)"
+  html={`    <div class="lh-demo">
+      <div class="lh-column">
+        <h3>line-height: 1.2</h3>
+        <p class="lh-tight">Typography is the art and technique of arranging type to make written language legible, readable, and appealing when displayed. The arrangement of type involves selecting typefaces, point sizes, line lengths, line spacing, and letter spacing.</p>
+      </div>
+      <div class="lh-column">
+        <h3>line-height: 1.5</h3>
+        <p class="lh-normal">Typography is the art and technique of arranging type to make written language legible, readable, and appealing when displayed. The arrangement of type involves selecting typefaces, point sizes, line lengths, line spacing, and letter spacing.</p>
+      </div>
+      <div class="lh-column">
+        <h3>line-height: 2.0</h3>
+        <p class="lh-loose">Typography is the art and technique of arranging type to make written language legible, readable, and appealing when displayed. The arrangement of type involves selecting typefaces, point sizes, line lengths, line spacing, and letter spacing.</p>
+      </div>
+    </div>`}
+  css={`.lh-demo {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .lh-column {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .lh-column h3 {
+      font-size: 0.85rem;
+      color: #6c63ff;
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    .lh-column p {
+      font-size: 0.95rem;
+      color: #333;
+      margin: 0;
+    }
+    .lh-tight { line-height: 1.2; }
+    .lh-normal { line-height: 1.5; }
+    .lh-loose { line-height: 2.0; }`}
+  height={320} />
+
+### 流体タイポグラフィとの組み合わせ
+
+```css
+:root {
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.3;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.8;
+}
+
+h1 {
+  font-size: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+  line-height: var(--line-height-tight);
+}
+
+p {
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: var(--line-height-normal);
+}
+```
+
+### スペーシングに`lh`単位を使う
+
+`lh`単位は要素の計算されたline-heightを表し、テキストのリズムに合ったスペーシングを実現します。
+
+```css
+p {
+  line-height: 1.5;
+  margin-block-end: 1lh; /* マージンがテキスト1行分に等しい */
+}
+
+blockquote {
+  line-height: 1.5;
+  padding-block: 0.5lh; /* テキスト半行分のパディング */
+  border-inline-start: 0.125lh solid currentColor;
+}
+```
+
+## AIがよくやるミス
+
+- 単位なしの`1.5`ではなく`line-height: 24px`や`line-height: 1.5em`を使い、継承のバグを引き起こす
+- 見出しと本文テキストに同じ`line-height`を適用する — 見出しにはよりタイトな値（1.1〜1.3）が必要
+- 本文テキストに`line-height: 1`（または`normal`キーワード）を設定する。`normal`キーワードはフォントによって通常約1.2に解決され、WCAGの推奨値を下回るため可読性に問題がある
+- 本文テキストに`line-height: 2`以上を使い、過剰なスペースで段落がバラバラに見える
+- `line-height`がインライン要素やリンクのクリッカブルエリアに影響することを忘れる
+- フォントの組み込みメトリクスを考慮しない — 一部のフォント（特に装飾系）は標準的なサンセリフフォントとは異なるline-height値が必要
+
+## 使い分け
+
+すべてのテキスト要素には意図的な`line-height`値を設定しましょう。一般的なガイドラインは次のとおりです：
+
+- **本文テキスト（段落、リスト）:** 1.5〜1.6 — WCAG 1.4.12（テキストスペーシング）の要件を満たす
+- **見出し:** 1.1〜1.3 — 大きなテキストはタイトなleadingでも読みやすい
+- **ディスプレイ / ヒーローテキスト:** 1.0〜1.15 — 非常に大きなテキストはさらにタイトにできる
+- **小さなテキスト / キャプション:** 1.5〜1.7 — 小さなテキストは余白があると読みやすい
+- **UI要素（ボタン、バッジ）:** 1〜1.2 — 読みやすさよりも垂直方向の中央揃えが重要な場合
+
+## 参考リンク
+
+- [MDN: line-height](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/line-height)
+- [Why should line-height be unitless in CSS?](https://www.30secondsofcode.org/css/s/unitless-line-height/)
+- [How to Tame Line Height in CSS — CSS-Tricks](https://css-tricks.com/how-to-tame-line-height-in-css/)
+- [Deep dive CSS: font metrics, line-height and vertical-align](https://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align)
+- [Line-height tricks with the lh unit — Dan Burzo](https://danburzo.ro/line-height-lh/)

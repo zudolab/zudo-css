@@ -1,0 +1,261 @@
+---
+title: fit-content, max-content, min-content
+sidebar_position: 12
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## The Problem
+
+Block-level elements in CSS default to `width: auto`, which stretches them to fill their container. When you need an element to shrink to fit its content — for example, a tag, a tooltip, or a call-to-action button styled as a block — AI agents typically reach for `width: auto` (which does nothing since it is the default) or `width: 100%` (which is the opposite of what is needed). The intrinsic sizing keywords `fit-content`, `max-content`, and `min-content` solve this directly, but AI agents rarely use them.
+
+## The Solution
+
+CSS provides three intrinsic sizing keywords that let elements size themselves based on their content:
+
+- **`fit-content`** — the element shrinks to its content but never exceeds its container width. This is the most commonly needed behavior.
+- **`max-content`** — the element expands to fit all its content on a single line, even if that overflows the container.
+- **`min-content`** — the element shrinks to the narrowest possible width without causing overflow of its smallest unbreakable content (e.g., the longest word).
+
+## Code Examples
+
+### Shrink a Block Element to Its Content
+
+```css
+/* The element is as wide as its content, up to the container width */
+.tag {
+  width: fit-content;
+  padding: 0.25rem 0.75rem;
+  background: #e0e7ff;
+  border-radius: 9999px;
+}
+```
+
+```html
+<div class="tag">New Feature</div>
+<div class="tag">A longer tag label that still shrinks to fit</div>
+```
+
+Without `width: fit-content`, each `.tag` would stretch to fill its parent. With it, each tag is only as wide as its text plus padding.
+
+### Centering a Shrink-to-Fit Element
+
+A common pattern is centering a block element that should be as narrow as its content:
+
+```css
+.centered-tag {
+  width: fit-content;
+  margin-inline: auto;
+}
+```
+
+This is cleaner than switching to `display: inline-block` and wrapping in a `text-align: center` parent.
+
+### Comparing the Three Keywords
+
+```css
+.min {
+  width: min-content;
+  /* Shrinks to the longest word. Text wraps aggressively. */
+}
+
+.max {
+  width: max-content;
+  /* Expands to fit all content on one line. May overflow container. */
+}
+
+.fit {
+  width: fit-content;
+  /* Like max-content, but capped at the container width. */
+}
+```
+
+```html
+<div class="container" style="width: 300px; border: 1px solid #ccc;">
+  <div class="min">This text wraps at every opportunity</div>
+  <div class="max">This text stays on one line even if it overflows the container</div>
+  <div class="fit">This text stays on one line if it fits, otherwise wraps at 300px</div>
+</div>
+```
+
+### Using min-content for Fixed-Width Columns
+
+`min-content` is useful in grid layouts when you want a column to be exactly as wide as its narrowest content:
+
+```css
+.table-layout {
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+  gap: 1rem;
+}
+```
+
+```html
+<div class="table-layout">
+  <span>Status</span>
+  <span>Description of the item that can be long</span>
+  <span>Actions</span>
+</div>
+```
+
+The first and last columns shrink to their content; the middle column takes the remaining space.
+
+### fit-content() Function in Grid
+
+The `fit-content()` function (with parentheses) is specifically for grid track sizing. It accepts a maximum length argument:
+
+```css
+.sidebar-layout {
+  display: grid;
+  grid-template-columns: fit-content(300px) 1fr;
+  gap: 2rem;
+}
+```
+
+The sidebar column shrinks to its content but never exceeds 300px. This is different from `minmax(auto, 300px)` because `fit-content()` will not grow beyond the content width even if space is available.
+
+### Practical Example: Notification Badge
+
+```css
+.badge {
+  display: block;
+  width: fit-content;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  background: #ef4444;
+  color: white;
+  border-radius: 9999px;
+}
+```
+
+```html
+<span class="badge">3</span>
+<span class="badge">99+</span>
+```
+
+Each badge is exactly as wide as its content. No fixed width, no overflow.
+
+## Live Preview
+
+<CssPreview client:load
+  title="width: fit-content vs width: 100%"
+  html={`
+    <div class="demo">
+      <div class="section">
+        <h4>width: 100% (default block)</h4>
+        <div class="tag full">New Feature</div>
+        <div class="tag full">Badge</div>
+      </div>
+      <div class="section">
+        <h4>width: fit-content</h4>
+        <div class="tag fit">New Feature</div>
+        <div class="tag fit">Badge</div>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .section {
+      flex: 1;
+    }
+    .section h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #334155;
+    }
+    .tag {
+      padding: 6px 16px;
+      background: #e0e7ff;
+      border-radius: 9999px;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .full {
+      width: 100%;
+    }
+    .fit {
+      width: fit-content;
+    }
+    `} />
+
+## Common AI Mistakes
+
+- **Using `width: auto` when `width: fit-content` is needed.** `width: auto` on a block element means "stretch to fill the container," which is the opposite of shrink-to-fit. AI agents often default to `auto` thinking it means "automatic sizing."
+- **Using `display: inline-block` as a workaround for shrink-to-fit.** While `inline-block` does cause shrink-to-fit behavior, it changes the element's formatting context and can cause alignment issues. `width: fit-content` achieves the same sizing without changing the display type.
+- **Confusing `fit-content` (keyword) with `fit-content()` (function).** The keyword works anywhere `width`, `height`, `min-width`, etc. accept a value. The function is only valid in grid track sizing (`grid-template-columns`, `grid-template-rows`).
+- **Using `max-content` when `fit-content` is intended.** `max-content` can cause overflow because it ignores the container width. `fit-content` is almost always the safer choice.
+- **Setting `width: 100%` on elements that should shrink.** AI agents frequently apply `width: 100%` to buttons, tags, and badges, forcing them to fill the container when they should size to their content.
+- **Forgetting that `min-content` wraps text aggressively.** It breaks at every soft wrap opportunity, which can produce very narrow, hard-to-read elements. It is mainly useful for grid track sizing, not for general element widths.
+
+## When to Use
+
+### fit-content
+
+- Block elements that should shrink to their content: tags, badges, tooltips, captions
+- Centering a content-width element with `margin-inline: auto`
+- Any scenario where you want "as narrow as the content, but no wider than the container"
+
+### max-content
+
+- When you need to know or enforce the natural single-line width of content
+- Calculating intrinsic sizes for animations or measurements
+- Rarely used for final layout because it can overflow
+
+### min-content
+
+- Grid columns that should be as narrow as possible (icon columns, status labels)
+- Understanding the minimum space an element needs before it overflows
+- Rarely used as a standalone `width` value because it wraps text aggressively
+
+### fit-content() function
+
+- Grid track sizing where you want a column to shrink to content but cap at a maximum width
+- Sidebar layouts: `grid-template-columns: fit-content(250px) 1fr`
+
+## Tailwind CSS
+
+Tailwind provides `w-fit`, `w-min`, and `w-max` utilities for intrinsic sizing.
+
+### w-fit vs Default Width
+
+<TailwindPreview client:load
+  title="Tailwind: w-fit Shrink-to-Content"
+  html={`    <div class="flex gap-8 p-6">
+      <div class="flex-1">
+        <h4 class="text-sm font-semibold text-slate-600 mb-3">Default (stretches)</h4>
+        <div class="bg-indigo-100 px-4 py-1.5 rounded-full text-sm mb-2">New Feature</div>
+        <div class="bg-indigo-100 px-4 py-1.5 rounded-full text-sm">Badge</div>
+      </div>
+      <div class="flex-1">
+        <h4 class="text-sm font-semibold text-slate-600 mb-3">w-fit (shrinks)</h4>
+        <div class="w-fit bg-indigo-100 px-4 py-1.5 rounded-full text-sm mb-2">New Feature</div>
+        <div class="w-fit bg-indigo-100 px-4 py-1.5 rounded-full text-sm">Badge</div>
+      </div>
+    </div>`}
+  height={140} />
+
+### Centered Fit-Content Element
+
+<TailwindPreview client:load
+  title="Tailwind: mx-auto + w-fit Centering"
+  html={`    <div class="p-6 bg-slate-50">
+      <div class="mx-auto w-fit bg-red-500 text-white px-5 py-1 rounded-full text-sm font-semibold">
+        Centered Badge
+      </div>
+    </div>`}
+  height={80} />
+
+## References
+
+- [fit-content - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/fit-content)
+- [max-content - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/max-content)
+- [min-content - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/min-content)
+- [fit-content() - CSS-Tricks](https://css-tricks.com/almanac/functions/f/fit-content/)
+- [Understanding min-content, max-content, and fit-content in CSS - LogRocket Blog](https://blog.logrocket.com/understanding-min-content-max-content-fit-content-css/)

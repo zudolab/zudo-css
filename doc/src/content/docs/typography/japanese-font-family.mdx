@@ -1,0 +1,387 @@
+---
+title: Japanese Font Family Specification
+sidebar_position: 9
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Specifying `font-family` for Japanese websites is significantly more complex than for Latin-script sites. Simply writing `sans-serif` produces poor results — browsers fall back to system defaults that vary widely by OS and may render Japanese characters as ugly bitmapped fonts on older systems. There are several compounding challenges:
+
+1. **Platform fragmentation**: macOS ships with Hiragino fonts, Windows 10+ uses Yu Gothic, and Linux/Android relies on Noto Sans CJK. Each platform requires explicit font names to get good results.
+2. **Japanese fonts contain Latin glyphs**: Every Japanese font includes its own rendition of ASCII characters. If the Japanese font is listed first, all Latin text (English, numbers, symbols) gets rendered in the Japanese font's Latin variant — typically wider and less refined than dedicated Latin typefaces.
+3. **Yu Gothic weight rendering bug**: Yu Gothic on Windows renders with a hairline-thin stroke weight at `font-weight: normal` due to a Windows font mapping quirk. Without a workaround, Japanese text appears unnaturally light.
+4. **Web font size**: A Japanese character set contains thousands of glyphs. Noto Sans JP weighs ~9MB uncompressed (TTF); even as WOFF2, a full character set is several MB — far too large for practical web font usage without subsetting or a variable font strategy.
+
+## The Solution
+
+The modern approach uses a carefully ordered system font stack. The ordering principle is:
+
+1. Latin web font(s) first — so English text uses the intended typeface
+2. Japanese system fonts, platform by platform
+3. `sans-serif` as the final catch-all
+
+### Platform Font Reference
+
+| Platform | Recommended Font | Notes |
+|---|---|---|
+| macOS / iOS | `"Hiragino Sans"` | Default since macOS 10.11 El Capitan; 10 weight variants |
+| macOS (compatibility) | `"Hiragino Kaku Gothic ProN"` | Older but widely supported; only 2 weights |
+| Windows 10+ | `"Yu Gothic UI"` | UI variant with correct weight mapping |
+| Windows 10 (fallback) | `"Yu Gothic"` | Original; renders thin at default weight |
+| Windows Vista–8.1 | `"Meiryo"` | Legacy; no longer the default, include for old OS support |
+| Linux / Android | `"Noto Sans CJK JP"` | Open source; packaged by most Linux distros |
+| Android (Google Fonts) | `"Noto Sans JP"` | Subset version used on Android and via Google Fonts |
+
+### The Recommended Stack
+
+```css
+body {
+  font-family:
+    /* 1. Latin web font (if loaded via @font-face or Google Fonts) */
+    'Inter',
+    /* 2. macOS / iOS — modern Hiragino (10 weights) */
+    'Hiragino Sans',
+    /* 3. Windows 10+ — "Yu Gothic UI" fixes the weight rendering bug */
+    'Yu Gothic UI',
+    'Yu Gothic',
+    /* 4. Older macOS / iOS compatibility */
+    'Hiragino Kaku Gothic ProN',
+    /* 5. Linux / Android */
+    'Noto Sans CJK JP',
+    'Noto Sans JP',
+    /* 6. Final fallback */
+    sans-serif;
+}
+```
+
+### Without a Latin Web Font
+
+If you are not loading any Latin web fonts, drop step 1. The browser will use the Latin glyphs built into whichever Japanese font resolves first, which is acceptable but not ideal for branded typography:
+
+```css
+body {
+  font-family:
+    'Hiragino Sans',
+    'Yu Gothic UI',
+    'Yu Gothic',
+    'Hiragino Kaku Gothic ProN',
+    'Noto Sans CJK JP',
+    'Noto Sans JP',
+    sans-serif;
+}
+```
+
+### The Yu Gothic Weight Fix
+
+`"Yu Gothic UI"` is a UI-optimized variant of Yu Gothic included in Windows 10 and later. It maps font-weight values correctly, so `font-weight: 400` renders at a readable stroke weight. The original `"Yu Gothic"` maps all weights below 700 to the lightest available variant, making body text appear hairline-thin.
+
+Always list `"Yu Gothic UI"` before `"Yu Gothic"` in your stack:
+
+```css
+/* Wrong — Yu Gothic renders thin at 400 on Windows */
+font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+
+/* Correct — Yu Gothic UI has proper weight mapping */
+font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', sans-serif;
+```
+
+## Code Examples
+
+### Recommended Stack in Action
+
+<CssPreview client:load
+  title="Recommended Japanese Font Stack — Japanese and Latin Mixed Text"
+  height={280}
+  html={`    <div class="font-demo">
+      <p class="font-demo__label">font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Noto Sans CJK JP', sans-serif</p>
+      <p class="font-demo__ja">日本語のWebサイトにおけるフォント指定は、OSによって使用できるフォントが異なるため、複数のフォントをフォールバックとして指定する必要があります。</p>
+      <p class="font-demo__mix">Mixed text: CSS font-family for Japanese (日本語) websites in 2025.</p>
+      <p class="font-demo__en">Latin only: The quick brown fox jumps over the lazy dog. 0123456789.</p>
+    </div>`}
+  css={`.font-demo {
+      padding: 1.5rem;
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+      line-height: 1.8;
+    }
+    .font-demo__label {
+      font-size: 0.7rem;
+      color: hsl(220, 10%, 55%);
+      background: hsl(220, 15%, 95%);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      margin: 0 0 1rem;
+      font-family: monospace;
+      line-height: 1.4;
+    }
+    .font-demo__ja {
+      font-size: 1rem;
+      color: hsl(220, 20%, 15%);
+      margin: 0 0 0.75rem;
+    }
+    .font-demo__mix {
+      font-size: 1rem;
+      color: hsl(220, 20%, 25%);
+      margin: 0 0 0.75rem;
+    }
+    .font-demo__en {
+      font-size: 1rem;
+      color: hsl(220, 20%, 35%);
+      margin: 0;
+    }`} />
+
+### Latin Font Ordering: Before vs After Japanese Fonts
+
+Japanese fonts ship with their own Latin glyphs. Listing a Japanese font before your Latin font causes all ASCII characters to be rendered in the Japanese font's Latin variant — typically wider, with different spacing and stroke contrast. Always list Latin fonts first.
+
+<CssPreview client:load
+  title="Latin Font Ordering — Japanese Font First vs Latin Font First"
+  height={320}
+  html={`    <div class="ordering-demo">
+      <div class="ordering-demo__col ordering-demo__col--wrong">
+        <div class="ordering-demo__badge ordering-demo__badge--wrong">Wrong order</div>
+        <p class="ordering-demo__stack-label">Hiragino Sans, system-ui, sans-serif</p>
+        <p class="ordering-demo__text ordering-demo__text--wrong-order">
+          CSS font-family 2025<br>
+          ABCDEFabcdef<br>
+          0123456789<br>
+          日本語テキスト
+        </p>
+        <p class="ordering-demo__note">Latin characters rendered in Japanese font's Latin variant — wider proportions, different stroke contrast</p>
+      </div>
+      <div class="ordering-demo__col ordering-demo__col--correct">
+        <div class="ordering-demo__badge ordering-demo__badge--correct">Correct order</div>
+        <p class="ordering-demo__stack-label">system-ui, Hiragino Sans, sans-serif</p>
+        <p class="ordering-demo__text ordering-demo__text--correct-order">
+          CSS font-family 2025<br>
+          ABCDEFabcdef<br>
+          0123456789<br>
+          日本語テキスト
+        </p>
+        <p class="ordering-demo__note">Latin characters use system-ui (San Francisco / Segoe UI), Japanese uses Hiragino</p>
+      </div>
+    </div>`}
+  css={`.ordering-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1.25rem;
+    }
+    .ordering-demo__col {
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .ordering-demo__col--wrong {
+      background: hsl(0, 15%, 96%);
+      border: 1px solid hsl(0, 25%, 88%);
+    }
+    .ordering-demo__col--correct {
+      background: hsl(140, 15%, 95%);
+      border: 1px solid hsl(140, 25%, 82%);
+    }
+    .ordering-demo__badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .ordering-demo__badge--wrong {
+      background: hsl(0, 70%, 90%);
+      color: hsl(0, 60%, 35%);
+    }
+    .ordering-demo__badge--correct {
+      background: hsl(140, 55%, 85%);
+      color: hsl(140, 50%, 28%);
+    }
+    .ordering-demo__stack-label {
+      font-size: 0.65rem;
+      font-family: monospace;
+      color: hsl(220, 10%, 50%);
+      margin: 0 0 0.75rem;
+      line-height: 1.4;
+    }
+    .ordering-demo__text {
+      font-size: 1.1rem;
+      line-height: 1.9;
+      color: hsl(220, 20%, 15%);
+      margin: 0 0 0.75rem;
+    }
+    .ordering-demo__text--wrong-order {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+    }
+    .ordering-demo__text--correct-order {
+      font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Noto Sans CJK JP', sans-serif;
+    }
+    .ordering-demo__note {
+      font-size: 0.72rem;
+      color: hsl(220, 15%, 50%);
+      line-height: 1.5;
+      margin: 0;
+      font-family: system-ui, sans-serif;
+    }`} />
+
+### Font Weight Variations with Japanese Text
+
+Japanese fonts support the same `font-weight` scale as Latin fonts, but behavior varies by OS font and weight availability. Hiragino Sans offers 10 weights (W0–W9), while Hiragino Kaku Gothic ProN only has 2 (W3, W6).
+
+<CssPreview client:load
+  title="Font Weight Scale — Japanese Text at Different Weights"
+  height={360}
+  html={`    <div class="weight-demo">
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">300</span>
+        <p class="weight-demo__text" style="font-weight: 300">フォントウェイト Light — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">400</span>
+        <p class="weight-demo__text" style="font-weight: 400">フォントウェイト Regular — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">500</span>
+        <p class="weight-demo__text" style="font-weight: 500">フォントウェイト Medium — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">600</span>
+        <p class="weight-demo__text" style="font-weight: 600">フォントウェイト SemiBold — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">700</span>
+        <p class="weight-demo__text" style="font-weight: 700">フォントウェイト Bold — The quick brown fox jumps over the lazy dog</p>
+      </div>
+      <div class="weight-demo__row">
+        <span class="weight-demo__label">900</span>
+        <p class="weight-demo__text" style="font-weight: 900">フォントウェイト Black — The quick brown fox jumps over the lazy dog</p>
+      </div>
+    </div>`}
+  css={`.weight-demo {
+      padding: 1rem 1.5rem;
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+    }
+    .weight-demo__row {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      border-bottom: 1px solid hsl(220, 15%, 92%);
+      padding: 0.4rem 0;
+    }
+    .weight-demo__row:last-child {
+      border-bottom: none;
+    }
+    .weight-demo__label {
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: hsl(220, 15%, 55%);
+      min-width: 2.5rem;
+      flex-shrink: 0;
+    }
+    .weight-demo__text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: hsl(220, 20%, 15%);
+      margin: 0;
+    }`} />
+
+### System Stack vs Minimal Fallback
+
+This demo shows the difference between a comprehensive system stack and just relying on `sans-serif`. On most modern desktop browsers the result may look similar, but on Linux systems without good CJK font configuration, `sans-serif` can fall back to bitmap or poorly-shaped fonts.
+
+<CssPreview client:load
+  title="Comprehensive Stack vs sans-serif Only"
+  height={260}
+  html={`    <div class="stack-compare">
+      <div class="stack-compare__col">
+        <div class="stack-compare__header">Recommended stack</div>
+        <p class="stack-compare__text stack-compare__text--full">
+          日本語のWebサイトでは、各OSに対応したフォントを明示的に指定することが重要です。
+        </p>
+        <p class="stack-compare__subtext">春はあけぼの。やうやう白くなりゆく山際、少し明かりて、紫だちたる雲の細くたなびきたる。</p>
+      </div>
+      <div class="stack-compare__col">
+        <div class="stack-compare__header">sans-serif only</div>
+        <p class="stack-compare__text stack-compare__text--minimal">
+          日本語のWebサイトでは、各OSに対応したフォントを明示的に指定することが重要です。
+        </p>
+        <p class="stack-compare__subtext stack-compare__subtext--minimal">春はあけぼの。やうやう白くなりゆく山際、少し明かりて、紫だちたる雲の細くたなびきたる。</p>
+      </div>
+    </div>`}
+  css={`.stack-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: hsl(220, 15%, 88%);
+    }
+    .stack-compare__col {
+      background: hsl(0, 0%, 100%);
+      padding: 1.25rem;
+    }
+    .stack-compare__header {
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: hsl(220, 30%, 50%);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid hsl(220, 15%, 90%);
+    }
+    .stack-compare__text {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: hsl(220, 20%, 15%);
+      margin: 0 0 0.75rem;
+    }
+    .stack-compare__text--full {
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+    }
+    .stack-compare__text--minimal {
+      font-family: sans-serif;
+    }
+    .stack-compare__subtext {
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: hsl(220, 15%, 45%);
+      margin: 0;
+      font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+    }
+    .stack-compare__subtext--minimal {
+      font-family: sans-serif;
+    }`} />
+
+## Common AI Mistakes
+
+- **Omitting Japanese system fonts entirely** — using only `system-ui, sans-serif` without any Japanese font names, which leaves font selection entirely to the browser's default mapping and produces inconsistent results across platforms
+- **Listing Japanese fonts before Latin fonts** — causing English text, numbers, and punctuation to be rendered in the Japanese font's Latin glyph set rather than the intended Latin typeface
+- **Using `"Yu Gothic"` without `"Yu Gothic UI"`** — resulting in hairline-thin text on Windows 10 at normal weight; `"Yu Gothic UI"` must come first in the stack
+- **Including `"Meiryo"` as the primary Windows font** — Meiryo was the default on Windows Vista and 7, but Yu Gothic has been the default since Windows 10; Meiryo should appear after Yu Gothic in a compatibility fallback position
+- **Loading Japanese web fonts without subsetting** — downloading full Noto Sans JP or similar (~9MB+) for every page, when system fonts would render just as well with zero download cost
+- **Using `italic` style on Japanese text** — Japanese fonts have no true italic variant; browsers apply a CSS oblique transform that makes characters look slanted and unnatural
+- **Assuming Hiragino Kaku Gothic ProN is the modern macOS font** — `"Hiragino Sans"` (added in macOS 10.11) is the modern replacement with 10 weight variants vs ProN's 2; always list Hiragino Sans first
+
+## When to Use
+
+**Use the full system font stack** for any Japanese-language website or web application where:
+- The page contains Japanese text (body copy, headings, UI labels)
+- You want consistent rendering across macOS, Windows, and Linux
+- You are not loading a Japanese web font (the common case for performance)
+
+**Include a Latin web font first** when:
+- Your brand uses a specific Latin typeface (Inter, Noto Sans, Roboto, etc.)
+- Consistent Latin rendering across platforms is important
+- The web font is already being loaded for other reasons (variable fonts, etc.)
+
+**Load a Japanese web font** (Noto Sans JP, BIZ UDPGothic, etc.) only when:
+- Exact cross-platform visual consistency is required (print-quality design systems)
+- You are using font subsetting or progressive loading strategies to control file size
+- The design calls for a specific glyph style not available in system fonts
+
+## References
+
+- [Best Japanese CSS font-family in 2025 — Bloomstreet Japan](https://www.bloomstreetjapan.com/best-japanese-font-setting-for-websites/)
+- [Japanese web safe fonts and how to use them — JStockMedia](https://jstockmedia.com/blog/japanese-web-safe-fonts-and-how-to-use-them-in-web-design/)
+- [system-fonts/modern-font-stacks — GitHub](https://github.com/system-fonts/modern-font-stacks)
+- [Japanese typography on the web — Pavel Laptev / Medium](https://pavellaptev.medium.com/japanese-typography-on-the-web-tips-and-tricks-981f120ad20e)
+- [MDN: font-family](https://developer.mozilla.org/en-US/docs/Web/CSS/font-family)
+- [MDN: font-variant-east-asian](https://developer.mozilla.org/en-US/docs/Web/CSS/font-variant-east-asian)

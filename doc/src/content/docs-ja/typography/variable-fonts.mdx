@@ -1,0 +1,282 @@
+---
+title: バリアブルフォント
+sidebar_position: 6
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+従来のWebタイポグラフィでは、ウェイト、幅、スタイルの組み合わせごとに別々のフォントファイルを読み込む必要がありました。一般的なプロジェクトでは、本文テキストだけでレギュラー、ボールド、イタリック、ボールドイタリックの4ファイルを読み込みます。AIエージェントは複数の静的フォントウェイト（300、400、500、600、700）をそれぞれ別の`@font-face`宣言で参照するCSSを生成しがちで、5つ以上のHTTPリクエストと大幅に増大したダウンロードサイズを招きます。バリアブルフォント（Variable Fonts）は、バリエーションの全範囲を1つのファイルにまとめることでこの問題を解決します。
+
+## 解決方法
+
+バリアブルフォントには1つ以上の**バリエーション軸**が含まれています — ウェイト、幅、スラントなどのプロパティの連続的な範囲です。1つのバリアブルフォントファイルが複数の静的ファイルを置き換え、ネットワークリクエストを削減し、それらの軸に沿った任意の値間のスムーズな遷移を可能にします。CSSの`font-variation-settings`プロパティは低レベルの制御を提供し、標準CSSプロパティ（`font-weight`、`font-stretch`、`font-style`）は範囲を受け入れ、登録済み軸に直接マッピングされるようになりました。
+
+### 登録済み軸
+
+| 軸タグ   | CSSプロパティ         | 説明                           | 範囲の例        |
+| -------- | --------------------- | ------------------------------ | --------------- |
+| `wght`   | `font-weight`         | ウェイト（Thin〜Black）        | 100–900         |
+| `wdth`   | `font-stretch`        | 幅（Condensed〜Expanded）      | 75%–125%        |
+| `slnt`   | `font-style`          | スラント角度                   | -12deg–0deg     |
+| `ital`   | `font-style`          | イタリック（バイナリトグル）   | 0 or 1          |
+| `opsz`   | `font-optical-sizing` | オプティカルサイズ調整         | 8–144           |
+
+## コード例
+
+### 基本的なバリアブルフォントのセットアップ
+
+```css
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900; /* ウェイト範囲全体を宣言 */
+  font-display: swap;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+h1 {
+  font-weight: 750; /* 範囲内の任意の値 — 100刻みに限定されない */
+}
+
+.light-text {
+  font-weight: 350;
+}
+
+.bold-text {
+  font-weight: 680;
+}
+```
+
+<CssPreview client:load
+  title="バリアブルフォントのウェイト範囲 — きめ細かなウェイト制御"
+  html={`<div class="vf-demo">
+    <div class="weight-row"><span class="label">100 Thin</span><span class="sample" style="font-weight:100">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">250</span><span class="sample" style="font-weight:250">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">400 Regular</span><span class="sample" style="font-weight:400">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">550</span><span class="sample" style="font-weight:550">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">700 Bold</span><span class="sample" style="font-weight:700">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">850</span><span class="sample" style="font-weight:850">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">900 Black</span><span class="sample" style="font-weight:900">The quick brown fox</span></div>
+    </div>`}
+  css={`.vf-demo {
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .weight-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.4rem 0.75rem;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+    .label {
+      font-size: 0.75rem;
+      color: #6c63ff;
+      font-weight: 600;
+      min-width: 100px;
+      flex-shrink: 0;
+    }
+    .sample {
+      font-size: 1.2rem;
+      color: #1a1a2e;
+    }`}
+  height={320} />
+
+### 標準CSSプロパティの使用（推奨）
+
+```css
+/* 正しい: 登録済み軸には標準CSSプロパティを使う */
+h1 {
+  font-weight: 800;
+  font-stretch: 110%;
+  font-style: oblique 8deg;
+}
+
+/* 避けるべき: 登録済み軸に低レベルのfont-variation-settingsを使う */
+h1 {
+  font-variation-settings: "wght" 800, "wdth" 110, "slnt" -8;
+}
+```
+
+標準プロパティが推奨される理由は、カスケードが正しく動作し、`inherit`や`initial`と連携し、互いをオーバーライドしないからです。`font-variation-settings`では、1つの軸を設定すると他のすべてがデフォルトにリセットされます。
+
+### カスタム軸
+
+カスタム軸（大文字のタグで識別）には`font-variation-settings`が必要です：
+
+```css
+/* GRAD = Grade軸（カスタム）、幅を変えずにストロークウェイトを調整 */
+.dark-bg-text {
+  font-variation-settings: "GRAD" 150;
+}
+
+/* CASL = RecursiveフォントのCasual軸 */
+.casual-text {
+  font-variation-settings: "CASL" 1;
+}
+
+/* カスタム軸と標準プロパティの組み合わせ */
+.display-text {
+  font-weight: 700;
+  font-variation-settings: "GRAD" 100, "CASL" 0.5;
+}
+```
+
+### カスタムプロパティによるレスポンシブウェイト
+
+```css
+:root {
+  --heading-weight: 700;
+  --body-weight: 400;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --heading-weight: 600; /* 小さな画面では読みやすさのためにやや軽く */
+    --body-weight: 420; /* 小さな画面での視認性のためにやや重く */
+  }
+}
+
+h1,
+h2,
+h3 {
+  font-weight: var(--heading-weight);
+}
+
+body {
+  font-weight: var(--body-weight);
+}
+```
+
+### フォントバリエーションのアニメーション
+
+```css
+.hover-weight {
+  font-weight: 400;
+  transition: font-weight 0.3s ease;
+}
+
+.hover-weight:hover {
+  font-weight: 700;
+}
+
+/* スムーズなウェイトアニメーション — 静的フォントでは不可能 */
+@keyframes breathe {
+  0%,
+  100% {
+    font-weight: 300;
+  }
+  50% {
+    font-weight: 700;
+  }
+}
+
+.animated-text {
+  animation: breathe 3s ease-in-out infinite;
+}
+```
+
+### オプティカルサイジング
+
+```css
+/* 自動オプティカルサイジング（フォントがサポートしている場合はデフォルトで有効） */
+body {
+  font-optical-sizing: auto;
+}
+
+/* 特定のケースでの手動制御 */
+.small-caption {
+  font-size: 0.75rem;
+  font-optical-sizing: auto; /* 小さいサイズに合わせてストロークコントラストを調整 */
+}
+
+.display-hero {
+  font-size: 4rem;
+  font-optical-sizing: auto; /* 大きなディスプレイサイズに合わせて調整 */
+}
+```
+
+### @supportsによるプログレッシブエンハンスメント
+
+```css
+/* フォールバック: 静的フォントファイル */
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont-regular.woff2") format("woff2");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont-bold.woff2") format("woff2");
+  font-weight: 700;
+}
+
+/* 対応ブラウザでのバリアブルフォントオーバーライド */
+@supports (font-variation-settings: normal) {
+  @font-face {
+    font-family: "MyFont";
+    src: url("/fonts/myfont-variable.woff2") format("woff2-variations");
+    font-weight: 100 900;
+  }
+}
+```
+
+### ダークモードのウェイト補正
+
+```css
+/* 暗い背景のテキストは太く見える — ウェイトを下げて補正 */
+@media (prefers-color-scheme: dark) {
+  body {
+    font-weight: 350; /* ライトモードの400より軽く */
+  }
+
+  h1 {
+    font-weight: 650; /* ライトモードの700より軽く */
+  }
+}
+```
+
+## AIがよくやるミス
+
+- 1つのバリアブルフォントファイルの代わりに複数の静的フォントファイル（レギュラー、ミディアム、セミボールド、ボールド）を読み込み、HTTPリクエストを不必要に増やす
+- 登録済み軸（ウェイト、幅、スラント）に標準CSSプロパティではなく`font-variation-settings`を使う — カスケードが壊れ、未指定の軸がリセットされる
+- `@font-face`でウェイト範囲を宣言しない（例: `font-weight: 100 900`）ため、ブラウザがデフォルトウェイトのみを使用する
+- バリアブルフォントのウェイトを静的フォントと同じように扱い、100刻みの値（400、500、600）しか使わない — 範囲内の任意の値が有効
+- ダークモードでテキストが太く見えることを補正しない — バリアブルフォントなら30〜50ウェイトユニットを減らすのが簡単
+- `font-variation-settings`の値はいずれか1つの軸を設定するとすべてリセットされることを忘れる — 各宣言に制御したいすべての軸を含める必要がある
+- `@font-face`の`src`ディスクリプタで`format("woff2-variations")`ではなく`format("woff2")`を使う。ただし、ほとんどのモダンブラウザはどちらも受け入れる
+
+## 使い分け
+
+### バリアブルフォントが最適な場合
+
+- 同じフォントファミリーの3つ以上のウェイトを使うプロジェクト — 1ファイルで通常、複数の静的ファイルより小さくなる
+- きめ細かなウェイト制御が必要なデザイン（例: 350、450、550）
+- ウェイト、幅、スラントの変化を含むアニメーションやトランジション
+- ウェイト補正で可読性を向上させるダークモードデザイン
+- ビューポートサイズやコンテキストに応じてウェイトを調整するレスポンシブデザイン
+
+### 静的フォントを使い続けるべき場合
+
+- 1〜2ウェイトしか必要ない場合 — 1つの静的ファイルがバリアブル版より小さい場合がある
+- 選択した書体がバリアブルフォントとして提供されていない場合
+- レガシーブラウザサポート（IE11）がハードな要件の場合
+
+## 参考リンク
+
+- [MDN: Variable fonts guide](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Fonts/Variable_fonts)
+- [MDN: font-variation-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variation-settings)
+- [web.dev: Introduction to variable fonts](https://web.dev/articles/variable-fonts)
+- [Designing with Variable Fonts](https://variablefonts.io/about-variable-fonts/)
+- [Variable Fonts: Reduce Bloat And Fix Layout Shifts](https://inkbotdesign.com/variable-fonts/)
+- [A Variable Fonts Primer — Google Fonts](https://fonts.google.com/knowledge/introducing_type/introducing_variable_fonts)

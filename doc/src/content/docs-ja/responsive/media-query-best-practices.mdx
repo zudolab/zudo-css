@@ -1,0 +1,375 @@
+---
+title: メディアクエリのベストプラクティス
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+AIエージェントはメディアクエリ（media query）をレスポンシブ対応のデフォルト（かつ唯一の）ツールとして使います。任意のデバイスベースのブレークポイントを多用し、ユーザー設定クエリ（`prefers-reduced-motion`、`prefers-color-scheme`、`prefers-contrast`）を無視し、機能クエリ（`@supports`）も使いません。また、デスクトップファーストのスタイルを書いてからモバイル向けにすべてをオーバーライドする傾向があり、CSSが肥大化します。
+
+## 解決方法
+
+メディアクエリはレスポンシブデザインのための多くのツールの一つとして使うべきです。ページレベルのレイアウト変更やユーザー設定の検出に使いましょう。デバイス固有のブレークポイントよりもコンテンツ駆動のブレークポイントを優先し、モバイルファーストのアプローチを採用しましょう。
+
+<CssPreview client:load
+  title="モバイルファーストレイアウト — ビューポートボタンでブレークポイントを確認"
+  html={`
+    <div class="layout">
+      <header class="layout__header">Header</header>
+      <nav class="layout__nav">Navigation</nav>
+      <main class="layout__main">Main Content Area</main>
+      <aside class="layout__sidebar">Sidebar</aside>
+      <footer class="layout__footer">Footer</footer>
+    </div>
+    `}
+  css={`
+    /* Mobile-first: base styles for small screens */
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      min-height: 300px;
+    }
+    
+    .layout__header,
+    .layout__nav,
+    .layout__main,
+    .layout__sidebar,
+    .layout__footer {
+      padding: 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .layout__header {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .layout__nav {
+      background: #8b5cf6;
+      color: white;
+    }
+    
+    .layout__main {
+      background: #22c55e;
+      color: white;
+      flex: 1;
+      min-height: 100px;
+    }
+    
+    .layout__sidebar {
+      background: #f59e0b;
+      color: white;
+    }
+    
+    .layout__footer {
+      background: #64748b;
+      color: white;
+    }
+    
+    /* Tablet: two-column layout */
+    @media (min-width: 600px) {
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto 1fr auto;
+    }
+    .layout__header {
+      grid-column: 1 / -1;
+    }
+    .layout__nav {
+      grid-column: 1 / -1;
+    }
+    .layout__footer {
+      grid-column: 1 / -1;
+    }
+    }
+    
+    /* Desktop: sidebar layout */
+    @media (min-width: 900px) {
+    .layout {
+    grid-template-columns: 1fr 200px;
+    grid-template-rows: auto auto 1fr auto;
+    }
+    .layout__header {
+    grid-column: 1 / -1;
+    }
+    .layout__nav {
+    grid-column: 1 / -1;
+    }
+    .layout__main {
+    grid-column: 1;
+    }
+    .layout__sidebar {
+    grid-column: 2;
+    }
+    .layout__footer {
+    grid-column: 1 / -1;
+    }
+    }
+    `}
+  height={350} />
+
+## コード例
+
+### モバイルファースト vs デスクトップファースト
+
+モバイルファーストは `min-width` クエリを使い、最小の画面から始めて複雑さを追加していきます：
+
+```css
+/* Mobile-first: base styles are for small screens */
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 48rem) {
+  .layout {
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    max-width: 75rem;
+    margin-inline: auto;
+  }
+}
+```
+
+デスクトップファーストは `max-width` クエリを使い、最大の画面から始めて機能を削除していきます：
+
+```css
+/* Desktop-first: more overrides needed */
+.layout {
+  display: flex;
+  flex-direction: row;
+  max-width: 75rem;
+  margin-inline: auto;
+}
+
+@media (max-width: 63.999rem) {
+  .layout {
+    max-width: none;
+  }
+}
+
+@media (max-width: 47.999rem) {
+  .layout {
+    flex-direction: column;
+  }
+}
+```
+
+モバイルファーストの方がCSS全体が少なくなります。ビューポートが大きくなるにつれてスタイルを追加するのであって、削除するのではないからです。
+
+### コンテンツ駆動のブレークポイント
+
+特定のデバイスをターゲットにするのではなく、レイアウトが崩れる箇所にブレークポイントを追加しましょう：
+
+```css
+/* Let the content dictate the breakpoint */
+.article {
+  max-width: 65ch; /* Optimal reading width */
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.article-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* Add a second column when there is enough room */
+@media (min-width: 55rem) {
+  .article-grid {
+    grid-template-columns: 1fr 20rem;
+  }
+}
+```
+
+### ユーザー設定: prefers-color-scheme
+
+```css
+:root {
+  --color-text: #1a1a1a;
+  --color-bg: #ffffff;
+  --color-surface: #f5f5f5;
+  --color-border: #e0e0e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e0e0e0;
+    --color-bg: #1a1a1a;
+    --color-surface: #2a2a2a;
+    --color-border: #3a3a3a;
+  }
+}
+
+body {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+```
+
+data 属性を使って手動オーバーライドを可能にします：
+
+```css
+[data-theme="light"] {
+  --color-text: #1a1a1a;
+  --color-bg: #ffffff;
+  --color-surface: #f5f5f5;
+  --color-border: #e0e0e0;
+}
+
+[data-theme="dark"] {
+  --color-text: #e0e0e0;
+  --color-bg: #1a1a1a;
+  --color-surface: #2a2a2a;
+  --color-border: #3a3a3a;
+}
+```
+
+### ユーザー設定: prefers-reduced-motion
+
+```css
+/* Remove transitions and animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+より細やかなアプローチについては、専用の [prefers-reduced-motion](../interactive/prefers-reduced-motion.mdx) ページを参照してください。
+
+### ユーザー設定: prefers-contrast
+
+```css
+@media (prefers-contrast: more) {
+  :root {
+    --color-text: #000000;
+    --color-bg: #ffffff;
+    --color-border: #000000;
+  }
+
+  .button {
+    border: 2px solid currentColor;
+  }
+}
+
+@media (prefers-contrast: less) {
+  :root {
+    --color-text: #333333;
+    --color-bg: #fafafa;
+    --color-border: #cccccc;
+  }
+}
+```
+
+### インタラクションメディアクエリ: hover と pointer
+
+```css
+/* Only apply hover styles on devices that support hover */
+@media (hover: hover) {
+  .card {
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  }
+}
+
+/* Increase touch targets on coarse pointer devices */
+@media (pointer: coarse) {
+  .nav-link {
+    min-height: 44px;
+    padding-block: 0.75rem;
+  }
+}
+```
+
+### @supports による機能クエリ
+
+```css
+/* Base layout */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.grid > * {
+  flex: 1 1 300px;
+}
+
+/* Enhanced layout for browsers with grid subgrid support */
+@supports (grid-template-columns: subgrid) {
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .grid > * {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3;
+  }
+}
+```
+
+### クエリの組み合わせ
+
+```css
+/* Dark mode + reduced motion */
+@media (prefers-color-scheme: dark) and (prefers-reduced-motion: reduce) {
+  .notification {
+    background-color: var(--color-surface);
+    /* No entrance animation, just appear */
+  }
+}
+```
+
+## AIがよくやるミス
+
+- **デバイス固有のブレークポイント**: 「iPadの幅だから」という理由で `@media (max-width: 768px)` を使ってしまいます。ブレークポイントはデバイスカタログではなくコンテンツに基づくべきです。
+- **デスクトップファーストのアプローチ**: まず完全なデスクトップスタイルを書いてからモバイル向けに削っていき、不要なオーバーライドを生み出してしまいます。
+- **ユーザー設定を無視する**: `prefers-color-scheme`、`prefers-reduced-motion`、`prefers-contrast` クエリを一切含めません。
+- **コンポーネントレイアウトにメディアクエリを使う**: `@container` の方が適切な場面で `@media` を使ってしまいます。メディアクエリはページレベルのレイアウト用、コンテナクエリはコンポーネントレベルの適応用です。
+- **`@media (hover: hover)` を忘れる**: タッチデバイスでスティッキーなホバー状態を引き起こす `:hover` スタイルを追加してしまいます。
+- **`@supports` を使わない**: フォールバックなし、サポートチェックなしでモダンなCSS機能を書いてしまいます。
+- **ブレークポイントに `px` を使う**: ピクセルのブレークポイントはユーザーのフォントサイズ設定に応じてスケールしません。`rem` 値を使いましょう（例：`768px` ではなく `48rem`）。
+- **ブレークポイントが多すぎる**: `clamp()` や固有のサイジングでフルイドな範囲を処理できるのに、5つ以上のブレークポイントを作成してしまいます。
+
+## 使い分け
+
+- **ページレベルのレイアウト変更**: シングルカラムとマルチカラムのページレイアウトの切り替えに使いましょう。
+- **ユーザー設定の検出**: `prefers-color-scheme`、`prefers-reduced-motion`、`prefers-contrast` の検出に使いましょう。
+- **入力モダリティの適応**: 入力タイプに合わせたインタラクション調整に `hover`、`pointer` を使いましょう。
+- **機能検出**: 新しいCSS機能のプログレッシブエンハンスメントに `@supports` を使いましょう。
+- **コンポーネントレイアウトには不向き**: 代わりにコンテナクエリを使いましょう。
+- **フルイドサイジングには不向き**: ブレークポイントでのジャンプではなく `clamp()` を使いましょう。
+
+## 参考リンク
+
+- [Using Media Queries — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Using)
+- [@media — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media)
+- [CSS Media Queries Complete Guide for 2026 — DevToolbox](https://devtoolbox.dedyn.io/blog/css-media-queries-complete-guide)
+- [Solving Sticky Hover States with @media (hover: hover) — CSS-Tricks](https://css-tricks.com/solving-sticky-hover-states-with-media-hover-hover/)

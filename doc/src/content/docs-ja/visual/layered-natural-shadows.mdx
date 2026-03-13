@@ -1,0 +1,223 @@
+---
+title: レイヤードナチュラルシャドウ
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+シャドウはUIデザインにおいて最も重要な奥行きの手がかりの1つですが、AIエージェントはほぼ常に単一のフラットな `box-shadow` 宣言を生成します。単一のシャドウは不自然に見えます。なぜなら、現実世界のシャドウは均一なブラーではないからです。オブジェクトが面の上にあるとき、底部近くに密で暗いコンタクトシャドウと、より遠くに広がる柔らかく薄いシャドウを落とします。単一の `box-shadow` ではこのレイヤードな振る舞いを再現できません。
+
+## 解決方法
+
+ブラー半径と垂直オフセットを段階的に増加させた、カンマ区切りの複数の `box-shadow` 値を使います。各レイヤーは自然光の振る舞いの異なる側面を表現します。ページ全体で単一の暗示された光源方向と一致するよう、すべてのシャドウの一貫性を保ちましょう。
+
+### 基本原則
+
+#### 一貫した光源
+
+ページ上のすべてのシャドウは、水平方向と垂直方向のオフセット間で同じ比率を共有すべきです。一般的な慣習は、上方やや左からの光源です。つまり、垂直オフセットは水平オフセットのおよそ2倍になります。
+
+#### エレベーションモデル
+
+要素が視聴者に向かって「浮き上がる」につれて、3つのプロパティが変化します。
+
+- **オフセットが増加する** — シャドウが要素からより遠くに移動する
+- **ブラーが拡大する** — シャドウがより柔らかく拡散する
+- **不透明度が減少する** — 要素が高く浮き上がるにつれてシャドウが薄くなる
+
+#### 色に合わせたシャドウ
+
+純粋な黒のシャドウ（`rgba(0, 0, 0, ...)`）は避けましょう。代わりに、背景の色相を低彩度で合わせます。これにより、黒いシャドウが引き起こす色褪せた脱色した見た目を防げます。
+
+## コード例
+
+### 基本的なレイヤードシャドウ
+
+```css
+.card {
+  box-shadow:
+    0 1px 1px hsl(0deg 0% 0% / 0.075),
+    0 2px 2px hsl(0deg 0% 0% / 0.075),
+    0 4px 4px hsl(0deg 0% 0% / 0.075),
+    0 8px 8px hsl(0deg 0% 0% / 0.075),
+    0 16px 16px hsl(0deg 0% 0% / 0.075);
+}
+```
+
+各レイヤーは前のオフセットとブラーを2倍にしています。累積効果として、滑らかで自然な奥行きのあるシャドウになります。
+
+### エレベーションレベル
+
+```css
+/* Low elevation — resting on surface */
+.elevation-1 {
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.07),
+    0 2px 2px hsl(220deg 60% 50% / 0.07),
+    0 4px 4px hsl(220deg 60% 50% / 0.07);
+}
+
+/* Medium elevation — card hover */
+.elevation-2 {
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.06),
+    0 2px 2px hsl(220deg 60% 50% / 0.06),
+    0 4px 4px hsl(220deg 60% 50% / 0.06),
+    0 8px 8px hsl(220deg 60% 50% / 0.06),
+    0 16px 16px hsl(220deg 60% 50% / 0.06);
+}
+
+/* High elevation — modal / dialog */
+.elevation-3 {
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.05),
+    0 2px 2px hsl(220deg 60% 50% / 0.05),
+    0 4px 4px hsl(220deg 60% 50% / 0.05),
+    0 8px 8px hsl(220deg 60% 50% / 0.05),
+    0 16px 16px hsl(220deg 60% 50% / 0.05),
+    0 32px 32px hsl(220deg 60% 50% / 0.05);
+}
+```
+
+### 色付き背景に合わせたシャドウ
+
+```css
+/* On a blue-tinted background */
+.card-on-blue {
+  background: hsl(220deg 80% 98%);
+  box-shadow:
+    0 1px 2px hsl(220deg 60% 50% / 0.1),
+    0 3px 6px hsl(220deg 60% 50% / 0.08),
+    0 8px 16px hsl(220deg 60% 50% / 0.06);
+}
+
+/* On a warm background */
+.card-on-warm {
+  background: hsl(30deg 80% 98%);
+  box-shadow:
+    0 1px 2px hsl(30deg 40% 40% / 0.1),
+    0 3px 6px hsl(30deg 40% 40% / 0.08),
+    0 8px 16px hsl(30deg 40% 40% / 0.06);
+}
+```
+
+### シャープ + ディフューズの組み合わせ
+
+```css
+/* Tight contact shadow + wide ambient shadow */
+.card-sharp-diffuse {
+  box-shadow:
+    0 1px 3px hsl(0deg 0% 0% / 0.12),
+    0 8px 24px hsl(0deg 0% 0% / 0.06);
+}
+```
+
+### 完全なカードの例
+
+```html
+<div class="shadow-card">
+  <h3>Card Title</h3>
+  <p>Card content goes here.</p>
+</div>
+```
+
+```css
+.shadow-card {
+  padding: 24px;
+  border-radius: 8px;
+  background: white;
+  box-shadow:
+    0 0.5px 1px hsl(220deg 60% 50% / 0.06),
+    0 1px 2px hsl(220deg 60% 50% / 0.06),
+    0 2px 4px hsl(220deg 60% 50% / 0.06),
+    0 4px 8px hsl(220deg 60% 50% / 0.06),
+    0 8px 16px hsl(220deg 60% 50% / 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-card:hover {
+  box-shadow:
+    0 1px 2px hsl(220deg 60% 50% / 0.05),
+    0 2px 4px hsl(220deg 60% 50% / 0.05),
+    0 4px 8px hsl(220deg 60% 50% / 0.05),
+    0 8px 16px hsl(220deg 60% 50% / 0.05),
+    0 16px 32px hsl(220deg 60% 50% / 0.05),
+    0 32px 64px hsl(220deg 60% 50% / 0.05);
+}
+```
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="フラットシャドウ vs レイヤードシャドウ"
+  html={`
+    <div class="demo">
+      <div class="card flat">
+        <h3>Flat Shadow</h3>
+        <p>Single box-shadow value</p>
+      </div>
+      <div class="card layered">
+        <h3>Layered Shadow</h3>
+        <p>Multiple layered values</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      padding: 40px 20px;
+      background: #f8fafc;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      padding: 24px;
+      border-radius: 8px;
+      background: white;
+      width: 200px;
+    }
+    .card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 14px;
+      color: #64748b;
+    }
+    .flat {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .layered {
+      box-shadow:
+      0 1px 1px hsl(220deg 60% 50% / 0.075),
+      0 2px 2px hsl(220deg 60% 50% / 0.075),
+      0 4px 4px hsl(220deg 60% 50% / 0.075),
+      0 8px 8px hsl(220deg 60% 50% / 0.075),
+      0 16px 16px hsl(220deg 60% 50% / 0.075);
+    }
+    `} />
+
+## AIがよくやるミス
+
+- **単一のフラットシャドウ** — どこでも `box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1)` を使うこと。これは奥行きのない均一で人工的な見た目になります。
+- **純粋な黒のシャドウカラー** — `rgba(0, 0, 0, ...)` はシャドウの下の領域を脱色し、色付きの背景上でグレーの色褪せた見た目を作ります。
+- **一貫しない光の方向** — 異なる要素に異なるオフセット角度を生成し、統一された光源の錯覚を壊す。
+- **すべてのエレベーションで同じシャドウ** — カード、モーダル、ドロップダウン、ツールチップに同じシャドウを使うが、それぞれ異なるエレベーションレベルを持つべき。
+- **過度に暗いシャドウ** — 複数レイヤーに低い不透明度を分散する代わりに、単一のシャドウに高い不透明度値（0.2-0.5）を設定する。
+
+## 使い分け
+
+- 物理的に存在感のあるカードや浮き上がった面
+- 複数のUIレイヤーが重なるエレベーションシステム（カード、ドロップダウン、モーダル、ツールチップ）
+- 要素がページから浮き上がるように見せるホバー状態
+- 人工的に重くならずに奥行き感を出したい要素
+
+## 参考リンク
+
+- [Designing Beautiful Shadows in CSS — Josh W. Comeau](https://www.joshwcomeau.com/css/designing-shadows/)
+- [Smoother & Sharper Shadows with Layered Box-Shadows — Tobias Ahlin](https://tobiasahlin.com/blog/layered-smooth-box-shadows/)
+- [box-shadow — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow)

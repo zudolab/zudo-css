@@ -1,0 +1,328 @@
+---
+title: ":is() and :where() Selectors"
+sidebar_position: 12
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+CSS selectors that share the same declarations require writing out every combination individually, leading to verbose and repetitive rule sets. Selector lists with different specificity levels make it difficult to create easily overridable base styles. When building resets, defaults, or library CSS, specificity conflicts with consumer styles are a constant battle. AI agents typically generate repetitive selectors and rarely use `:is()` or `:where()` to manage specificity intentionally.
+
+## The Solution
+
+`:is()` and `:where()` are functional pseudo-class selectors that accept a selector list and match any element that matches at least one selector in that list. They reduce repetition by grouping selectors. The critical difference is specificity:
+
+- **`:is()`** takes on the specificity of its most specific argument
+- **`:where()`** always has zero specificity `(0, 0, 0)`
+
+This makes `:where()` ideal for default/base styles that should be easily overridable, and `:is()` for grouping selectors while preserving specificity.
+
+## Code Examples
+
+### Reducing Selector Repetition with `:is()`
+
+```css
+/* Without :is() — verbose and repetitive */
+article h1,
+article h2,
+article h3,
+section h1,
+section h2,
+section h3,
+aside h1,
+aside h2,
+aside h3 {
+  line-height: 1.2;
+}
+
+/* With :is() — concise */
+:is(article, section, aside) :is(h1, h2, h3) {
+  line-height: 1.2;
+}
+```
+
+### Zero-Specificity Defaults with `:where()`
+
+Create base styles that any single class can easily override.
+
+```css
+/* Base styles with zero specificity — trivially overridable */
+:where(h1, h2, h3, h4, h5, h6) {
+  margin-block: 0;
+  font-weight: 700;
+}
+
+:where(ul, ol) {
+  padding-left: 1.5rem;
+}
+
+:where(a) {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Any class override wins without specificity battles */
+.nav-link {
+  color: inherit;
+  text-decoration: none;
+}
+```
+
+### Building an Overridable Reset
+
+```css
+/* A reset that never fights with author styles */
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:where(html) {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+:where(img, picture, video, canvas, svg) {
+  display: block;
+  max-width: 100%;
+}
+
+:where(input, button, textarea, select) {
+  font: inherit;
+}
+```
+
+### Combining `:is()` and `:where()` Strategically
+
+Use `:is()` for the parts where you want specificity to contribute, and `:where()` for the parts you want to be zero.
+
+```css
+/* The .article class contributes specificity (0,1,0),
+   but the element selectors inside :where() add nothing */
+.article :where(p, li, blockquote) {
+  line-height: 1.8;
+  max-width: 65ch;
+}
+
+/* Override with just a class — no specificity fight */
+.compact-text {
+  line-height: 1.4;
+}
+```
+
+### Forgiving Selector Lists
+
+Both `:is()` and `:where()` use a forgiving selector list. An invalid selector in the list does not invalidate the entire rule.
+
+```css
+/* If :未来的-selector is invalid, the rest still works */
+:is(.card, .panel, :未来的-selector) {
+  border-radius: 8px;
+}
+
+/* Without :is(), one invalid selector breaks the entire rule */
+/* .card, .panel, :未来的-selector { border-radius: 8px; } — entire rule is dropped */
+```
+
+### Simplifying Nested Selectors
+
+```css
+/* Complex nesting without :is() */
+.sidebar nav ul li a,
+.sidebar nav ol li a {
+  color: #374151;
+  text-decoration: none;
+}
+
+/* Simplified with :is() */
+.sidebar nav :is(ul, ol) li a {
+  color: #374151;
+  text-decoration: none;
+}
+```
+
+### Specificity Comparison
+
+```css
+/* :is() specificity = highest argument */
+:is(.class, #id) p {
+  /* Specificity: (1, 0, 1) because #id is the highest */
+  color: blue;
+}
+
+/* :where() specificity = always zero */
+:where(.class, #id) p {
+  /* Specificity: (0, 0, 1) — only the p contributes */
+  color: blue;
+}
+
+/* A simple class wins over :where(#id) */
+.text {
+  /* Specificity: (0, 1, 0) — wins over :where(#id) p's (0, 0, 1) */
+  color: red;
+}
+```
+
+### Library/Design System Pattern
+
+```css
+/* Design system default — zero specificity via :where() */
+:where(.ds-button) {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+:where(.ds-button.primary) {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+/* Consumer can override with just a class — no !important needed */
+.my-button {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+```
+
+## Browser Support
+
+- Chrome 88+
+- Firefox 78+
+- Safari 14+
+- Edge 88+
+
+Both `:is()` and `:where()` have global support exceeding 96%. They are safe for production use.
+
+## Common AI Mistakes
+
+- Not knowing `:where()` exists and generating verbose selector lists that create specificity conflicts
+- Using `:is()` when `:where()` would be more appropriate (e.g., for base/reset styles that should be easily overridable)
+- Writing out every selector combination manually instead of grouping with `:is()`
+- Not leveraging `:where()` for library/design system CSS to avoid specificity wars with consumers
+- Confusing the specificity behavior — thinking `:is()` has zero specificity like `:where()`
+- Not realizing that `:is()` and `:where()` use forgiving selector lists (invalid selectors don't break the rule)
+- Using `!important` to override base styles when `:where()` would have made them trivially overridable
+
+## When to Use
+
+- **`:is()`**: Group selectors to reduce repetition while preserving specificity
+- **`:where()`**: Create zero-specificity base styles, resets, and design system defaults
+- **Both**: Build forgiving selector lists that handle unknown or future selectors gracefully
+- **`:where()` for library CSS**: Ensure consumer styles can always override without `!important`
+- **Combined**: Use `:is()` for the specificity-contributing part and `:where()` for the zero-specificity part of a selector
+
+## Live Previews
+
+<CssPreview client:load
+  title=":is() — Selector Grouping"
+  html={`
+    <article>
+      <h1>Article Heading (h1)</h1>
+      <h2>Sub-heading (h2)</h2>
+      <p>Regular paragraph text.</p>
+      <h3>Section heading (h3)</h3>
+      <p>More paragraph text.</p>
+    </article>
+    <div class="outside">
+      <h2>Heading Outside Article</h2>
+      <p>This heading is not styled — :is(article, section) limits scope</p>
+    </div>
+    `}
+  css={`
+    * {
+      margin: 0;
+    }
+    
+    article, .outside {
+      font-family: system-ui, sans-serif;
+      padding: 1.25rem;
+      border-radius: 12px;
+    }
+    
+    article {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      margin-bottom: 1rem;
+    }
+    
+    :is(article, section) :is(h1, h2, h3) {
+    color: #166534;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid #bbf7d0;
+    }
+    
+    article p, .outside p {
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    }
+    
+    .outside {
+    background: #f8fafc;
+    border: 1px dashed #d1d5db;
+    }
+    
+    .outside h2 {
+    color: #6b7280;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    }
+    `} />
+
+<CssPreview client:load
+  title=":where() — Zero Specificity (Easily Overridable)"
+  html={`
+    <div class="demo">
+      <a href="#" class="link-default">Default link (styled by :where)</a>
+      <a href="#" class="my-link">Custom link (single class overrides :where)</a>
+    </div>
+    <p class="hint">:where(a) has zero specificity (0,0,0), so even a single .my-link class (0,1,0) wins without any !important</p>
+    `}
+  css={`
+    :where(a) {
+    color: #2563eb;
+    text-decoration: underline;
+    font-weight: 600;
+    }
+    
+    .my-link {
+    color: #dc2626;
+    text-decoration: none;
+    background: #fef2f2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #fca5a5;
+    }
+    
+    .demo {
+    font-family: system-ui, sans-serif;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    }
+    
+    .hint {
+    font-family: system-ui, sans-serif;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 1rem;
+    }
+    `} />
+
+## References
+
+- [:is() - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:is)
+- [:where() - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:where)
+- [:is() pseudo-class - Can I Use](https://caniuse.com/css-matches-pseudo)
+- [:where() pseudo-class - Can I Use](https://caniuse.com/mdn-css_selectors_where)
+- [CSS :where() Selector: The Zero-Specificity Superpower - McNeece](https://www.mcneece.com/2025/03/css-where-selector-the-zero-specificity-superpower/)

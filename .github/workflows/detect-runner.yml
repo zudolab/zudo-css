@@ -1,0 +1,67 @@
+name: Detect Runner
+
+# Reusable workflow to detect if a self-hosted runner is online.
+# Falls back to ubuntu-latest if no runner is available or token is not set.
+#
+# Usage:
+#   jobs:
+#     detect-runner:
+#       uses: ./.github/workflows/detect-runner.yml
+#       secrets: inherit
+#     my-job:
+#       needs: detect-runner
+#       runs-on: ${{ needs.detect-runner.outputs.runner }}
+#
+# Requires RUNNER_CHECK_TOKEN secret (PAT with administration:read scope).
+on:
+  workflow_call:
+    outputs:
+      runner:
+        description: "Runner label to use (self-hosted or ubuntu-latest)"
+        value: ${{ jobs.detect.outputs.runner }}
+
+jobs:
+  detect:
+    name: Detect Runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      runner: ${{ steps.detect.outputs.runner }}
+    steps:
+      - name: Check for online self-hosted runner
+        id: detect
+        env:
+          CHECK_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
+        run: |
+          RUNNER_LABEL="ubuntu-latest"
+
+          if [ -n "$CHECK_TOKEN" ]; then
+            RESPONSE=$(curl -s --max-time 10 -w "\n%{http_code}" \
+              -H "Authorization: Bearer $CHECK_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runners")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+
+            if [ "$HTTP_CODE" = "200" ] && [ -n "$BODY" ]; then
+              ONLINE=$(echo "$BODY" | jq -r '[.runners[]? | select(.status == "online")] | length' 2>/dev/null)
+              if [ -z "$ONLINE" ] || [ "$ONLINE" = "null" ]; then
+                ONLINE=0
+              fi
+              if [ "$ONLINE" -gt 0 ]; then
+                RUNNER_LABEL="self-hosted"
+                echo "Self-hosted runner detected (online)"
+              else
+                echo "No self-hosted runners online, using ubuntu-latest"
+              fi
+            else
+              echo "Runner API returned $HTTP_CODE, using ubuntu-latest"
+            fi
+          else
+            echo "RUNNER_CHECK_TOKEN not set, using ubuntu-latest"
+          fi
+
+          echo "runner=$RUNNER_LABEL" >> "$GITHUB_OUTPUT"
+          echo "Selected runner: $RUNNER_LABEL"

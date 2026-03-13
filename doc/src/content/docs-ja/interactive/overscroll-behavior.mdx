@@ -1,0 +1,740 @@
+---
+title: オーバースクロールの挙動
+sidebar_position: 8
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+ネストされたスクロール可能領域 — モーダル、サイドバー、ドロップダウン、チャットパネル — の端までスクロールすると、ブラウザはスクロールイベントを最も近いスクロール可能な祖先に「チェーン」します。背景のページがオーバーレイの下で突然スクロールし始めます。これは**スクロールチェーン**と呼ばれ、ウェブアプリケーションで最もよく見られるUXバグの1つです。
+
+`overscroll-behavior` が登場する前は、これを防ぐためにJavaScriptのスクロールロックハックが必要でした：wheelイベントのリスニング、スクロール位置の計算、適切なタイミングでの `preventDefault()` 呼び出しです。これらのソリューションは脆弱で、カクつきを引き起こし、タッチデバイスのスクロールを完全に壊すことが多かったです。モバイルでは、プルトゥリフレッシュのようなオーバースクロールエフェクトがカスタムスクロール領域内で予期せずトリガーされることもありました。
+
+## 解決方法
+
+`overscroll-behavior` プロパティは、スクロールコンテナが境界に達した時の動作を1行のCSSで制御します。
+
+- **`auto`**（デフォルト）：通常の動作 — 親へのスクロールチェーンとネイティブオーバースクロールエフェクト（バウンス、プルトゥリフレッシュ）が有効です。
+- **`contain`**：親へのスクロールチェーンを防止しますが、ネイティブオーバースクロールエフェクト（iOS/macOSのラバーバンドバウンスなど）は要素自体の中では依然として適用されます。
+- **`none`**：スクロールチェーンとすべてのネイティブオーバースクロールエフェクトの両方を防止します。スクロールは単に停止します。
+
+`overscroll-behavior-x` と `overscroll-behavior-y` で各軸を個別に制御することもできます。
+
+### 基本原則
+
+#### auto（デフォルト）
+
+デフォルト値です。要素がスクロール境界に達すると親にチェーンします。メインページコンテンツでは通常問題ありませんが、オーバーレイ、モーダル、サイドバーでは問題を引き起こします。
+
+#### contain
+
+最もよく必要とされる値です。スクロールチェーンを防止し、スクロールが要素内に閉じ込められます。モーダル、サイドバー、チャットパネル、ドロップダウンメニューなど、背景をスクロールさせたくない独立したスクロール可能領域に使用しましょう。
+
+#### none
+
+`contain` よりさらに進んで、ラバーバンドバウンスやプルトゥリフレッシュなどのネイティブオーバースクロールエフェクトも抑制します。境界でスクロールが視覚的フィードバックなしで完全に停止してほしい場合に使用します。埋め込みアプリライクなインターフェースに便利です。
+
+<CssPreview client:load
+  title="スクロールチェーンの問題（修正なし）"
+  height={350}
+  html={`
+    <div class="outer-scroll">
+      <div class="page-header">Background Page</div>
+      <p class="page-text">This outer area is scrollable. Try scrolling inside the inner panel below until you reach its end — then keep scrolling. The outer page will start scrolling too. This is scroll chaining.</p>
+      <div class="inner-panel">
+        <div class="panel-header">Inner Scrollable Panel</div>
+        <p>Item 1 — Scroll down inside this panel</p>
+        <p>Item 2 — Keep scrolling past the end</p>
+        <p>Item 3 — The outer page will start moving</p>
+        <p>Item 4 — This is the scroll chaining problem</p>
+        <p>Item 5 — No overscroll-behavior is set here</p>
+        <p>Item 6 — So the browser chains the scroll</p>
+        <p>Item 7 — To the nearest scrollable ancestor</p>
+        <p>Item 8 — Which is the outer container</p>
+        <p>Item 9 — Causing unexpected page movement</p>
+        <p>Item 10 — This is a very common UX bug</p>
+        <p>Item 11 — That frustrates users</p>
+        <p>Item 12 — Especially on modal overlays</p>
+      </div>
+      <p class="page-text">More background content below the panel. If scroll chaining is happening, you will see this area scroll into view when the inner panel reaches its end.</p>
+      <p class="page-text">Even more content here to demonstrate the outer scroll area is tall enough to scroll.</p>
+      <p class="page-text">And even more content to make it clearly scrollable.</p>
+      <p class="page-text">Bottom of the outer scrollable area.</p>
+    </div>
+    `}
+  css={`
+    .outer-scroll {
+      height: 100%;
+      overflow-y: auto;
+      padding: 1rem;
+      background: hsl(210 20% 96%);
+    }
+    
+    .page-header {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: hsl(210 25% 25%);
+      margin-bottom: 0.5rem;
+    }
+    
+    .page-text {
+      font-size: 0.8125rem;
+      color: hsl(210 15% 40%);
+      line-height: 1.5;
+      margin: 0.5rem 0;
+    }
+    
+    .inner-panel {
+      background: hsl(0 0% 100%);
+      border: 2px solid hsl(0 70% 60%);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      height: 150px;
+      overflow-y: auto;
+      margin: 0.75rem 0;
+      /* No overscroll-behavior — scroll chains to parent */
+    }
+    
+    .panel-header {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: hsl(0 70% 45%);
+      margin-bottom: 0.5rem;
+    }
+    
+    .inner-panel p {
+      font-size: 0.75rem;
+      color: hsl(210 10% 35%);
+      padding: 0.25rem 0;
+      margin: 0;
+      border-bottom: 1px solid hsl(210 20% 92%);
+    }
+    `} />
+
+<CssPreview client:load
+  title="overscroll-behavior: contain でスクロールチェーンを修正"
+  height={350}
+  html={`
+    <div class="outer-scroll">
+      <div class="page-header">Background Page</div>
+      <p class="page-text">This outer area is scrollable, just like before. But now the inner panel has <code>overscroll-behavior: contain</code>. Try scrolling inside the panel past its end — the outer page will NOT scroll.</p>
+      <div class="inner-panel">
+        <div class="panel-header">Inner Panel (contained)</div>
+        <p>Item 1 — Scroll down inside this panel</p>
+        <p>Item 2 — Keep scrolling past the end</p>
+        <p>Item 3 — The outer page stays still</p>
+        <p>Item 4 — overscroll-behavior: contain fixes it</p>
+        <p>Item 5 — Scroll chaining is prevented</p>
+        <p>Item 6 — The scroll stays trapped here</p>
+        <p>Item 7 — No JavaScript required</p>
+        <p>Item 8 — Just one line of CSS</p>
+        <p>Item 9 — Works on all modern browsers</p>
+        <p>Item 10 — Touch devices included</p>
+        <p>Item 11 — Much better UX</p>
+        <p>Item 12 — The background page is safe</p>
+      </div>
+      <p class="page-text">More background content. This time it will NOT scroll when you reach the end of the inner panel. You can still scroll the outer area by scrolling outside the inner panel.</p>
+      <p class="page-text">More outer content to demonstrate the page is scrollable on its own.</p>
+      <p class="page-text">And more content here.</p>
+      <p class="page-text">Bottom of the outer scrollable area.</p>
+    </div>
+    `}
+  css={`
+    .outer-scroll {
+      height: 100%;
+      overflow-y: auto;
+      padding: 1rem;
+      background: hsl(210 20% 96%);
+    }
+    
+    .page-header {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: hsl(210 25% 25%);
+      margin-bottom: 0.5rem;
+    }
+    
+    .page-text {
+      font-size: 0.8125rem;
+      color: hsl(210 15% 40%);
+      line-height: 1.5;
+      margin: 0.5rem 0;
+    }
+    
+    .inner-panel {
+      background: hsl(0 0% 100%);
+      border: 2px solid hsl(140 60% 40%);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      height: 150px;
+      overflow-y: auto;
+      margin: 0.75rem 0;
+      overscroll-behavior: contain;
+    }
+    
+    .panel-header {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: hsl(140 60% 30%);
+      margin-bottom: 0.5rem;
+    }
+    
+    .inner-panel p {
+      font-size: 0.75rem;
+      color: hsl(210 10% 35%);
+      padding: 0.25rem 0;
+      margin: 0;
+      border-bottom: 1px solid hsl(210 20% 92%);
+    }
+    `} />
+
+<CssPreview client:load
+  title="contain vs none — 並べて比較"
+  height={350}
+  html={`
+    <div class="comparison">
+      <div class="column">
+        <div class="column-label contain-label">overscroll-behavior: contain</div>
+        <div class="scroll-box contain-box">
+          <p>Line 1 — Scroll to the bottom</p>
+          <p>Line 2 — Native bounce effects still show</p>
+          <p>Line 3 — on supported platforms (macOS/iOS)</p>
+          <p>Line 4 — but scroll chaining is prevented</p>
+          <p>Line 5 — The rubber-band effect still works</p>
+          <p>Line 6 — within this element</p>
+          <p>Line 7 — Only chaining to the parent</p>
+          <p>Line 8 — is blocked by contain</p>
+          <p>Line 9 — This is the most common value</p>
+          <p>Line 10 — for modals and sidebars</p>
+          <p>Line 11 — Use contain by default</p>
+          <p>Line 12 — unless you need none</p>
+        </div>
+      </div>
+      <div class="column">
+        <div class="column-label none-label">overscroll-behavior: none</div>
+        <div class="scroll-box none-box">
+          <p>Line 1 — Scroll to the bottom</p>
+          <p>Line 2 — No bounce effects at all</p>
+          <p>Line 3 — No pull-to-refresh</p>
+          <p>Line 4 — No rubber-band overscroll</p>
+          <p>Line 5 — Scroll just stops completely</p>
+          <p>Line 6 — at the boundary</p>
+          <p>Line 7 — No chaining either</p>
+          <p>Line 8 — Like contain but stricter</p>
+          <p>Line 9 — Good for app-like interfaces</p>
+          <p>Line 10 — or embedded panels</p>
+          <p>Line 11 — Use none when you want</p>
+          <p>Line 12 — no overscroll feedback</p>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .comparison {
+      display: flex;
+      gap: 0.75rem;
+      height: 100%;
+      padding: 0.75rem;
+      background: hsl(210 20% 96%);
+    }
+    
+    .column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    
+    .column-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 0.375rem 0.5rem;
+      border-radius: 0.375rem 0.375rem 0 0;
+      text-align: center;
+    }
+    
+    .contain-label {
+      background: hsl(200 70% 50%);
+      color: hsl(0 0% 100%);
+    }
+    
+    .none-label {
+      background: hsl(270 60% 50%);
+      color: hsl(0 0% 100%);
+    }
+    
+    .scroll-box {
+      flex: 1;
+      overflow-y: auto;
+      background: hsl(0 0% 100%);
+      padding: 0.5rem;
+      border-radius: 0 0 0.375rem 0.375rem;
+    }
+    
+    .contain-box {
+      overscroll-behavior: contain;
+      border: 2px solid hsl(200 70% 50%);
+      border-top: none;
+    }
+    
+    .none-box {
+      overscroll-behavior: none;
+      border: 2px solid hsl(270 60% 50%);
+      border-top: none;
+    }
+    
+    .scroll-box p {
+      font-size: 0.6875rem;
+      color: hsl(210 10% 35%);
+      padding: 0.25rem 0;
+      margin: 0;
+      border-bottom: 1px solid hsl(210 20% 92%);
+    }
+    `} />
+
+<CssPreview client:load
+  title="スクロール制御付きチャットパネル"
+  height={400}
+  html={`
+    <div class="chat-app">
+      <div class="chat-header">
+        <div class="chat-avatar">T</div>
+        <div class="chat-info">
+          <div class="chat-name">Team Chat</div>
+          <div class="chat-status">3 members online</div>
+        </div>
+      </div>
+      <div class="chat-messages">
+        <div class="message received">
+          <div class="message-author">Alice</div>
+          <div class="message-bubble">Hey team, has anyone looked at the new design specs?</div>
+          <div class="message-time">10:02 AM</div>
+        </div>
+        <div class="message sent">
+          <div class="message-bubble">Yes, I reviewed them this morning. The layout changes look good.</div>
+          <div class="message-time">10:05 AM</div>
+        </div>
+        <div class="message received">
+          <div class="message-author">Bob</div>
+          <div class="message-bubble">I have a few concerns about the navigation redesign. Can we discuss?</div>
+          <div class="message-time">10:08 AM</div>
+        </div>
+        <div class="message sent">
+          <div class="message-bubble">Sure, let's set up a quick call after lunch.</div>
+          <div class="message-time">10:10 AM</div>
+        </div>
+        <div class="message received">
+          <div class="message-author">Alice</div>
+          <div class="message-bubble">Sounds good. I'll send a calendar invite. Also, the client wants to see a progress update by Friday.</div>
+          <div class="message-time">10:12 AM</div>
+        </div>
+        <div class="message received">
+          <div class="message-author">Bob</div>
+          <div class="message-bubble">That's tight. We should prioritize the landing page and dashboard components first.</div>
+          <div class="message-time">10:14 AM</div>
+        </div>
+        <div class="message sent">
+          <div class="message-bubble">Agreed. I'll focus on the dashboard today and we can review tomorrow morning.</div>
+          <div class="message-time">10:15 AM</div>
+        </div>
+        <div class="message received">
+          <div class="message-author">Alice</div>
+          <div class="message-bubble">Perfect. I'll handle the landing page. Bob, can you update the shared components library?</div>
+          <div class="message-time">10:17 AM</div>
+        </div>
+        <div class="message received">
+          <div class="message-author">Bob</div>
+          <div class="message-bubble">On it. I'll push the updates by end of day.</div>
+          <div class="message-time">10:18 AM</div>
+        </div>
+        <div class="message sent">
+          <div class="message-bubble">Great teamwork everyone. Let's keep this momentum going!</div>
+          <div class="message-time">10:20 AM</div>
+        </div>
+      </div>
+      <div class="chat-input">
+        <div class="input-field">Type a message...</div>
+        <div class="send-btn">Send</div>
+      </div>
+    </div>
+    `}
+  css={`
+    .chat-app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: hsl(210 20% 97%);
+      font-family: system-ui, sans-serif;
+    }
+    
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.625rem 0.75rem;
+      background: hsl(220 60% 50%);
+      color: hsl(0 0% 100%);
+      flex-shrink: 0;
+    }
+    
+    .chat-avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: hsl(220 60% 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+    
+    .chat-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .chat-name {
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+    
+    .chat-status {
+      font-size: 0.6875rem;
+      opacity: 0.8;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      overscroll-behavior-y: contain;
+    }
+    
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+    }
+    
+    .message.sent {
+      align-self: flex-end;
+    }
+    
+    .message.received {
+      align-self: flex-start;
+    }
+    
+    .message-author {
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: hsl(220 50% 45%);
+      margin-bottom: 0.125rem;
+      padding-left: 0.5rem;
+    }
+    
+    .message-bubble {
+      padding: 0.5rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    
+    .message.sent .message-bubble {
+      background: hsl(220 60% 50%);
+      color: hsl(0 0% 100%);
+      border-bottom-right-radius: 0.25rem;
+    }
+    
+    .message.received .message-bubble {
+      background: hsl(0 0% 100%);
+      color: hsl(210 15% 25%);
+      border-bottom-left-radius: 0.25rem;
+      box-shadow: 0 1px 2px hsl(210 20% 85%);
+    }
+    
+    .message-time {
+      font-size: 0.5625rem;
+      color: hsl(210 10% 60%);
+      margin-top: 0.125rem;
+      padding: 0 0.5rem;
+    }
+    
+    .message.sent .message-time {
+      align-self: flex-end;
+    }
+    
+    .chat-input {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: hsl(0 0% 100%);
+      border-top: 1px solid hsl(210 20% 90%);
+      flex-shrink: 0;
+    }
+    
+    .input-field {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border-radius: 1.25rem;
+      background: hsl(210 20% 96%);
+      font-size: 0.75rem;
+      color: hsl(210 10% 60%);
+    }
+    
+    .send-btn {
+      padding: 0.375rem 0.75rem;
+      background: hsl(220 60% 50%);
+      color: hsl(0 0% 100%);
+      border-radius: 1.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    `} />
+
+<CssPreview client:load
+  title="スクロール制御付きサイドバーナビゲーション"
+  height={380}
+  html={`
+    <div class="app-layout">
+      <nav class="sidebar">
+        <div class="sidebar-header">Navigation</div>
+        <ul class="nav-list">
+          <li class="nav-item active">Dashboard</li>
+          <li class="nav-item">Analytics</li>
+          <li class="nav-item">Customers</li>
+          <li class="nav-item">Products</li>
+          <li class="nav-item">Orders</li>
+          <li class="nav-item">Inventory</li>
+          <li class="nav-item">Marketing</li>
+          <li class="nav-item">Campaigns</li>
+          <li class="nav-item">Reports</li>
+          <li class="nav-item">Revenue</li>
+          <li class="nav-item">Expenses</li>
+          <li class="nav-item">Team</li>
+          <li class="nav-item">Members</li>
+          <li class="nav-item">Roles</li>
+          <li class="nav-item">Permissions</li>
+          <li class="nav-item">Settings</li>
+          <li class="nav-item">Preferences</li>
+          <li class="nav-item">Integrations</li>
+          <li class="nav-item">API Keys</li>
+          <li class="nav-item">Webhooks</li>
+          <li class="nav-item">Notifications</li>
+          <li class="nav-item">Billing</li>
+          <li class="nav-item">Support</li>
+          <li class="nav-item">Documentation</li>
+        </ul>
+      </nav>
+      <main class="main-content">
+        <h1 class="main-title">Dashboard</h1>
+        <p class="main-text">This is the main content area. Scroll inside the sidebar navigation on the left — even when you reach the end of the nav list, the main content will not scroll.</p>
+        <p class="main-text">The sidebar uses <code>overscroll-behavior: contain</code> to prevent scroll chaining to this main area.</p>
+        <p class="main-text">This pattern is essential for any application with a fixed sidebar that has enough nav items to be scrollable. Without overscroll-behavior, users accidentally scroll the main content when they reach the end of the navigation list.</p>
+        <div class="card">
+          <div class="card-title">Monthly Revenue</div>
+          <div class="card-value">$48,250</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Users</div>
+          <div class="card-value">12,847</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Conversion Rate</div>
+          <div class="card-value">3.24%</div>
+        </div>
+        <p class="main-text">More dashboard content follows below. This area is scrollable on its own, but the sidebar scroll will never chain into it.</p>
+        <p class="main-text">Additional content to make the main area longer and clearly scrollable independently from the sidebar.</p>
+      </main>
+    </div>
+    `}
+  css={`
+    .app-layout {
+      display: flex;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+    }
+    
+    .sidebar {
+      width: 10rem;
+      background: hsl(220 25% 18%);
+      color: hsl(0 0% 100%);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    
+    .sidebar-header {
+      padding: 0.75rem;
+      font-weight: 700;
+      font-size: 0.8125rem;
+      border-bottom: 1px solid hsl(220 20% 28%);
+      flex-shrink: 0;
+    }
+    
+    .nav-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.25rem 0;
+      overflow-y: auto;
+      flex: 1;
+      overscroll-behavior: contain;
+    }
+    
+    .nav-item {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.6875rem;
+      color: hsl(220 15% 75%);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    
+    .nav-item:hover {
+      background: hsl(220 20% 25%);
+      color: hsl(0 0% 100%);
+    }
+    
+    .nav-item.active {
+      background: hsl(220 60% 50%);
+      color: hsl(0 0% 100%);
+      font-weight: 600;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      background: hsl(210 20% 97%);
+    }
+    
+    .main-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: hsl(210 25% 20%);
+      margin: 0 0 0.75rem;
+    }
+    
+    .main-text {
+      font-size: 0.75rem;
+      color: hsl(210 15% 40%);
+      line-height: 1.6;
+      margin: 0 0 0.75rem;
+    }
+    
+    .main-text code {
+      background: hsl(210 20% 92%);
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.6875rem;
+    }
+    
+    .card {
+      background: hsl(0 0% 100%);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 1px 3px hsl(210 20% 85%);
+    }
+    
+    .card-title {
+      font-size: 0.6875rem;
+      color: hsl(210 10% 55%);
+      margin-bottom: 0.25rem;
+    }
+    
+    .card-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: hsl(210 25% 20%);
+    }
+    `} />
+
+## コード例
+
+### モーダルでのスクロールチェーン防止
+
+```css
+.modal-body {
+  max-height: 80vh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+```
+
+この1行で、モーダルコンテンツの端までスクロールした際に背景ページがスクロールするのを防止します。
+
+### ブラウザの戻るナビゲーションの誤発動防止
+
+```css
+.horizontal-scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+```
+
+一部のブラウザでは、水平オーバースクロールジェスチャーがブラウザの戻る/進むナビゲーションをトリガーします。水平スクロール領域に `overscroll-behavior-x: contain` を設定することで、この誤ナビゲーションを防止します。
+
+### コンテナを制御したアプリシェル
+
+```css
+.app-shell {
+  display: grid;
+  grid-template-columns: 250px 1fr 300px;
+  height: 100vh;
+}
+
+.sidebar-nav {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.main-content {
+  overflow-y: auto;
+}
+
+.detail-panel {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+```
+
+マルチパネルレイアウトでは、各セカンダリスクロールパネルに `overscroll-behavior: contain` を適用し、メインコンテンツ領域へのスクロールチェーンを防止しましょう。
+
+### プルトゥリフレッシュの無効化
+
+```css
+body {
+  overscroll-behavior-y: none;
+}
+```
+
+モバイルブラウザでは、ページ上部で下に引くとリフレッシュがトリガーされます。body に `overscroll-behavior-y: none` を設定することでこの動作を無効にできます。独自のリフレッシュメカニズムを持つウェブアプリに便利です。
+
+## AIがよくやるミス
+
+- **`overscroll-behavior` を一切提案しない**：単一のCSSプロパティで解決できる問題にJavaScriptのスクロールロックライブラリや `event.preventDefault()` ハックをデフォルトで使用します。
+- **間違った要素に適用する**：`overscroll-behavior` は**スクロールを持つ**要素（`overflow: auto` または `overflow: scroll`）に設定する必要がありますが、親やラッパーに設定してしまいます。
+- **`contain` ではなく常に `none` を使用する**：`none` はすべてのオーバースクロールフィードバックを抑制するため、不自然に感じることがあります。バウンスエフェクトを特に抑制する必要がない限り、`contain` を優先しましょう。
+- **軸固有のバリアントを忘れる**：水平スクローラーの `overscroll-behavior-x: contain` のように1軸のみ制御が必要な場合に `overscroll-behavior: contain` を使用します。
+- **`overflow` と組み合わせない**：`overscroll-behavior` はスクロールコンテナにのみ効果を発揮します。要素に `overflow: auto` または `overflow: scroll` がない場合、このプロパティは効果がありません。
+
+## 使い分け
+
+- **モーダルとダイアログ**：モーダル内でスクロールした際の背景ページスクロールを防止します。
+- **サイドバーとナビゲーションパネル**：サイドバーのスクロールをメインコンテンツから独立させます。
+- **チャット・メッセージングパネル**：ユーザーがメッセージ履歴をスクロールする際のページスクロールを防止します。
+- **ドロップダウンメニュー**：長いドロップダウンが背後のページをスクロールさせないようにします。
+- **水平スクロール領域**：`overscroll-behavior-x: contain` でブラウザの戻る/進むナビゲーションの誤発動を防止します。
+- **モバイルウェブアプリ**：アプリが独自のリフレッシュロジックを処理する場合、body に `overscroll-behavior-y: none` でプルトゥリフレッシュを無効にします。
+
+## 参考リンク
+
+- [overscroll-behavior — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior)
+- [overscroll-behavior — web.dev](https://developer.chrome.com/blog/overscroll-behavior)
+- [CSS overscroll-behavior — Ahmad Shadeed](https://ishadeed.com/article/css-overscroll-behavior)

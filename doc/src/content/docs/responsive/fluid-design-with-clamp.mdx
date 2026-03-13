@@ -1,0 +1,180 @@
+---
+title: Fluid Design with clamp()
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Traditional responsive design relies on discrete breakpoints: fixed values at specific viewport widths with abrupt jumps between them. This creates jarring transitions and requires multiple media queries to manage. AI agents typically generate rigid breakpoint-based values (e.g., `font-size: 1rem` on mobile, `font-size: 1.5rem` on desktop) instead of using fluid scaling, resulting in more code and a less polished experience.
+
+## The Solution
+
+The CSS `clamp()` function defines a value that scales fluidly between a minimum and maximum, based on a preferred value that usually involves viewport units. This eliminates the need for breakpoints for many sizing concerns.
+
+```css
+/* clamp(minimum, preferred, maximum) */
+font-size: clamp(1rem, 0.5rem + 1.5vw, 2rem);
+```
+
+- **Minimum**: The smallest the value will ever be.
+- **Preferred**: The fluid middle value, typically using `vw` combined with a `rem` base.
+- **Maximum**: The largest the value will ever be.
+
+<CssPreview client:load
+  title="Fluid Sizing with clamp() — Use viewport buttons to see smooth scaling"
+  html={`
+    <div class="fluid-demo">
+      <h2 class="fluid-heading">Fluid Heading</h2>
+      <p class="fluid-text">This text and its container use clamp() for fluid sizing. The heading, paragraph text, padding, and container width all scale smoothly between minimum and maximum values based on viewport width. No breakpoints needed.</p>
+      <div class="fluid-box">
+        <span>Fluid padding &amp; width</span>
+      </div>
+    </div>
+    `}
+  css={`
+    .fluid-demo {
+      max-width: clamp(16rem, 90%, 50rem);
+      margin: 0 auto;
+      padding: clamp(0.75rem, 0.5rem + 2vw, 2.5rem);
+    }
+    
+    .fluid-heading {
+      font-size: clamp(1.25rem, 0.75rem + 2.5vw, 2.5rem);
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 0.75rem;
+      line-height: 1.2;
+    }
+    
+    .fluid-text {
+      font-size: clamp(0.875rem, 0.8rem + 0.25vw, 1.125rem);
+      line-height: 1.6;
+      color: #475569;
+      margin: 0 0 1.5rem;
+    }
+    
+    .fluid-box {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: clamp(0.75rem, 0.5rem + 1.5vw, 2rem);
+      border-radius: 0.5rem;
+      font-size: clamp(0.75rem, 0.65rem + 0.5vw, 1.125rem);
+      font-weight: 600;
+      text-align: center;
+    }
+    `} />
+
+## Code Examples
+
+### Fluid Typography
+
+```css
+h1 {
+  font-size: clamp(1.75rem, 1rem + 2.5vw, 3rem);
+}
+
+h2 {
+  font-size: clamp(1.375rem, 0.875rem + 1.5vw, 2.25rem);
+}
+
+h3 {
+  font-size: clamp(1.125rem, 0.75rem + 1vw, 1.75rem);
+}
+
+p {
+  font-size: clamp(1rem, 0.875rem + 0.25vw, 1.125rem);
+}
+```
+
+### Fluid Spacing
+
+```css
+.section {
+  padding-block: clamp(2rem, 1rem + 3vw, 5rem);
+  padding-inline: clamp(1rem, 0.5rem + 2vw, 3rem);
+}
+
+.stack > * + * {
+  margin-block-start: clamp(1rem, 0.5rem + 1vw, 2rem);
+}
+```
+
+### Fluid Layout Dimensions
+
+```css
+.container {
+  max-width: clamp(20rem, 90vw, 75rem);
+  margin-inline: auto;
+}
+
+.sidebar {
+  width: clamp(15rem, 25vw, 20rem);
+}
+
+.gap-fluid {
+  gap: clamp(0.5rem, 0.25rem + 1vw, 2rem);
+}
+```
+
+### Fluid Line Height and Letter Spacing
+
+```css
+p {
+  font-size: clamp(1rem, 0.875rem + 0.25vw, 1.125rem);
+  line-height: clamp(1.5, 1.4 + 0.2vw, 1.8);
+  letter-spacing: clamp(0px, 0.02em + 0.01vw, 0.04em);
+}
+```
+
+### Building the Preferred Value
+
+The preferred value formula follows a pattern:
+
+```
+preferred = base-rem-value + viewport-unit-value
+```
+
+To calculate values that scale between two specific viewport widths:
+
+```css
+/*
+  Scale from 1rem at 320px to 2rem at 1200px:
+
+  Slope = (max - min) / (max-viewport - min-viewport)
+  Slope = (2 - 1) / (75 - 20) = 0.01818rem per rem of viewport
+  In vw: 0.01818 * 100 = 1.818vw
+
+  Intercept = min - slope * min-viewport
+  Intercept = 1 - 0.01818 * 20 = 0.636rem
+
+  Result: clamp(1rem, 0.636rem + 1.818vw, 2rem)
+*/
+.fluid-text {
+  font-size: clamp(1rem, 0.636rem + 1.818vw, 2rem);
+}
+```
+
+## Common AI Mistakes
+
+- **Using only breakpoints**: Generating multiple `@media` queries with fixed values instead of a single `clamp()` expression.
+- **Using `vw` alone without `rem`**: Writing `font-size: clamp(1rem, 3vw, 2rem)` where the preferred value is pure `vw`. This prevents the value from scaling with user font-size preferences. Always combine `vw` with a `rem` base.
+- **Unrealistic min/max bounds**: Setting bounds too close together (no visible fluid range) or too far apart (text becomes unreadable at extremes).
+- **Forgetting accessibility**: Fluid typography using `vw` units can interfere with browser zoom. Always test zoom to 200% and ensure text remains readable.
+- **Using `clamp()` where a simple `max-width` suffices**: Not every value needs to be fluid. Use `clamp()` where smooth scaling improves the experience.
+- **Using pixel values for min/max**: Pixels do not scale with user font-size settings. Prefer `rem` for min and max values.
+
+## When to Use
+
+- **Typography**: Heading and body font sizes that should scale smoothly between mobile and desktop.
+- **Spacing**: Padding, margins, and gaps that should grow proportionally with the viewport.
+- **Layout widths**: Container widths, sidebar widths, and max-widths that need fluid behavior.
+- **Not for colors or discrete values**: `clamp()` works with numeric CSS values. It does not apply to properties like `display`, `color`, or `grid-template-columns` patterns.
+
+## References
+
+- [clamp() — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/clamp)
+- [Modern Fluid Typography Using CSS Clamp — Smashing Magazine](https://www.smashingmagazine.com/2022/01/modern-fluid-typography-css-clamp/)
+- [Fluid Typography with CSS Clamp — XenonStack](https://www.xenonstack.com/blog/fluid-typography-css-clamp)
+- [CSS Clamp Guide — Clamp Generator](https://clampgenerator.com/guides/css-clamp/)

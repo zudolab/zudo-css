@@ -1,0 +1,705 @@
+---
+title: 親要素の状態による子要素のスタイリング
+sidebar_position: 9
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+親のインタラクティブ状態（ホバー、フォーカス、チェックなど）に基づいて子要素をスタイリングすることは、最も一般的なUIパターンの1つです — カードをホバーするとタイトルがハイライトされたり、inputにフォーカスするとアイコンが変わったり、チェックボックスをオンにすると追加コンテンツが表示されたりします。AIエージェントはこれらのパターンにJavaScriptのイベントリスナーとクラストグルを使おうとしたり、各子要素に個別にホバースタイルを適用したりする傾向があります。Tailwind CSSは `group` と `group-hover:` ユーティリティでこれをエレガントに解決しましたが、基盤となるCSSパターンはシンプルで、多くの開発者が認識しているよりも強力です。
+
+## 解決方法
+
+CSSは親の状態に基づく子スタイリングのための3つの補完的なメカニズムを提供しています：
+
+1. **擬似クラスと子孫コンビネーター** — `.parent:hover .child` で親がホバーされた時に子をターゲットにします
+2. **`:focus-within`** — 要素自体またはその子孫がフォーカスを持つ時にマッチします
+3. **`:has()`** — 最も強力：任意の子の状態に基づいて親（およびその子）をスタイリングします
+
+これらを組み合わせることで、Tailwindの `group-*` ユーティリティが処理するすべてのシナリオ、さらにそれ以上をカバーします。
+
+<CssPreview client:load
+  title="カード — ホバーまたはTabで連動する子の変化を確認"
+  html={`
+    <div class="demo">
+      <div class="card" tabindex="0">
+        <div class="card__icon">→</div>
+        <h3 class="card__title">Hover this card</h3>
+        <p class="card__desc">The icon shifts, the title changes color, and the background transitions — all from a single parent :hover and :focus-within.</p>
+      </div>
+      <div class="card" tabindex="0">
+        <div class="card__icon">→</div>
+        <h3 class="card__title">Second card</h3>
+        <p class="card__desc">Each card is independent. Hovering one does not affect the other.</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      gap: 1rem;
+      padding: 1.5rem;
+    }
+    
+    .card {
+      flex: 1;
+      padding: 1.5rem;
+      border: 1px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      background: white;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    
+    .card:hover,
+    .card:focus-within {
+      background: hsl(220 60% 97%);
+      border-color: hsl(220 60% 70%);
+    }
+    
+    .card:focus-visible {
+      outline: 2px solid hsl(220 70% 50%);
+      outline-offset: 2px;
+    }
+    
+    .card__icon {
+      font-size: 1.25rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .card:hover .card__icon,
+    .card:focus-within .card__icon {
+      transform: translateX(4px);
+    }
+    
+    .card__title {
+      margin: 0.5rem 0 0.25rem;
+      font-size: 1rem;
+      color: hsl(220 15% 25%);
+      transition: color 0.2s ease;
+    }
+    
+    .card:hover .card__title,
+    .card:focus-within .card__title {
+      color: hsl(220 70% 50%);
+    }
+    
+    .card__desc {
+      margin: 0;
+      font-size: 0.8rem;
+      color: hsl(220 10% 50%);
+      line-height: 1.5;
+    }
+    `} />
+
+## コード例
+
+### 基本：親のホバー → 子のスタイリング
+
+最もシンプルなパターンです。親がホバーされると子が応答します。
+
+```css
+.card:hover .card__title {
+  color: blue;
+}
+
+.card:hover .card__icon {
+  transform: translateX(4px);
+}
+
+.card:hover .card__arrow {
+  opacity: 1;
+}
+```
+
+これはTailwindの `group` / `group-hover:` がコンパイルされる先のCSSです。親が「グループ」で、子がその状態に反応します。
+
+### Focus-Within：キーボードアクセシブルなグループフォーカス
+
+`:focus-within` は要素自体または**任意の子孫**がフォーカスを持つ時にマッチします。キーボードアクセシビリティに不可欠で、`:hover` が親に対して提供するのと同じ連動スタイリングをフォーカスイベントに対して実現します。
+
+```css
+/* The search bar container highlights when its input is focused */
+.search-bar:focus-within {
+  border-color: hsl(220 70% 50%);
+  box-shadow: 0 0 0 3px hsl(220 70% 50% / 0.15);
+}
+
+.search-bar:focus-within .search-bar__icon {
+  color: hsl(220 70% 50%);
+}
+
+.search-bar:focus-within .search-bar__label {
+  transform: translateY(-100%) scale(0.85);
+  color: hsl(220 70% 50%);
+}
+```
+
+<CssPreview client:load
+  title="検索バー — inputをクリックまたはTabで移動"
+  html={`
+    <div class="demo">
+      <div class="search-bar">
+        <span class="search-bar__icon">⌕</span>
+        <input class="search-bar__input" type="text" placeholder="Search..." />
+      </div>
+      <p class="hint">Click the input or press Tab — the entire search bar highlights via :focus-within</p>
+    </div>
+    `}
+  css={`
+    .demo {
+      padding: 2rem;
+    }
+    
+    .hint {
+      font-size: 0.75rem;
+      color: hsl(220 10% 55%);
+      font-style: italic;
+      margin-top: 0.75rem;
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border: 2px solid hsl(220 15% 80%);
+      border-radius: 0.5rem;
+      background: white;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .search-bar:focus-within {
+      border-color: hsl(220 70% 50%);
+      box-shadow: 0 0 0 3px hsl(220 70% 50% / 0.15);
+    }
+    
+    .search-bar__icon {
+      font-size: 1.25rem;
+      color: hsl(220 10% 60%);
+      transition: color 0.2s ease;
+    }
+    
+    .search-bar:focus-within .search-bar__icon {
+      color: hsl(220 70% 50%);
+    }
+    
+    .search-bar__input {
+      border: none;
+      outline: 2px solid transparent;
+      font-size: 0.9rem;
+      flex: 1;
+      background: transparent;
+      color: hsl(220 15% 20%);
+    }
+    
+    .search-bar__input::placeholder {
+      color: hsl(220 10% 65%);
+    }
+    `} />
+
+### :has() — 最も強力なグループパターン
+
+`:has()` はホバーやフォーカスを超えた能力を持ちます。**任意の子の状態**（チェックされたチェックボックス、入力されたinput、選択されたオプション、さらには構造的条件）に基づいて親（およびその子）をスタイリングできます。
+
+```css
+/* Highlight the form group when its checkbox is checked */
+.option-group:has(input:checked) {
+  background: hsl(220 60% 97%);
+  border-color: hsl(220 70% 50%);
+}
+
+.option-group:has(input:checked) .option-group__label {
+  color: hsl(220 70% 40%);
+  font-weight: 600;
+}
+
+/* Reveal extra content when checked */
+.option-group:has(input:checked) .option-group__details {
+  display: block;
+}
+```
+
+<CssPreview client:load
+  title="オプションカード — クリックで選択（:has(:checked) 使用）"
+  html={`
+    <div class="demo">
+      <label class="option-card">
+        <input type="radio" name="plan" value="free" class="option-card__input" />
+        <div class="option-card__content">
+          <span class="option-card__indicator"></span>
+          <div>
+            <div class="option-card__title">Free</div>
+            <div class="option-card__desc">Basic features, 1 project</div>
+          </div>
+        </div>
+      </label>
+      <label class="option-card">
+        <input type="radio" name="plan" value="pro" class="option-card__input" checked />
+        <div class="option-card__content">
+          <span class="option-card__indicator"></span>
+          <div>
+            <div class="option-card__title">Pro</div>
+            <div class="option-card__desc">Unlimited projects, priority support</div>
+          </div>
+        </div>
+      </label>
+      <label class="option-card">
+        <input type="radio" name="plan" value="team" class="option-card__input" />
+        <div class="option-card__content">
+          <span class="option-card__indicator"></span>
+          <div>
+            <div class="option-card__title">Team</div>
+            <div class="option-card__desc">Everything in Pro, plus team management</div>
+          </div>
+        </div>
+      </label>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1.5rem;
+    }
+    
+    .option-card {
+      display: block;
+      border: 2px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    
+    .option-card:hover {
+      border-color: hsl(220 30% 70%);
+    }
+    
+    .option-card:has(input:checked) {
+    border-color: hsl(220 70% 50%);
+    background: hsl(220 60% 97%);
+    }
+    
+    .option-card:has(input:focus-visible) {
+    outline: 2px solid hsl(220 70% 50%);
+    outline-offset: 2px;
+    }
+    
+    .option-card__input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    }
+    
+    .option-card__content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    }
+    
+    .option-card__indicator {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid hsl(220 15% 70%);
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color 0.2s ease;
+    }
+    
+    .option-card:has(input:checked) .option-card__indicator {
+    border-color: hsl(220 70% 50%);
+    }
+    
+    .option-card:has(input:checked) .option-card__indicator::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: hsl(220 70% 50%);
+    }
+    
+    .option-card__title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: hsl(220 15% 25%);
+    transition: color 0.2s ease;
+    }
+    
+    .option-card:has(input:checked) .option-card__title {
+    color: hsl(220 70% 40%);
+    }
+    
+    .option-card__desc {
+    font-size: 0.8rem;
+    color: hsl(220 10% 55%);
+    margin-top: 0.125rem;
+    }
+    `} />
+
+### ホバーと Focus-Within の組み合わせ
+
+堅牢なインタラクティブコンポーネントには、マウスとキーボードの両方のユーザーで動作するよう `:hover` と `:focus-within` の両方を組み合わせましょう。
+
+```css
+.nav-item:hover .nav-item__tooltip,
+.nav-item:focus-within .nav-item__tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+```
+
+<CssPreview client:load
+  title="ナビアイテムとツールチップ — ホバーまたはTabで表示"
+  html={`
+    <div class="demo">
+      <nav class="nav">
+        <div class="nav-item">
+          <button class="nav-item__btn">Home</button>
+          <div class="nav-item__tooltip">Go to homepage</div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-item__btn">Settings</button>
+          <div class="nav-item__tooltip">Manage your preferences</div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-item__btn">Profile</button>
+          <div class="nav-item__tooltip">View your profile</div>
+        </div>
+      </nav>
+      <p class="hint">Hover or Tab to each button — the tooltip appears via :hover + :focus-within</p>
+    </div>
+    `}
+  css={`
+    .demo {
+      padding: 2rem;
+    }
+    
+    .hint {
+      font-size: 0.75rem;
+      color: hsl(220 10% 55%);
+      font-style: italic;
+      margin-top: 1.5rem;
+    }
+    
+    .nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .nav-item {
+      position: relative;
+    }
+    
+    .nav-item__btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid hsl(220 15% 80%);
+      border-radius: 0.375rem;
+      background: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    
+    .nav-item:hover .nav-item__btn,
+    .nav-item:focus-within .nav-item__btn {
+      background: hsl(220 60% 97%);
+      border-color: hsl(220 60% 70%);
+    }
+    
+    .nav-item__btn:focus-visible {
+      outline: 2px solid hsl(220 70% 50%);
+      outline-offset: 2px;
+    }
+    
+    .nav-item__tooltip {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      padding: 0.375rem 0.75rem;
+      background: hsl(220 20% 20%);
+      color: white;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    
+    .nav-item:hover .nav-item__tooltip,
+    .nav-item:focus-within .nav-item__tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    `} />
+
+### :has(:checked) による表示切り替え
+
+クラシックなパターンです。チェックボックスやラジオの状態に基づいてコンテンツセクションの表示/非表示を切り替えます。JavaScriptは不要です。
+
+<CssPreview client:load
+  title="アコーディオン — クリックでセクションを展開（純粋なCSS）"
+  html={`
+    <div class="accordion">
+      <div class="accordion__item">
+        <label class="accordion__header">
+          <input type="checkbox" class="accordion__trigger" />
+          <span class="accordion__title">What is parent-state styling?</span>
+          <span class="accordion__chevron">›</span>
+        </label>
+        <div class="accordion__body">
+          <div class="accordion__body-inner">
+            <p>Parent-state styling means applying CSS to child elements based on the parent's interactive state — hover, focus, checked, etc. This is what Tailwind's group/group-hover utilities compile to.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion__item">
+        <label class="accordion__header">
+          <input type="checkbox" class="accordion__trigger" />
+          <span class="accordion__title">Do I need JavaScript for this?</span>
+          <span class="accordion__chevron">›</span>
+        </label>
+        <div class="accordion__body">
+          <div class="accordion__body-inner">
+            <p>No. Descendant combinators with :hover, :focus-within, and :has(:checked) cover the vast majority of interactive parent-child patterns without any JavaScript.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion__item">
+        <label class="accordion__header">
+          <input type="checkbox" class="accordion__trigger" />
+          <span class="accordion__title">What about browser support?</span>
+          <span class="accordion__chevron">›</span>
+        </label>
+        <div class="accordion__body">
+          <div class="accordion__body-inner">
+            <p>:hover and :focus-within have universal support. :has() is supported in all major browsers since December 2023 (Chrome 105+, Safari 15.4+, Firefox 121+).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .accordion {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .accordion__item {
+      border: 1px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+    
+    .accordion__item:has(.accordion__trigger:checked) {
+    border-color: hsl(220 60% 70%);
+    }
+    
+    .accordion__item:has(.accordion__trigger:focus-visible) {
+    outline: 2px solid hsl(220 70% 50%);
+    outline-offset: 2px;
+    }
+    
+    .accordion__trigger {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    }
+    
+    .accordion__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    cursor: pointer;
+    background: white;
+    transition: background-color 0.15s ease;
+    }
+    
+    .accordion__header:hover {
+    background: hsl(220 30% 97%);
+    }
+    
+    .accordion__title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: hsl(220 15% 25%);
+    }
+    
+    .accordion__chevron {
+    font-size: 1.25rem;
+    color: hsl(220 10% 55%);
+    transition: transform 0.2s ease;
+    }
+    
+    .accordion__item:has(.accordion__trigger:checked) .accordion__chevron {
+    transform: rotate(90deg);
+    }
+    
+    .accordion__body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+    }
+    
+    .accordion__item:has(.accordion__trigger:checked) .accordion__body {
+    grid-template-rows: 1fr;
+    }
+    
+    .accordion__body-inner {
+    overflow: hidden;
+    }
+    
+    .accordion__body-inner > p {
+    margin: 0;
+    padding: 0 1rem 1rem;
+    font-size: 0.85rem;
+    color: hsl(220 10% 40%);
+    line-height: 1.6;
+    }
+    `} />
+
+### ネストされたグループ：複数の祖先レベル
+
+異なる祖先レベルが異なる子スタイルを駆動する必要がある場合、各レベルに個別のクラス名を使用しましょう。
+
+```css
+/* Outer group: the card */
+.card:hover .card__badge {
+  background: hsl(220 70% 50%);
+}
+
+/* Inner group: the card footer */
+.card__footer:hover .card__footer-link {
+  text-decoration: underline;
+}
+```
+
+これはTailwindの名前付きグループ（`group/card`、`group/footer`）のCSS等価物です。各祖先の状態がそれぞれの子孫を独立して制御します。
+
+<CssPreview client:load
+  title="ネストされたグループ — カードをホバーし、次にフッターリンクをホバー"
+  html={`
+    <div class="demo">
+      <div class="card">
+        <span class="card__badge">New</span>
+        <h3 class="card__title">Nested Group Demo</h3>
+        <p class="card__desc">Hover the card to highlight the badge. Then hover the footer area to see the link underline.</p>
+        <div class="card__footer">
+          <a href="#" class="card__footer-link">Read more →</a>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      padding: 1.5rem;
+      max-width: 320px;
+    }
+    
+    .card {
+      border: 1px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      background: white;
+      transition: border-color 0.2s ease;
+      position: relative;
+    }
+    
+    .card:hover {
+      border-color: hsl(220 50% 70%);
+    }
+    
+    .card__badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 0.25rem;
+      background: hsl(220 15% 88%);
+      color: hsl(220 15% 40%);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    
+    /* Outer group: card hover changes badge */
+    .card:hover .card__badge {
+      background: hsl(220 70% 50%);
+      color: white;
+    }
+    
+    .card__title {
+      font-size: 1rem;
+      margin: 0.75rem 0 0.25rem;
+      color: hsl(220 15% 20%);
+    }
+    
+    .card__desc {
+      font-size: 0.8rem;
+      color: hsl(220 10% 50%);
+      line-height: 1.5;
+      margin: 0;
+    }
+    
+    .card__footer {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid hsl(220 15% 90%);
+    }
+    
+    .card__footer-link {
+      font-size: 0.85rem;
+      color: hsl(220 70% 50%);
+      transition: text-decoration-color 0.15s ease;
+      text-decoration: underline transparent;
+    }
+    
+    .card__footer-link:focus-visible {
+      outline: 2px solid hsl(220 70% 50%);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+    
+    /* Inner group: footer hover changes link */
+    .card__footer:hover .card__footer-link,
+    .card__footer:focus-within .card__footer-link {
+      text-decoration: underline hsl(220 70% 50%);
+    }
+    `} />
+
+## Tailwind group → CSS マッピング
+
+| Tailwind ユーティリティ | CSS 等価物 |
+| --- | --- |
+| `group` + `group-hover:text-blue` | `.parent:hover .child { color: blue; }` |
+| `group` + `group-focus:opacity-100` | `.parent:focus .child { opacity: 1; }` |
+| `group` + `group-focus-within:ring-2` | `.parent:focus-within .child { ... }` |
+| `group` + `group-active:scale-95` | `.parent:active .child { transform: scale(0.95); }` |
+| `group/name`（名前付きグループ） | 祖先レベルごとに個別のクラス名を使用 |
+| `group-has-[:checked]:bg-blue` | `.parent:has(:checked) { background: blue; }` |
+
+## AIがよくやるミス
+
+- **ホバーエフェクトにJavaScriptでクラスをトグルする** — `.parent:hover .child` を使いましょう。イベントリスナーは不要です。
+- **すべての子要素にホバースタイルを重複して書く** — 親に一度 `:hover` を適用し、そこからすべての子をスタイリングしましょう。
+- **キーボードアクセシビリティを忘れる** — インタラクティブコンテナには常に `:hover` と `:focus-within` をペアにしましょう。ホバーのみのパターンはキーボードユーザーを排除します。
+- **`:has()` を過度に使用する** — シンプルな `.parent:hover .child` で十分な場合に `:has()` を使わないでください。`:has()` は子の内部状態（checked、valid、empty）に反応する必要がある場合に使いましょう。
+
+## 使い分け
+
+- **カードのホバーエフェクト**：タイトル、アイコン、背景の連動変化に使います。
+- **フォームグループ**：inputがフォーカスされた時や無効な時にグループ全体をハイライトする場合に使います。
+- **ナビゲーションメニュー**：ホバー/フォーカス時にツールチップやドロップダウンを表示する場合に使います。
+- **オプションセレクター**：ラジオ/チェックボックスの状態に基づいて選択されたオプションをスタイリングする場合に使います。
+- **アコーディオン/ディスクロージャー**：`:has(:checked)` で表示を切り替える場合に使います。
+- **Tailwindが `group` を使用するパターンすべて** — CSSは常に子孫コンビネーター + 擬似クラスです。

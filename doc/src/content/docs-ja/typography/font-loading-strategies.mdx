@@ -1,0 +1,255 @@
+---
+title: フォント読み込み戦略
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+Webフォントは、レイアウトシフト（CLS）やパフォーマンス低下の主要な原因です。ブラウザがカスタムフォントをダウンロードする際、待機中に何を表示するかを決める必要があります — 不可視テキスト（FOIT: Flash of Invisible Text）か、フォールバックスタイルのテキスト（FOUT: Flash of Unstyled Text）です。AIエージェントは通常、`@font-face`宣言やGoogle Fontsの`<link>`タグを追加するだけで読み込み動作を無視します。その結果、フォント読み込み時に目に見えるレイアウトシフトが発生したり、読み込み中にテキストが空白になったり、遅延可能なフォントに対して不要なネットワークリクエストが発生したりします。
+
+## 解決方法
+
+堅牢なフォント読み込み戦略は、いくつかの技術を組み合わせます：レンダリング動作を制御する`font-display`ディスクリプタ、重要なフォントの`<link rel="preload">`、フォールバックとしてのシステムフォントスタック、レイアウトシフトを最小化するメトリックオーバーライドです。
+
+## コード例
+
+### font-displayの値
+
+```css
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont.woff2") format("woff2");
+
+  /* swap: フォールバックを即座に表示し、フォント読み込み後にスワップ。
+     コンテンツを読めるようにすべき本文テキストに最適。 */
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HeadingFont";
+  src: url("/fonts/heading.woff2") format("woff2");
+
+  /* optional: フォントがすでにキャッシュされている場合のみ使用。
+     レイアウトの安定性が重要な非クリティカルテキストに最適。 */
+  font-display: optional;
+}
+```
+
+#### font-display値のまとめ
+
+| 値         | ブロック期間           | スワップ期間           | 最適な用途                       |
+| ---------- | ---------------------- | ---------------------- | -------------------------------- |
+| `auto`     | ブラウザのデフォルト   | ブラウザのデフォルト   | ほとんどの場合、適切ではない     |
+| `block`    | 短い（3秒）            | 無制限                 | アイコンフォントのみ             |
+| `swap`     | 極めて短い             | 無制限                 | 本文テキスト、コンテンツフォント |
+| `fallback` | 非常に短い（100ms）    | 短い（3秒）            | FOUTとCLSのバランス              |
+| `optional` | なし                   | なし                   | 非クリティカルフォント、CLS最大制御 |
+
+### 重要なフォントのプリロード
+
+```html
+<head>
+  <!-- 最も重要なフォントファイルのみプリロード（通常は本文テキストのレギュラーウェイト） -->
+  <link
+    rel="preload"
+    href="/fonts/body-regular.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+
+  <!-- すべてのウェイト/スタイルをプリロードしてはいけません — ファーストビューに必要なものだけにしましょう -->
+</head>
+```
+
+`crossorigin`属性は同一オリジンのフォントでも必須です — これがないとフォントが2回フェッチされます。
+
+<CssPreview client:load
+  title="システムフォントスタック — ネイティブフォントでのレンダリング"
+  html={`    <div class="font-demo">
+      <div class="font-card">
+        <h3>system-ui (Default System Font)</h3>
+        <p style="font-family: system-ui, sans-serif;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. 0123456789</p>
+      </div>
+      <div class="font-card">
+        <h3>ui-monospace (System Monospace)</h3>
+        <p style="font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. 0123456789</p>
+      </div>
+      <div class="font-card">
+        <h3>Georgia (Serif Fallback)</h3>
+        <p style="font-family: Georgia, 'Times New Roman', serif;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. 0123456789</p>
+      </div>
+    </div>`}
+  css={`.font-demo {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-family: system-ui, sans-serif;
+    }
+    .font-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+      border-left: 4px solid #6c63ff;
+    }
+    .font-card h3 {
+      font-size: 0.8rem;
+      color: #6c63ff;
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+    .font-card p {
+      font-size: 1.1rem;
+      line-height: 1.5;
+      color: #333;
+      margin: 0;
+    }`}
+  height={280} />
+
+### フォールバックとしてのシステムフォントスタック
+
+```css
+:root {
+  --font-system: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
+    "DejaVu Sans Mono", monospace;
+}
+
+body {
+  font-family: "MyFont", var(--font-system);
+}
+
+code {
+  font-family: var(--font-mono);
+}
+```
+
+### メトリックオーバーライドによるレイアウトシフトの軽減
+
+```css
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* フォールバックフォントのメトリックをWebフォントに合わせて調整 */
+@font-face {
+  font-family: "MyFont Fallback";
+  src: local("Arial");
+  size-adjust: 104.7%;
+  ascent-override: 93%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+
+body {
+  font-family: "MyFont", "MyFont Fallback", sans-serif;
+}
+```
+
+### 完全な戦略：最適なパフォーマンス
+
+```html
+<head>
+  <!-- 1. 重要なフォントをプリロード -->
+  <link
+    rel="preload"
+    href="/fonts/body-regular.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+
+  <!-- 2. クリティカルな@font-faceルールをインライン化 -->
+  <style>
+    @font-face {
+      font-family: "Body";
+      src: url("/fonts/body-regular.woff2") format("woff2");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Body";
+      src: url("/fonts/body-bold.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Heading";
+      src: url("/fonts/heading.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+      font-display: optional;
+    }
+  </style>
+</head>
+```
+
+### フォントサブセッティング
+
+```css
+/* ラテン文字サブセットのみ — ファイルサイズが大幅に削減される */
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont-latin.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+```
+
+## AIがよくやるミス
+
+- `font-display`をまったく指定せず、ブラウザのデフォルト動作（ほとんどのブラウザで`auto`、FOITを引き起こす）に任せてしまう
+- すべてのフォントウェイトとスタイルをプリロードし、ネットワークを圧迫してページの読み込みを遅くする
+- `<link rel="preload">`に`crossorigin`属性を付け忘れ、フォントが2回ダウンロードされる
+- `woff2`ではなく`woff`のみを使用する — `woff2`は15〜30%圧縮率が高く、すべてのモダンブラウザでサポートされている
+- Google Fontsを`display=swap`パラメータなしの`<link>`で読み込む（例: `fonts.googleapis.com/css2?family=Roboto&display=swap`）
+- システムフォントのフォールバックスタックを提供せず、`sans-serif`だけをフォールバックにする
+- デザインで使用しないウェイトのフォントまで読み込む（例: レギュラーとボールドしか使わないのに6ウェイト読み込む）
+- 本文テキストに`font-display: block`を使い、低速回線で最大3秒間テキストが不可視になる
+
+## 使い分け
+
+### font-display: swap
+
+- 本文テキストや主要な読み物コンテンツ
+- すぐに読める状態であるべきテキスト
+
+### font-display: optional
+
+- レイアウトの安定性が重要な見出しやディスプレイフォント
+- 装飾目的のフォント
+- フォントがキャッシュされている可能性が高い再訪問時
+
+### プリロード
+
+- 最も重要なフォントファイル1つ（通常は本文のレギュラーウェイト）
+- ランディングページのファーストビュー見出しフォント
+- 1〜2ファイルを超えてはいけません
+
+### システムフォントスタック
+
+- パフォーマンスが最優先の場合
+- 社内ツールや管理画面
+- カスタムWebフォントのフォールバックチェーン
+
+## 参考リンク
+
+- [Best practices for fonts — web.dev](https://web.dev/articles/font-best-practices)
+- [The Best Font Loading Strategies — CSS-Tricks](https://css-tricks.com/the-best-font-loading-strategies-and-how-to-execute-them/)
+- [A Comprehensive Guide to Font Loading Strategies — Zach Leatherman](https://www.zachleat.com/web/comprehensive-webfonts)
+- [Ensure text remains visible during webfont load — Chrome Developers](https://developer.chrome.com/docs/lighthouse/performance/font-display)
+- [A New Way To Reduce Font Loading Impact — Smashing Magazine](https://www.smashingmagazine.com/2021/05/reduce-font-loading-impact-css-descriptors/)

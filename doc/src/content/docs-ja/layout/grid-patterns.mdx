@@ -1,0 +1,340 @@
+---
+title: CSS Grid パターン
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+CSS Gridは最も強力なCSSレイアウトシステムですが、AIエージェントはしばしば活用しきれなかったり、誤った使い方をしたりします。よくあるミスとしては、`auto-fill` と `auto-fit` の混同、レスポンシブパターンではなく固定のカラム数を使う、可読性が大幅に向上するのに `grid-template-areas` を避ける、`minmax()` がネイティブでレスポンシブに対応できるのにJavaScriptやメディアクエリに頼る、などがあります。
+
+## 解決方法
+
+CSS Gridは二次元のレイアウトシステムです。ページレベルのレイアウト、レスポンシブなカードグリッド、行と列の両方でアイテムを揃える必要があるあらゆるシナリオに使いましょう。`auto-fill`/`auto-fit` と `minmax()` の組み合わせにより、メディアクエリを1つも使わずにレスポンシブレイアウトが実現できます。
+
+## コード例
+
+### auto-fill vs auto-fit
+
+アイテムの数がグリッドに収まる数より少ない場合に、違いが現れます。
+
+```css
+/* auto-fill: keeps empty tracks, preserving the grid structure */
+.grid-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* auto-fit: collapses empty tracks, items stretch to fill space */
+.grid-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+```
+
+5カラム分の幅があるコンテナに3つのアイテムがある場合：
+
+- `auto-fill` は5カラムを作り、2つは空のまま残します。アイテムは約200pxの幅を維持します。
+- `auto-fit` は2つの空カラムを折りたたみます。アイテムはコンテナの全幅に広がります。
+
+**`auto-fit` を使う場面：** カードグリッド、ギャラリーレイアウトなど、アイテムが利用可能なスペースを埋めるべきほとんどのUIパターン。
+
+**`auto-fill` を使う場面：** アイテム数に関係なくカラム幅を一定に保ちたい場合（フォームフィールドやデータ入力レイアウトなど）。
+
+<CssPreview client:load
+  title="Grid: auto-fill vs auto-fit の比較"
+  html={`    <div class="label">auto-fill (empty tracks preserved):</div>
+    <div class="grid-fill">
+      <div class="item">1</div>
+      <div class="item">2</div>
+      <div class="item">3</div>
+    </div>
+    <div class="label">auto-fit (items stretch to fill):</div>
+    <div class="grid-fit">
+      <div class="item fit">1</div>
+      <div class="item fit">2</div>
+      <div class="item fit">3</div>
+    </div>`}
+  css={`.label {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+    .grid-fill {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .grid-fit {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+    }
+    .item {
+      background: #3b82f6;
+      color: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .item.fit {
+      background: #22c55e;
+    }`} />
+
+### レスポンシブなカードグリッド（メディアクエリ不要）
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1.5rem;
+}
+```
+
+```html
+<div class="card-grid">
+  <article class="card">Card 1</article>
+  <article class="card">Card 2</article>
+  <article class="card">Card 3</article>
+  <article class="card">Card 4</article>
+</div>
+```
+
+<CssPreview client:load
+  title="Grid: minmax() を使ったレスポンシブカードグリッド"
+  html={`    <div class="card-grid">
+      <div class="card">Card 1</div>
+      <div class="card">Card 2</div>
+      <div class="card">Card 3</div>
+      <div class="card">Card 4</div>
+      <div class="card">Card 5</div>
+      <div class="card">Card 6</div>
+    </div>`}
+  css={`.card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+      gap: 12px;
+      padding: 8px;
+    }
+    .card {
+      background: #8b5cf6;
+      color: #fff;
+      padding: 20px 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }`} />
+
+### 名前付きグリッドエリア
+
+グリッドエリアは複雑なレイアウトを読みやすく保守しやすくします。
+
+```css
+.page-layout {
+  display: grid;
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }
+
+/* Responsive: stack on narrow viewports */
+@media (max-width: 768px) {
+  .page-layout {
+    grid-template-areas:
+      "header"
+      "main"
+      "sidebar"
+      "footer";
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+```html
+<div class="page-layout">
+  <header class="header">Header</header>
+  <aside class="sidebar">Sidebar</aside>
+  <main class="main">Main Content</main>
+  <footer class="footer">Footer</footer>
+</div>
+```
+
+<CssPreview client:load
+  title="Grid: 名前付きグリッドエリアレイアウト"
+  html={`    <div class="page-layout">
+      <header class="header">Header</header>
+      <aside class="sidebar">Sidebar</aside>
+      <main class="main">Main Content</main>
+      <footer class="footer">Footer</footer>
+    </div>`}
+  css={`.page-layout {
+      display: grid;
+      grid-template-areas:
+      "header  header"
+      "sidebar main"
+      "footer  footer";
+      grid-template-columns: 120px 1fr;
+      grid-template-rows: auto 1fr auto;
+      min-height: 280px;
+      gap: 8px;
+      padding: 8px;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .header {
+      grid-area: header;
+      background: #3b82f6;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+    .sidebar {
+      grid-area: sidebar;
+      background: #f59e0b;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+    .main {
+      grid-area: main;
+      background: #22c55e;
+      color: #fff;
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .footer {
+      grid-area: footer;
+      background: #8b5cf6;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }`}
+  height={320} />
+
+### grid-template ショートハンドによる複雑なレイアウト
+
+`grid-template` ショートハンドは `grid-template-rows`、`grid-template-columns`、`grid-template-areas` を1つの宣言にまとめます。
+
+```css
+.dashboard {
+  display: grid;
+  grid-template:
+    "nav    nav    nav"    60px
+    "side   main   aside"  1fr
+    "footer footer footer" 80px
+    / 200px  1fr    250px;
+  min-height: 100vh;
+  gap: 1rem;
+}
+```
+
+### 複数の行や列にまたがる
+
+```css
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 1rem;
+}
+
+.featured-item {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+```
+
+### Dense パッキング（隙間の埋め合わせ）
+
+```css
+.masonry-like {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-auto-flow: dense;
+  gap: 1rem;
+}
+```
+
+`dense` キーワードは、DOMの後方にある小さなアイテムで空のセルを埋めるようブラウザに指示し、より詰まったレイアウトを作ります。
+
+## AIがよくやるミス
+
+- **`auto-fit` を意図しているのに `auto-fill` を使う。** ほとんどのUIパターンでは、アイテムが利用可能なスペースを埋めるように広がることを望みます（`auto-fit`）。AIエージェントは空のトラックを残す `auto-fill` を選びがちです。
+- **`min()` ガードなしで `minmax(300px, 1fr)` を書く。** 300px未満のビューポートで水平オーバーフローが発生します。常に `minmax(min(100%, 300px), 1fr)` を使いましょう。
+- **`grid-template-areas` を避ける。** AIエージェントは行/列番号で配置しがちで、読みにくいコードになります。名前付きエリアは自己ドキュメンティングで、リファクタリングも容易です。
+- **`repeat(auto-fit, ...)` の代わりに明示的なカラム数を設定する。** 固定の `grid-template-columns: repeat(3, 1fr)` はレスポンシブにするためにメディアクエリが必要です。`auto-fit` と `minmax()` なら自動的に対応できます。
+- **カードのグリッドにflexboxを使う。** カードが行と列の両方で一貫したサイズで揃う必要がある場合、CSS Gridが正しいツールです。
+- **`gap` を忘れてグリッドアイテムにmarginを使う。** Gridには `gap` サポートが組み込まれています。グリッドアイテムのmarginはグリッドトラックの外側にスペースを追加し、整列を崩します。
+- **フルページのグリッドレイアウトに `min-height: 100vh` を設定しない。** これがないと、グリッドはコンテンツの高さしか取らず、フッターなどのエリアが下端に届きません。
+
+## 使い分け
+
+### CSS Grid が適しているケース
+
+- 二次元レイアウト（行と列を同時に扱う）
+- header、sidebar、main、footerを持つページレベルのレイアウト
+- auto-fit/auto-fill を使ったレスポンシブなカードグリッド
+- 複数の行や列にまたがるアイテムを含むレイアウト
+- 名前付きエリアによる可読性が有益なレイアウト
+
+### 代わりにFlexboxを使うべき場合
+
+- 一次元のレイアウトのみ必要な場合（単一の行または列）
+- アイテムの幅が不明で、スペースを分配する必要がある場合（ナビゲーション、ツールバー）
+- アイテムを折り返したいが、行間でのカラム整列は不要な場合
+
+## Tailwind CSS
+
+Tailwindはレスポンシブブレークポイントプレフィックス付きのグリッドユーティリティを提供しています。CSS Gridの `auto-fit`/`auto-fill` と `minmax()` はユーティリティとして提供されていませんが、Tailwindのレスポンシブプレフィックス（`sm:`、`md:`、`lg:`）が明示的なブレークポイントベースの代替手段を提供します。
+
+### レスポンシブカードグリッド
+
+<TailwindPreview client:load
+  title="Tailwind: レスポンシブグリッド（リサイズして確認）"
+  html={`    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-2">
+      <div class="bg-violet-500 text-white py-5 px-4 rounded-lg text-center">Card 1</div>
+      <div class="bg-violet-500 text-white py-5 px-4 rounded-lg text-center">Card 2</div>
+      <div class="bg-violet-500 text-white py-5 px-4 rounded-lg text-center">Card 3</div>
+      <div class="bg-violet-500 text-white py-5 px-4 rounded-lg text-center">Card 4</div>
+      <div class="bg-violet-500 text-white py-5 px-4 rounded-lg text-center">Card 5</div>
+      <div class="bg-violet-500 text-white py-5 px-4 rounded-lg text-center">Card 6</div>
+    </div>`} />
+
+### カラムのスパン
+
+<TailwindPreview client:load
+  title="Tailwind: col-span を使ったグリッド"
+  html={`    <div class="grid grid-cols-3 gap-3 p-2">
+      <div class="col-span-2 bg-blue-500 text-white p-4 rounded-lg text-center">Spans 2 columns</div>
+      <div class="bg-green-500 text-white p-4 rounded-lg text-center">1 col</div>
+      <div class="bg-amber-500 text-white p-4 rounded-lg text-center">1 col</div>
+      <div class="bg-amber-500 text-white p-4 rounded-lg text-center">1 col</div>
+      <div class="bg-amber-500 text-white p-4 rounded-lg text-center">1 col</div>
+    </div>`} />
+
+## 参考リンク
+
+- [A Complete Guide to CSS Grid - CSS-Tricks](https://css-tricks.com/snippets/css/complete-guide-grid/)
+- [CSS Grid Layout - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout)
+- [Auto-Sizing Columns: auto-fill vs auto-fit - CSS-Tricks](https://css-tricks.com/auto-sizing-columns-css-grid-auto-fill-vs-auto-fit/)
+- [A Deep Dive Into CSS Grid minmax() - Ahmad Shadeed](https://ishadeed.com/article/css-grid-minmax/)
+- [Learn CSS Grid - web.dev](https://web.dev/learn/css/grid)

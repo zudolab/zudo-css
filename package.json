@@ -1,0 +1,18 @@
+{
+  "name": "zcss",
+  "private": true,
+  "scripts": {
+    "doc:start": "pnpm --dir doc start",
+    "doc:start:ja": "pnpm --dir doc start:ja",
+    "doc:build": "pnpm --dir doc build",
+    "doc:serve": "pnpm --dir doc serve",
+    "doc:check": "pnpm --dir doc check",
+    "doc:check:fix": "pnpm --dir doc check:fix",
+    "doc:generate": "pnpm --dir doc generate",
+    "generate:css-wisdom": "node doc/scripts/generate-css-wisdom.js",
+    "setup:symlink": "node doc/scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked ~/.claude/skills/css-wisdom → .claude/skills/css-wisdom'"
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}

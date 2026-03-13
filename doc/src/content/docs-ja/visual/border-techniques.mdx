@@ -1,0 +1,377 @@
+---
+title: ボーダーテクニック
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+AIエージェントは通常 `border: 1px solid #ccc` で済ませ、CSSが提供するより豊富なボーダー機能を探ることはほとんどありません。グラデーションボーダー、ダブルボーダー効果、アウトラインのテクニック、`border-radius` と `overflow: hidden` の相互作用は、日常的に見落とされるか誤って実装されます。最大の落とし穴は `border-image` と `border-radius` の組み合わせです。これらは互換性がなく、AIエージェントが両方を組み合わせると壊れたコードを生成します。
+
+## 解決方法
+
+CSSは基本的な `border` ショートハンドを超えた、複数のボーダーエフェクト用プロパティを提供しています。`border-image`、`outline`、`box-shadow`、背景ベースのグラデーションボーダーテクニックをいつ使うべきかを理解することで、一般的な互換性の問題を防げます。
+
+## コード例
+
+### border-image によるグラデーションボーダー
+
+グラデーションボーダーの最もシンプルな構文です。直線エッジの要素にのみ機能します。
+
+```css
+.gradient-border-straight {
+  border: 4px solid;
+  border-image: linear-gradient(135deg, #3b82f6, #8b5cf6) 1;
+}
+```
+
+末尾の `1`（`border-image-slice: 1`）は、グラデーション画像全体をボーダーの塗りとして使うようブラウザに指示します。
+
+### border-radius 付きグラデーションボーダー（background-clip アプローチ）
+
+`border-image` は `border-radius` と併用できません。代わりに background-clip テクニックを使います。
+
+```css
+.gradient-border-rounded {
+  border: 3px solid transparent;
+  border-radius: 12px;
+  background:
+    linear-gradient(white, white) padding-box,
+    linear-gradient(135deg, #3b82f6, #8b5cf6) border-box;
+}
+```
+
+最初の背景が padding-box を白（または希望する内側の色）で塗り、2番目が border-box をグラデーションで塗ります。透明なボーダーが下のグラデーションを透かして見せます。
+
+```html
+<div class="gradient-border-rounded">
+  Content with a rounded gradient border.
+</div>
+```
+
+### カスタム背景色のグラデーションボーダー
+
+```css
+/* Works on any background color */
+.gradient-border-dark {
+  --bg-color: #1a1a2e;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background:
+    linear-gradient(var(--bg-color), var(--bg-color)) padding-box,
+    linear-gradient(135deg, #3b82f6, #ec4899) border-box;
+}
+```
+
+### outline と border の違い
+
+`outline` はレイアウトに影響を与えず、`border-radius` を尊重せず（古いブラウザの場合）、ボーダーの外側に描画されます。最新のブラウザではアウトラインも `border-radius` に従います。
+
+```css
+/* Outline for focus indicators — does not shift layout */
+.input-focus:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Border changes shift layout unless using box-sizing carefully */
+.input-border:focus {
+  border: 2px solid #3b82f6;
+}
+```
+
+### outline-offset による間隔のあるリング
+
+`outline-offset` は要素とそのアウトラインの間にギャップを作成します。フォーカスインジケーターや装飾的なリングに便利です。
+
+```css
+.ring-effect {
+  border: 2px solid #3b82f6;
+  outline: 2px solid #3b82f6;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+```
+
+### box-shadow によるダブルボーダー
+
+`box-shadow` は追加のボーダーをシミュレートできます。`inset` シャドウは `border-radius` に従い、レイアウトに影響しないためです。
+
+```css
+/* Double border effect */
+.double-border {
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  box-shadow: 0 0 0 4px white, 0 0 0 6px #3b82f6;
+}
+
+/* Triple ring effect */
+.triple-ring {
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px #3b82f6,
+    0 0 0 8px white,
+    0 0 0 12px #8b5cf6;
+}
+```
+
+### inset シャドウによる内側ボーダー
+
+```css
+.inner-border {
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 2px #3b82f6;
+}
+```
+
+これにより、外側の寸法を変えずに要素の内側にボーダーが作成されます。
+
+### border-radius と overflow: hidden の注意点
+
+`border-radius` と独自の背景を持つ子要素を組み合わせる場合、親に `overflow: hidden` を設定しないと、子要素の角がはみ出します。
+
+```css
+/* Without overflow: hidden — child corners poke through */
+.card-broken {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.card-broken img {
+  width: 100%;
+  /* Image corners are square, poking outside the rounded card */
+}
+
+/* Fixed with overflow: hidden */
+.card-fixed {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.card-fixed img {
+  width: 100%;
+  /* Image corners are clipped to the card's border-radius */
+}
+```
+
+```html
+<div class="card-fixed">
+  <img src="hero.jpg" alt="Hero image" />
+  <div class="card-body">
+    <h3>Card Title</h3>
+  </div>
+</div>
+```
+
+**注意点**: `overflow: hidden` は box-shadow や要素の境界を超えて広がるコンテンツ（ツールチップ、ドロップダウン）もクリップします。意図的に使いましょう。
+
+### background-clip によるパディング効果付き border-radius
+
+```css
+/* Visible gap between border and content using background-clip */
+.padded-border {
+  border: 4px solid #3b82f6;
+  border-radius: 12px;
+  padding: 4px;
+  background: #3b82f6;
+  background-clip: content-box;
+}
+```
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="border-image によるグラデーションボーダー"
+  html={`    <div class="demo"><div class="gradient-border-straight"><p>Gradient border using border-image. Works on straight edges only — no border-radius.</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #f8fafc;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .gradient-border-straight {
+      border: 4px solid;
+      border-image: linear-gradient(135deg, #3b82f6, #8b5cf6) 1;
+      padding: 24px;
+      max-width: 320px;
+    }
+    .gradient-border-straight p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    `}
+  height={200} />
+
+<CssPreview client:load
+  title="background-clip によるグラデーションボーダー（角丸）"
+  html={`    <div class="demo"><div class="gradient-border-rounded"><p>Rounded gradient border using the background-clip technique.</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #f8fafc;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .gradient-border-rounded {
+      border: 3px solid transparent;
+      border-radius: 16px;
+      background:
+      linear-gradient(white, white) padding-box,
+      linear-gradient(135deg, #3b82f6, #ec4899) border-box;
+      padding: 24px;
+      max-width: 320px;
+    }
+    .gradient-border-rounded p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    `}
+  height={200} />
+
+<CssPreview client:load
+  title="box-shadow によるダブルボーダー"
+  html={`    <div class="demo"><div class="double-border"><p>Double border using box-shadow spread</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #f8fafc;
+      padding: 32px;
+      font-family: system-ui, sans-serif;
+    }
+    .double-border {
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      box-shadow: 0 0 0 5px white, 0 0 0 7px #8b5cf6;
+      padding: 24px;
+      background: white;
+      max-width: 320px;
+    }
+    .double-border p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    `}
+  height={200} />
+
+<CssPreview client:load
+  title="outline-offset によるリングエフェクト"
+  html={`    <div class="demo"><div class="ring-box"><p>Ring effect with outline-offset</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #f8fafc;
+      padding: 32px;
+      font-family: system-ui, sans-serif;
+    }
+    .ring-box {
+      border: 2px solid #3b82f6;
+      outline: 2px solid #8b5cf6;
+      outline-offset: 4px;
+      border-radius: 12px;
+      padding: 24px;
+      background: white;
+      max-width: 320px;
+    }
+    .ring-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    `}
+  height={200} />
+
+## AIがよくやるミス
+
+- **border-image と border-radius を組み合わせる** — これは最もよくある間違いです。`border-image` は `border-radius` を完全に無視し、radius を宣言しているにもかかわらず角が四角になります。
+- **フォーカスインジケーターに border を使う** — ボーダーの変更はレイアウトをずらします。フォーカス状態には `outline` と `outline-offset` が正しいアプローチです。
+- **角丸コンテナに overflow: hidden を忘れる** — これがないと、子の画像や色付きセクションが角丸からはみ出します。
+- **マルチリング効果に box-shadow を使わない** — AIエージェントは装飾的なボーダーのために追加の div をネストしようとしますが、ブラーなしの `box-shadow` スプレッドでクリーンに処理できます。
+- **border-image-slice を誤解する** — グラデーション使用時にスライス値の `1` を忘れ、空のボーダーになります。
+- **グラデーションボーダーに複雑なラッパー div を使う** — `background-clip: padding-box, border-box` テクニックにより余分なマークアップは不要です。
+
+## 使い分け
+
+- **グラデーションボーダー** — フィーチャーカード、ハイライトされたセクション、視覚的に差をつけたいCTA
+- **outline + outline-offset** — レイアウトをずらさないアクセシブルなフォーカスインジケーター
+- **box-shadow リング** — アバターリング、ステータスインジケーター、装飾的なマルチボーダーエフェクト
+- **inset box-shadow** — 外側の寸法を変えない内側ボーダー
+- **角丸コンテナの overflow: hidden** — 画像や色付き子要素を持つ border-radius 付きのカードやコンテナ
+
+## Tailwind CSS
+
+Tailwindはボーダーエフェクト用に `border-*`、`ring-*`、`outline-*`、`divide-*` ユーティリティを提供しています。`ring-*` ユーティリティは、レイアウトシフトなしのフォーカスインジケーターや装飾的なリングエフェクトに特に便利です。
+
+### ボーダーとリングエフェクト
+
+<TailwindPreview client:load
+  title="Tailwind: ボーダーとリングエフェクト"
+  html={`    <div class="flex flex-wrap gap-8 justify-center items-center min-h-[220px] bg-slate-50 p-8">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-36 bg-white border-2 border-blue-500 rounded-xl p-4 text-center text-sm text-slate-600">border-2</div>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-36 bg-white ring-2 ring-purple-500 rounded-xl p-4 text-center text-sm text-slate-600">ring-2</div>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-36 bg-white ring-2 ring-blue-500 ring-offset-4 ring-offset-slate-50 rounded-xl p-4 text-center text-sm text-slate-600">ring + offset</div>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-36 bg-white outline outline-2 outline-offset-4 outline-pink-500 rounded-xl p-4 text-center text-sm text-slate-600">outline + offset</div>
+      </div>
+    </div>`}
+  height={240} />
+
+### Divide ユーティリティ
+
+<TailwindPreview client:load
+  title="Tailwind: Divide ユーティリティ"
+  html={`    <div class="flex justify-center items-center min-h-[200px] bg-slate-50 p-6">
+      <div class="w-72 bg-white rounded-xl border border-slate-200 divide-y divide-slate-200">
+        <div class="px-4 py-3 text-sm text-slate-700">First item</div>
+        <div class="px-4 py-3 text-sm text-slate-700">Second item</div>
+        <div class="px-4 py-3 text-sm text-slate-700">Third item</div>
+        <div class="px-4 py-3 text-sm text-slate-700">Fourth item</div>
+      </div>
+    </div>`}
+  height={220} />
+
+### フォーカスリングパターン
+
+<TailwindPreview client:load
+  title="Tailwind: フォーカスリングパターン"
+  html={`    <div class="flex gap-4 justify-center items-center min-h-[160px] bg-slate-100 p-6">
+      <button class="bg-blue-500 text-white px-6 py-2.5 rounded-lg text-sm font-medium ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-100">
+        Focused Button
+      </button>
+      <button class="bg-white text-slate-700 px-6 py-2.5 rounded-lg text-sm font-medium border border-slate-300 ring-2 ring-purple-500 ring-offset-2 ring-offset-slate-100">
+        Outlined Focus
+      </button>
+    </div>`}
+  height={180} />
+
+## 参考リンク
+
+- [Gradient Borders in CSS — CSS-Tricks](https://css-tricks.com/gradient-borders-in-css/)
+- [border-image — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/border-image)
+- [Border with Gradient and Radius — Temani Afif](https://dev.to/afif/border-with-gradient-and-radius-387f)
+- [outline — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/outline)
+- [outline-offset — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/outline-offset)

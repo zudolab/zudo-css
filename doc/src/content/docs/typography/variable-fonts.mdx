@@ -1,0 +1,282 @@
+---
+title: Variable Fonts
+sidebar_position: 6
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Traditional web typography requires loading separate font files for each weight, width, and style combination. A typical project might load regular, bold, italic, and bold-italic variants — four files — just for body text. AI agents commonly generate CSS that references multiple static font weights (300, 400, 500, 600, 700) with separate `@font-face` declarations, resulting in five or more HTTP requests and significantly larger total download sizes. Variable fonts solve this by packing an entire range of variations into a single file.
+
+## The Solution
+
+Variable fonts contain one or more **axes of variation** — continuous ranges for properties like weight, width, and slant. A single variable font file replaces multiple static files, reducing network requests and enabling smooth transitions between any values along those axes. The CSS `font-variation-settings` property provides low-level control, while standard CSS properties (`font-weight`, `font-stretch`, `font-style`) now accept ranges and map directly to registered axes.
+
+### Registered Axes
+
+| Axis tag | CSS property      | Description                    | Example range   |
+| -------- | ----------------- | ------------------------------ | --------------- |
+| `wght`   | `font-weight`     | Weight (thin to black)         | 100–900         |
+| `wdth`   | `font-stretch`    | Width (condensed to expanded)  | 75%–125%        |
+| `slnt`   | `font-style`      | Slant angle                    | -12deg–0deg     |
+| `ital`   | `font-style`      | Italic (binary toggle)         | 0 or 1          |
+| `opsz`   | `font-optical-sizing` | Optical size adjustments   | 8–144           |
+
+## Code Examples
+
+### Basic Variable Font Setup
+
+```css
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900; /* Declare the full weight range */
+  font-display: swap;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+h1 {
+  font-weight: 750; /* Any value in the range — not limited to 100-step increments */
+}
+
+.light-text {
+  font-weight: 350;
+}
+
+.bold-text {
+  font-weight: 680;
+}
+```
+
+<CssPreview client:load
+  title="Variable Font Weight Range — Fine-grained Weight Control"
+  html={`<div class="vf-demo">
+    <div class="weight-row"><span class="label">100 Thin</span><span class="sample" style="font-weight:100">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">250</span><span class="sample" style="font-weight:250">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">400 Regular</span><span class="sample" style="font-weight:400">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">550</span><span class="sample" style="font-weight:550">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">700 Bold</span><span class="sample" style="font-weight:700">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">850</span><span class="sample" style="font-weight:850">The quick brown fox</span></div>
+    <div class="weight-row"><span class="label">900 Black</span><span class="sample" style="font-weight:900">The quick brown fox</span></div>
+    </div>`}
+  css={`.vf-demo {
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .weight-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.4rem 0.75rem;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+    .label {
+      font-size: 0.75rem;
+      color: #6c63ff;
+      font-weight: 600;
+      min-width: 100px;
+      flex-shrink: 0;
+    }
+    .sample {
+      font-size: 1.2rem;
+      color: #1a1a2e;
+    }`}
+  height={320} />
+
+### Using Standard CSS Properties (Preferred)
+
+```css
+/* CORRECT: Use standard CSS properties for registered axes */
+h1 {
+  font-weight: 800;
+  font-stretch: 110%;
+  font-style: oblique 8deg;
+}
+
+/* AVOID: Low-level font-variation-settings for registered axes */
+h1 {
+  font-variation-settings: "wght" 800, "wdth" 110, "slnt" -8;
+}
+```
+
+Standard properties are preferred because they cascade properly, work with `inherit` and `initial`, and don't override each other. With `font-variation-settings`, setting one axis resets all others to their defaults.
+
+### Custom Axes
+
+Custom axes (identified by uppercase tags) require `font-variation-settings`:
+
+```css
+/* GRAD = Grade axis (custom), adjusts stroke weight without changing width */
+.dark-bg-text {
+  font-variation-settings: "GRAD" 150;
+}
+
+/* CASL = Casual axis in Recursive font */
+.casual-text {
+  font-variation-settings: "CASL" 1;
+}
+
+/* Combining custom axes with standard properties */
+.display-text {
+  font-weight: 700;
+  font-variation-settings: "GRAD" 100, "CASL" 0.5;
+}
+```
+
+### Responsive Weight with Custom Properties
+
+```css
+:root {
+  --heading-weight: 700;
+  --body-weight: 400;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --heading-weight: 600; /* Slightly lighter on small screens for readability */
+    --body-weight: 420; /* Slightly heavier for small screen legibility */
+  }
+}
+
+h1,
+h2,
+h3 {
+  font-weight: var(--heading-weight);
+}
+
+body {
+  font-weight: var(--body-weight);
+}
+```
+
+### Animated Font Variations
+
+```css
+.hover-weight {
+  font-weight: 400;
+  transition: font-weight 0.3s ease;
+}
+
+.hover-weight:hover {
+  font-weight: 700;
+}
+
+/* Smooth weight animation — impossible with static fonts */
+@keyframes breathe {
+  0%,
+  100% {
+    font-weight: 300;
+  }
+  50% {
+    font-weight: 700;
+  }
+}
+
+.animated-text {
+  animation: breathe 3s ease-in-out infinite;
+}
+```
+
+### Optical Sizing
+
+```css
+/* Automatic optical sizing (on by default when the font supports it) */
+body {
+  font-optical-sizing: auto;
+}
+
+/* Manual control for specific cases */
+.small-caption {
+  font-size: 0.75rem;
+  font-optical-sizing: auto; /* Font adjusts stroke contrast for small size */
+}
+
+.display-hero {
+  font-size: 4rem;
+  font-optical-sizing: auto; /* Font adjusts for large display size */
+}
+```
+
+### Progressive Enhancement with @supports
+
+```css
+/* Fallback: static font files */
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont-regular.woff2") format("woff2");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "MyFont";
+  src: url("/fonts/myfont-bold.woff2") format("woff2");
+  font-weight: 700;
+}
+
+/* Variable font override for supporting browsers */
+@supports (font-variation-settings: normal) {
+  @font-face {
+    font-family: "MyFont";
+    src: url("/fonts/myfont-variable.woff2") format("woff2-variations");
+    font-weight: 100 900;
+  }
+}
+```
+
+### Dark Mode Weight Compensation
+
+```css
+/* Text on dark backgrounds appears heavier — reduce weight to compensate */
+@media (prefers-color-scheme: dark) {
+  body {
+    font-weight: 350; /* Lighter than the 400 used in light mode */
+  }
+
+  h1 {
+    font-weight: 650; /* Lighter than the 700 used in light mode */
+  }
+}
+```
+
+## Common AI Mistakes
+
+- Loading multiple static font files (regular, medium, semibold, bold) instead of a single variable font file, multiplying HTTP requests unnecessarily
+- Using `font-variation-settings` for registered axes (weight, width, slant) instead of standard CSS properties — this breaks cascading and resets unspecified axes
+- Not declaring the weight range in `@font-face` (e.g., `font-weight: 100 900`), causing browsers to only use the default weight
+- Treating variable font weights like static fonts — only using values at 100-step increments (400, 500, 600) when any value in the range is valid
+- Not compensating for text appearing heavier on dark backgrounds — variable fonts make it easy to subtract 30–50 weight units for dark mode
+- Forgetting that `font-variation-settings` values all reset when you set any one axis — each declaration must include every axis you want to control
+- Using `format("woff2")` instead of `format("woff2-variations")` in the `@font-face` `src` descriptor, though most modern browsers accept either
+
+## When to Use
+
+### Variable fonts are ideal for
+
+- Projects using 3+ weights of the same font family — the single file is typically smaller than multiple static files
+- Designs that need fine-grained weight control (e.g., 350, 450, 550)
+- Animations or transitions involving weight, width, or slant changes
+- Dark mode designs where weight compensation improves readability
+- Responsive designs that adjust weight based on viewport size or context
+
+### Stick with static fonts when
+
+- Only 1-2 weights are needed — a single static file may be smaller than the variable version
+- The chosen typeface is not available as a variable font
+- Legacy browser support is a hard requirement (IE11)
+
+## References
+
+- [MDN: Variable fonts guide](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Fonts/Variable_fonts)
+- [MDN: font-variation-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variation-settings)
+- [web.dev: Introduction to variable fonts](https://web.dev/articles/variable-fonts)
+- [Designing with Variable Fonts](https://variablefonts.io/about-variable-fonts/)
+- [Variable Fonts: Reduce Bloat And Fix Layout Shifts](https://inkbotdesign.com/variable-fonts/)
+- [A Variable Fonts Primer — Google Fonts](https://fonts.google.com/knowledge/introducing_type/introducing_variable_fonts)

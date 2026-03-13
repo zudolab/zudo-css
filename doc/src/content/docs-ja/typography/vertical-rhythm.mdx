@@ -1,0 +1,242 @@
+---
+title: バーティカルリズム
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+AIが生成したレイアウトは、適切なフォントサイズやカラーを使っていても「なんか違う」と感じることがよくあります。その根本原因は垂直方向のスペーシングの不一致です — マージン、パディング、line-heightが、互いに数学的な関係を持たない任意の値で設定されています。`margin-bottom: 12px`の見出しの後に`margin-top: 20px`の段落が続き、さらに`margin-bottom: 15px`のリストが続くと、視覚的なノイズが生まれます。人間はレイアウトがなぜ不自然に感じるのかを言語化できなくても、この不一致を感知します。
+
+## 解決方法
+
+バーティカルリズム（Vertical Rhythm）とは、要素間の垂直方向のスペースを、1つの基本単位からすべてのスペーシングを導出することで一貫させる手法です。この基本単位は通常、本文テキストの`line-height`の計算値です。すべてのマージン、パディング、ギャップは、この基本単位の倍数（または端数）で設定します。
+
+### 基本原則
+
+1. ベースのline-heightを定義する（例: `16px`フォントで`1.5` = `24px`のリズム単位）
+2. すべての垂直スペーシングをその単位の倍数で設定する：`24px`、`48px`、`72px`（または`1×`、`2×`、`3×`）
+3. より狭いスペーシングには端数の倍数を使う：`12px`（`0.5×`）、`6px`（`0.25×`）
+
+## コード例
+
+### 基本的なバーティカルリズムシステム
+
+```css
+:root {
+  --font-size-base: 1rem; /* 16px */
+  --line-height-base: 1.5; /* 24pxのリズム単位 */
+  --rhythm: calc(var(--font-size-base) * var(--line-height-base)); /* 1.5rem = 24px */
+}
+
+body {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+/* すべてのスペーシングをリズム単位から導出 */
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  margin-block: calc(var(--rhythm) * 2) var(--rhythm);
+}
+
+h2 {
+  font-size: 2rem;
+  line-height: 1.25;
+  margin-block: calc(var(--rhythm) * 2) var(--rhythm);
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin-block: var(--rhythm) calc(var(--rhythm) * 0.5);
+}
+
+p {
+  margin-block-end: var(--rhythm);
+}
+
+ul,
+ol {
+  margin-block-end: var(--rhythm);
+  padding-inline-start: var(--rhythm);
+}
+
+li + li {
+  margin-block-start: calc(var(--rhythm) * 0.25);
+}
+
+blockquote {
+  margin-block: var(--rhythm);
+  padding-block: calc(var(--rhythm) * 0.5);
+  padding-inline-start: var(--rhythm);
+}
+```
+
+<CssPreview client:load
+  title="一貫したバーティカルリズム vs 不一致なスペーシング"
+  html={`    <div class="vr-demo">
+      <div class="vr-column">
+        <h3 class="label">Consistent rhythm (24px base)</h3>
+        <article class="consistent">
+          <h2>Section Title</h2>
+          <p>First paragraph with body text. Vertical rhythm keeps spacing mathematically related to the base line-height unit.</p>
+          <p>Second paragraph maintains the same spacing. Every gap is a multiple of the 24px rhythm unit.</p>
+          <h2>Another Section</h2>
+          <p>Content flows with predictable, harmonious spacing throughout the layout.</p>
+        </article>
+      </div>
+      <div class="vr-column">
+        <h3 class="label">Inconsistent spacing</h3>
+        <article class="inconsistent">
+          <h2>Section Title</h2>
+          <p>First paragraph with body text. The spacing here uses arbitrary values with no mathematical relationship.</p>
+          <p>Second paragraph has different margin than the first. The gaps feel random and uneven.</p>
+          <h2>Another Section</h2>
+          <p>Content feels visually noisy even though the text is identical.</p>
+        </article>
+      </div>
+    </div>`}
+  css={`.vr-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .vr-column { background: #fafafa; border-radius: 8px; padding: 1rem; }
+    .label {
+      font-size: 0.8rem;
+      color: #6c63ff;
+      margin: 0 0 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .consistent h2 {
+      font-size: 1.4rem;
+      line-height: 1.2;
+      margin: 48px 0 24px;
+      color: #1a1a2e;
+    }
+    .consistent h2:first-child { margin-top: 0; }
+    .consistent p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0 0 24px;
+      color: #444;
+    }
+    .inconsistent h2 {
+      font-size: 1.4rem;
+      line-height: 1.2;
+      margin: 35px 0 10px;
+      color: #1a1a2e;
+    }
+    .inconsistent h2:first-child { margin-top: 0; }
+    .inconsistent p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #444;
+    }
+    .inconsistent p:nth-child(2) { margin: 0 0 18px; }
+    .inconsistent p:nth-child(3) { margin: 0 0 30px; }
+    .inconsistent p:nth-child(5) { margin: 0 0 12px; }`}
+  height={400} />
+
+### リズム単位を使ったスペーシングスケール
+
+```css
+:root {
+  --rhythm: 1.5rem; /* 24pxの基本単位 */
+
+  --space-3xs: calc(var(--rhythm) * 0.125); /* 3px */
+  --space-2xs: calc(var(--rhythm) * 0.25); /* 6px */
+  --space-xs: calc(var(--rhythm) * 0.5); /* 12px */
+  --space-sm: calc(var(--rhythm) * 0.75); /* 18px */
+  --space-md: var(--rhythm); /* 24px */
+  --space-lg: calc(var(--rhythm) * 1.5); /* 36px */
+  --space-xl: calc(var(--rhythm) * 2); /* 48px */
+  --space-2xl: calc(var(--rhythm) * 3); /* 72px */
+  --space-3xl: calc(var(--rhythm) * 4); /* 96px */
+}
+```
+
+### Lobotomized Owlによる一貫したフロースペーシング
+
+「Lobotomized Owl」セレクタ（`* + *`）は、隣接する兄弟要素間に一貫したスペーシングを適用します：
+
+```css
+.flow > * + * {
+  margin-block-start: var(--rhythm, 1.5rem);
+}
+
+/* 特定の要素に対するオーバーライド */
+.flow > h2 + * {
+  margin-block-start: calc(var(--rhythm) * 0.5);
+}
+
+.flow > * + h2 {
+  margin-block-start: calc(var(--rhythm) * 2);
+}
+```
+
+```html
+<article class="flow">
+  <h2>Section Title</h2>
+  <p>First paragraph gets half-rhythm spacing from heading.</p>
+  <p>Subsequent paragraphs get standard rhythm spacing.</p>
+  <p>Consistent spacing throughout the article.</p>
+  <h2>Next Section</h2>
+  <p>More content with predictable spacing.</p>
+</article>
+```
+
+### グリッドを使ったバーティカルリズム
+
+```css
+.content-grid {
+  display: grid;
+  row-gap: var(--rhythm);
+}
+
+.content-grid > h2 {
+  margin-block-start: var(--rhythm); /* 見出し前に追加のスペース */
+}
+```
+
+## AIがよくやるミス
+
+- 数学的な関係のない任意のマージン/パディング値を使う（`margin: 10px`、`padding: 15px`、`gap: 22px`）
+- スペーシング単位を一貫なく混在させる — ある場所では`px`、別の場所では`rem`、また別の場所では`em`
+- 隣接する要素に`margin-top`と`margin-bottom`の両方を設定し、マージンの相殺（またはflex/gridコンテキストでの非相殺）によってスペースが倍増する
+- 同一の要素タイプ間で異なるスペーシングを使う — ある段落は`margin-bottom: 16px`、次の段落は`margin-bottom: 20px`
+- 見出しは上に余分なスペース、下には少ないスペースが必要で、後続のコンテンツとの視覚的な関連付けを作ることを無視する
+- スペーシングスケールを確立せず、各要素に対して場当たり的に値を選ぶ
+- flexやgridコンテナではマージンが相殺されないため、スペーシング戦略の調整が必要であることを忘れる
+
+## 使い分け
+
+バーティカルリズムは、コンテンツの多いレイアウトに適用しましょう：
+
+- ブログ記事やアーティクルページ
+- ドキュメンテーションサイト
+- 混合コンテンツセクションのあるランディングページ
+- メールテンプレート
+- 複数のテキスト要素が縦に積み重なるあらゆるレイアウト
+
+リズムの厳密さは状況に応じて変えられます：
+
+- **厳密なリズム:** すべての要素がベースライングリッドに揃う。エディトリアル/出版デザインに最適
+- **緩やかなリズム:** スペーシングは基本単位の倍数を使うが、ベースラインの整列は強制しない。コンポーネントの内部スペーシングが多様なWebアプリケーションに最適
+
+密度の高いUIレイアウト（ダッシュボード、データテーブル、ツールバー）では、スペースの効率的な使用がバーティカルリズムより重要です。リズムの原則は主に読み物中心のコンテンツエリアに適用しましょう。
+
+## 参考リンク
+
+- [Why is Vertical Rhythm an Important Typography Practice? — Zell Liew](https://zellwk.com/blog/why-vertical-rhythms/)
+- [Mastering CSS: Vertical Rhythm — DEV Community](https://dev.to/adrianbdesigns/mastering-css-vertical-rhythm-om9)
+- [Baseline Grids in CSS — edg.design](https://edgdesign.co/blog/baseline-grids-in-css)
+- [Creating a Vertical Rhythm with CSS Grid — Aleksandr Hovhannisyan](https://www.aleksandrhovhannisyan.com/blog/vertical-rhythm-with-css-grid/)
+- [8-Point Grid: Vertical Rhythm — Built to Adapt](https://medium.com/built-to-adapt/8-point-grid-vertical-rhythm-90d05ad95032)

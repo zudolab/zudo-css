@@ -1,0 +1,252 @@
+---
+title: OKLCH カラースペース
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+AIエージェントはほぼ常に `hex`、`rgb()`、または `hsl()` 形式で色を生成します。これらの古いカラースペースには根本的な欠陥があります：知覚的に均一ではないということです。HSLでは、同じ明度値を持つ2つの色（例：`hsl(60, 100%, 50%)` の黄色と `hsl(240, 100%, 50%)` の青）は、知覚される明るさが大きく異なります。これにより、色相値を調整するだけでは一貫したアクセシブルなカラーパレットを作ることがほぼ不可能になります。HSLで生成されたAIのパレットは、コントラスト比が不均一で、中間トーンがくすみ、スペクトラム全体で知覚される明るさが「飛ぶ」ことがよくあります。
+
+## 解決方法
+
+OKLCH（`oklch()`）は、Oklab 知覚カラーモデルに基づくCSS色関数です。3つのコンポーネントを使用します：
+
+- **L** — 明度（Lightness）（0% = 黒、100% = 白）、知覚的にリニア
+- **C** — 彩度（Chroma）（0 = グレー、高い = より鮮やか）、色の鮮やかさを表す
+- **H** — 色相（Hue）（0〜360度）、カラーホイール上の角度
+
+重要な利点：Lを一定にしてHを変更すると、知覚される明るさは同じままです。これによりパレット作成が予測可能になり、人間の目に同じ明るさに見える色のセットを生成できます。
+
+### OKLCH が HSL より優れている理由
+
+```css
+/* HSL: These "look" like the same lightness, but they're not */
+.yellow {
+  color: hsl(60, 100%, 50%); /* Appears very bright */
+}
+
+.blue {
+  color: hsl(240, 100%, 50%); /* Appears much darker */
+}
+
+/* OKLCH: Same lightness = same perceived brightness */
+.yellow {
+  color: oklch(80% 0.18 90); /* Visually bright */
+}
+
+.blue {
+  color: oklch(80% 0.18 264); /* Equally bright */
+}
+```
+
+## コード例
+
+### 基本的な OKLCH 構文
+
+```css
+:root {
+  /* oklch(lightness chroma hue) */
+  --brand-primary: oklch(55% 0.25 264); /* Vivid blue */
+  --brand-secondary: oklch(65% 0.2 150); /* Teal-green */
+  --brand-accent: oklch(70% 0.22 30); /* Warm orange */
+
+  /* With alpha transparency */
+  --overlay: oklch(20% 0 0 / 0.5); /* Semi-transparent black */
+}
+```
+
+### 知覚的に均一なパレットの作成
+
+明度と彩度を固定して色相のみを回転させると、すべての色が同じ視覚的重みを持ちます：
+
+```css
+:root {
+  /* Categorical palette — all colors appear equally prominent */
+  --chart-1: oklch(65% 0.2 30); /* Red-orange */
+  --chart-2: oklch(65% 0.2 90); /* Yellow */
+  --chart-3: oklch(65% 0.2 150); /* Green */
+  --chart-4: oklch(65% 0.2 210); /* Cyan */
+  --chart-5: oklch(65% 0.2 270); /* Blue */
+  --chart-6: oklch(65% 0.2 330); /* Magenta */
+}
+```
+
+<CssPreview client:load
+  title="OKLCH の均一な明度 vs HSL の不均一な明度"
+  html={`    <div class="color-demo">
+      <div>
+        <h3>OKLCH — Same lightness (65%), different hues</h3>
+        <div class="swatches">
+          <div class="swatch" style="background: oklch(65% 0.2 30)"><span>Red H:30</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 90)"><span>Yellow H:90</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 150)"><span>Green H:150</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 210)"><span>Cyan H:210</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 270)"><span>Blue H:270</span></div>
+          <div class="swatch" style="background: oklch(65% 0.2 330)"><span>Magenta H:330</span></div>
+        </div>
+        <p class="note">All colors appear equally bright — perceptually uniform</p>
+      </div>
+      <div>
+        <h3>HSL — Same lightness (50%), different hues</h3>
+        <div class="swatches">
+          <div class="swatch" style="background: hsl(0, 80%, 50%)"><span>Red H:0</span></div>
+          <div class="swatch" style="background: hsl(60, 80%, 50%)"><span>Yellow H:60</span></div>
+          <div class="swatch" style="background: hsl(120, 80%, 50%)"><span>Green H:120</span></div>
+          <div class="swatch" style="background: hsl(180, 80%, 50%)"><span>Cyan H:180</span></div>
+          <div class="swatch" style="background: hsl(240, 80%, 50%)"><span>Blue H:240</span></div>
+          <div class="swatch" style="background: hsl(300, 80%, 50%)"><span>Magenta H:300</span></div>
+        </div>
+        <p class="note">Yellow appears much brighter than blue — not perceptually uniform</p>
+      </div>
+    </div>`}
+  css={`.color-demo {
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .color-demo h3 {
+      font-size: 0.85rem;
+      color: #444;
+      margin: 0 0 0.75rem;
+      font-weight: 600;
+    }
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+    }
+    .swatch {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0.25rem;
+    }
+    .swatch span {
+      font-size: 0.65rem;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      font-weight: 600;
+    }
+    .note {
+      font-size: 0.8rem;
+      color: #666;
+      margin: 0.5rem 0 0;
+      font-style: italic;
+    }`}
+  height={340} />
+
+### 単一色相の明度スケール
+
+```css
+:root {
+  --blue-hue: 264;
+  --blue-chroma: 0.15;
+
+  --blue-50: oklch(97% var(--blue-chroma) var(--blue-hue));
+  --blue-100: oklch(93% var(--blue-chroma) var(--blue-hue));
+  --blue-200: oklch(85% var(--blue-chroma) var(--blue-hue));
+  --blue-300: oklch(75% var(--blue-chroma) var(--blue-hue));
+  --blue-400: oklch(65% var(--blue-chroma) var(--blue-hue));
+  --blue-500: oklch(55% var(--blue-chroma) var(--blue-hue));
+  --blue-600: oklch(45% var(--blue-chroma) var(--blue-hue));
+  --blue-700: oklch(37% var(--blue-chroma) var(--blue-hue));
+  --blue-800: oklch(30% var(--blue-chroma) var(--blue-hue));
+  --blue-900: oklch(22% var(--blue-chroma) var(--blue-hue));
+}
+```
+
+### OKLCH カスタムプロパティによるテーマ設定
+
+```css
+:root {
+  --hue: 264;
+  --chroma: 0.2;
+
+  --color-primary: oklch(55% var(--chroma) var(--hue));
+  --color-primary-light: oklch(75% var(--chroma) var(--hue));
+  --color-primary-dark: oklch(35% var(--chroma) var(--hue));
+  --color-primary-subtle: oklch(95% 0.03 var(--hue));
+
+  --color-surface: oklch(99% 0.005 var(--hue));
+  --color-text: oklch(20% 0.02 var(--hue));
+  --color-text-muted: oklch(45% 0.02 var(--hue));
+}
+
+/* Change the entire theme by adjusting one variable */
+.theme-green {
+  --hue: 150;
+}
+
+.theme-red {
+  --hue: 25;
+}
+```
+
+### アクセシブルなカラーペア
+
+OKLCHでは、明度差を制御することでコントラストを保証できます：
+
+```css
+:root {
+  /* A lightness difference of ~45-50% in oklch roughly maps to WCAG AA 4.5:1 */
+  --bg: oklch(97% 0.01 264);
+  --text: oklch(25% 0.02 264);
+
+  --btn-bg: oklch(50% 0.2 264);
+  --btn-text: oklch(98% 0.01 264);
+}
+```
+
+### OKLCH vs HSL — 実際の比較
+
+```css
+/* Creating "same lightness" grays in HSL — they're not truly equal */
+.hsl-problem {
+  --gray-warm: hsl(30, 10%, 50%);
+  --gray-cool: hsl(210, 10%, 50%);
+  /* These two grays have visibly different perceived brightness */
+}
+
+/* OKLCH grays are genuinely perceptually matched */
+.oklch-solution {
+  --gray-warm: oklch(55% 0.02 60);
+  --gray-cool: oklch(55% 0.02 250);
+  /* These two grays actually look equally bright */
+}
+```
+
+## AIがよくやるミス
+
+- `oklch()` でより一貫したパレットが作れるのに、すべての色値にデフォルトで `hex` や `hsl()` を使っている
+- HSLの明度が知覚的に均一だと思い込んでいる — `hsl(60, 100%, 50%)` と `hsl(240, 100%, 50%)` は同じ明度値にもかかわらず、明るさが大きく異なって見える
+- 特定の色相/明度の組み合わせでガモットを超える彩度値を使っている — ブラウザはクリップしますが、結果が意図と異なる可能性がある
+- マルチカラーパレット生成でOKLCHの色相回転を活用していない — AIは色相を回転させる代わりに、各色を独立してハードコードしがち
+- 非常に高い彩度が極端な明度でガモット外になることを考慮せず、明度値を均等に配置して（10%、20%、30%...）カラースケールを作っている
+- より簡単な `black` と `white` キーワードで十分なのに、黒と白に `oklch(0% 0 0)` と `oklch(100% 0 0)` を使っている
+
+## 使い分け
+
+- **デザインシステムのカラートークン**: OKLCHは異なる色相間で一貫した明度スケールを簡単に生成できます
+- **データビジュアライゼーションパレット**: 同じ知覚的な明るさのカテゴリカルカラーにより、1つの色が視覚的に支配することを防ぎます
+- **アクセシブルなテーマ設定**: 背景とテキスト間の明度差を制御することで、予測可能なコントラストを確保します
+- **動的テーマ設定**: 色相カスタムプロパティを回転させるだけで、視覚的な調和を保ちながらパレット全体をシフトします
+
+### hex/rgb を使い続ける場面
+
+- OKLCHをサポートしていない古いブラウザ（2023年以前）をターゲットにしていて、フォールバックが非現実的な場合
+- hex や rgb 値のみを受け付けるデザインツールやAPIとインターフェースする場合
+- 知覚的均一性が関係ない単一色の宣言
+
+## 参考リンク
+
+- [MDN: oklch()](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/oklch)
+- [OKLCH in CSS: why we moved from RGB and HSL — Evil Martians](https://evilmartians.com/chronicles/oklch-in-css-why-quit-rgb-hsl)
+- [OKLCH Color Picker & Converter](https://oklch.com/)
+- [CSS-Tricks: oklch()](https://css-tricks.com/almanac/functions/o/oklch/)
+- [Oklab color space — Wikipedia](https://en.wikipedia.org/wiki/Oklab_color_space)

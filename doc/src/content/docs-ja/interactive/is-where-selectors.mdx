@@ -1,0 +1,328 @@
+---
+title: ":is()と:where()セレクター"
+sidebar_position: 8
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+同じ宣言を共有するCSSセレクターは、すべての組み合わせを個別に書く必要があり、冗長で繰り返しの多いルールセットになります。異なる詳細度レベルのセレクターリストは、簡単にオーバーライドできるベーススタイルの作成を困難にします。リセット、デフォルト、ライブラリCSSを構築する際、コンシューマーのスタイルとの詳細度の競合は常に課題です。AIエージェントは通常、繰り返しの多いセレクターを生成し、詳細度を意図的に管理するために`:is()`や`:where()`を使うことはほとんどありません。
+
+## 解決方法
+
+`:is()`と`:where()`は、セレクターリストを受け取り、そのリストの少なくとも1つのセレクターに一致する要素をマッチさせる関数擬似クラスセレクターです。セレクターをグループ化することで繰り返しを減らします。重要な違いは詳細度です：
+
+- **`:is()`** は最も具体的な引数の詳細度を取る
+- **`:where()`** は常にゼロの詳細度`(0, 0, 0)`を持つ
+
+これにより、`:where()`は簡単にオーバーライドできるべきデフォルト/ベーススタイルに最適であり、`:is()`は詳細度を保持しながらセレクターをグループ化するのに適しています。
+
+## コード例
+
+### `:is()`によるセレクターの繰り返し削減
+
+```css
+/* Without :is() — verbose and repetitive */
+article h1,
+article h2,
+article h3,
+section h1,
+section h2,
+section h3,
+aside h1,
+aside h2,
+aside h3 {
+  line-height: 1.2;
+}
+
+/* With :is() — concise */
+:is(article, section, aside) :is(h1, h2, h3) {
+  line-height: 1.2;
+}
+```
+
+### `:where()`によるゼロ詳細度のデフォルト
+
+どんな単一クラスでも簡単にオーバーライドできるベーススタイルを作成します。
+
+```css
+/* Base styles with zero specificity — trivially overridable */
+:where(h1, h2, h3, h4, h5, h6) {
+  margin-block: 0;
+  font-weight: 700;
+}
+
+:where(ul, ol) {
+  padding-left: 1.5rem;
+}
+
+:where(a) {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Any class override wins without specificity battles */
+.nav-link {
+  color: inherit;
+  text-decoration: none;
+}
+```
+
+### オーバーライド可能なリセットの構築
+
+```css
+/* A reset that never fights with author styles */
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:where(html) {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+:where(img, picture, video, canvas, svg) {
+  display: block;
+  max-width: 100%;
+}
+
+:where(input, button, textarea, select) {
+  font: inherit;
+}
+```
+
+### `:is()`と`:where()`の戦略的な組み合わせ
+
+詳細度を寄与させたい部分には`:is()`を、ゼロにしたい部分には`:where()`を使用します。
+
+```css
+/* The .article class contributes specificity (0,1,0),
+   but the element selectors inside :where() add nothing */
+.article :where(p, li, blockquote) {
+  line-height: 1.8;
+  max-width: 65ch;
+}
+
+/* Override with just a class — no specificity fight */
+.compact-text {
+  line-height: 1.4;
+}
+```
+
+### 寛容なセレクターリスト
+
+`:is()`と`:where()`の両方が寛容なセレクターリストを使用します。リスト内の無効なセレクターがルール全体を無効にすることはありません。
+
+```css
+/* If :未来的-selector is invalid, the rest still works */
+:is(.card, .panel, :未来的-selector) {
+  border-radius: 8px;
+}
+
+/* Without :is(), one invalid selector breaks the entire rule */
+/* .card, .panel, :未来的-selector { border-radius: 8px; } — entire rule is dropped */
+```
+
+### ネストされたセレクターの簡略化
+
+```css
+/* Complex nesting without :is() */
+.sidebar nav ul li a,
+.sidebar nav ol li a {
+  color: #374151;
+  text-decoration: none;
+}
+
+/* Simplified with :is() */
+.sidebar nav :is(ul, ol) li a {
+  color: #374151;
+  text-decoration: none;
+}
+```
+
+### 詳細度の比較
+
+```css
+/* :is() specificity = highest argument */
+:is(.class, #id) p {
+  /* Specificity: (1, 0, 1) because #id is the highest */
+  color: blue;
+}
+
+/* :where() specificity = always zero */
+:where(.class, #id) p {
+  /* Specificity: (0, 0, 1) — only the p contributes */
+  color: blue;
+}
+
+/* A simple class wins over :where(#id) */
+.text {
+  /* Specificity: (0, 1, 0) — wins over :where(#id) p's (0, 0, 1) */
+  color: red;
+}
+```
+
+### ライブラリ/デザインシステムパターン
+
+```css
+/* Design system default — zero specificity via :where() */
+:where(.ds-button) {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+:where(.ds-button.primary) {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+/* Consumer can override with just a class — no !important needed */
+.my-button {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+```
+
+## ブラウザサポート
+
+- Chrome 88+
+- Firefox 78+
+- Safari 14+
+- Edge 88+
+
+`:is()`と`:where()`の両方がグローバルサポート96%を超えています。プロダクション利用に安全です。
+
+## AIがよくやるミス
+
+- `:where()`の存在を知らず、詳細度の競合を引き起こす冗長なセレクターリストを生成する
+- `:where()`の方が適切な場合に`:is()`を使用する（例：簡単にオーバーライドできるべきベース/リセットスタイル）
+- セレクターの全組み合わせを手動で書き出し、`:is()`でグループ化しない
+- ライブラリ/デザインシステムCSSでコンシューマーとの詳細度競合を避けるために`:where()`を活用しない
+- 詳細度の動作を混同する — `:is()`が`:where()`のようにゼロ詳細度だと思い込む
+- `:is()`と`:where()`が寛容なセレクターリストを使用すること（無効なセレクターがルールを壊さない）を認識していない
+- `:where()`なら簡単にオーバーライドできたはずのベーススタイルのオーバーライドに`!important`を使用する
+
+## 使い分け
+
+- **`:is()`**：詳細度を保持しながら繰り返しを減らすためにセレクターをグループ化する
+- **`:where()`**：ゼロ詳細度のベーススタイル、リセット、デザインシステムのデフォルトを作成する
+- **両方**：未知または将来のセレクターを適切に処理する寛容なセレクターリストを構築する
+- **ライブラリCSSには`:where()`**：コンシューマーのスタイルが常に`!important`なしでオーバーライドできることを保証する
+- **組み合わせ**：セレクターの詳細度を寄与させる部分に`:is()`を、ゼロ詳細度の部分に`:where()`を使用する
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title=":is() — セレクターのグループ化"
+  html={`
+    <article>
+      <h1>Article Heading (h1)</h1>
+      <h2>Sub-heading (h2)</h2>
+      <p>Regular paragraph text.</p>
+      <h3>Section heading (h3)</h3>
+      <p>More paragraph text.</p>
+    </article>
+    <div class="outside">
+      <h2>Heading Outside Article</h2>
+      <p>This heading is not styled — :is(article, section) limits scope</p>
+    </div>
+    `}
+  css={`
+    * {
+      margin: 0;
+    }
+    
+    article, .outside {
+      font-family: system-ui, sans-serif;
+      padding: 1.25rem;
+      border-radius: 12px;
+    }
+    
+    article {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      margin-bottom: 1rem;
+    }
+    
+    :is(article, section) :is(h1, h2, h3) {
+    color: #166534;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid #bbf7d0;
+    }
+    
+    article p, .outside p {
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    }
+    
+    .outside {
+    background: #f8fafc;
+    border: 1px dashed #d1d5db;
+    }
+    
+    .outside h2 {
+    color: #6b7280;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    }
+    `} />
+
+<CssPreview client:load
+  title=":where() — ゼロ詳細度（簡単にオーバーライド可能）"
+  html={`
+    <div class="demo">
+      <a href="#" class="link-default">Default link (styled by :where)</a>
+      <a href="#" class="my-link">Custom link (single class overrides :where)</a>
+    </div>
+    <p class="hint">:where(a) has zero specificity (0,0,0), so even a single .my-link class (0,1,0) wins without any !important</p>
+    `}
+  css={`
+    :where(a) {
+    color: #2563eb;
+    text-decoration: underline;
+    font-weight: 600;
+    }
+    
+    .my-link {
+    color: #dc2626;
+    text-decoration: none;
+    background: #fef2f2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #fca5a5;
+    }
+    
+    .demo {
+    font-family: system-ui, sans-serif;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    }
+    
+    .hint {
+    font-family: system-ui, sans-serif;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 1rem;
+    }
+    `} />
+
+## 参考リンク
+
+- [:is() - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:is)
+- [:where() - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:where)
+- [:is() pseudo-class - Can I Use](https://caniuse.com/css-matches-pseudo)
+- [:where() pseudo-class - Can I Use](https://caniuse.com/mdn-css_selectors_where)
+- [CSS :where() Selector: The Zero-Specificity Superpower - McNeece](https://www.mcneece.com/2025/03/css-where-selector-the-zero-specificity-superpower/)

@@ -1,0 +1,39 @@
+---
+import { withBase, stripBase } from "@/utils/base";
+import { defaultLocale, locales, getLocaleLabel, type Locale } from "@/config/i18n";
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = defaultLocale } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+function getPathForLocale(path: string, currentLang: string, targetLang: string): string {
+  let relativePath = stripBase(path);
+  // Strip current locale prefix if not default
+  if (currentLang !== defaultLocale) {
+    relativePath = relativePath.replace(new RegExp(`^/${currentLang}/`), "/");
+  }
+  // Add target locale prefix if not default
+  if (targetLang !== defaultLocale) {
+    relativePath = `/${targetLang}${relativePath}`;
+  }
+  return withBase(relativePath);
+}
+---
+
+{locales.length > 1 && (
+  <div class="flex items-center gap-x-hsp-xs text-small">
+    {locales.map((code, i) => (
+      <>
+        {i > 0 && <span class="text-muted">/</span>}
+        {code === lang ? (
+          <span aria-current="true" class="font-medium text-fg">{getLocaleLabel(code)}</span>
+        ) : (
+          <a href={getPathForLocale(currentPath, lang, code)} lang={code} class="text-muted hover:text-fg">{getLocaleLabel(code)}</a>
+        )}
+      </>
+    ))}
+  </div>
+)}

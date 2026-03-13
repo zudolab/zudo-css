@@ -1,0 +1,354 @@
+---
+title: ポジショニングガイド
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+CSSのポジショニングはAIエージェントに頻繁に誤用されます。最もよくあるエラーとしては、flexboxやgridを使うべきレイアウトタスクに `position: absolute` を使う、包含要素に `position: relative` を設定し忘れる、モバイルのビューポートの問題を考慮せずに `position: fixed` を使う、`position: sticky` にスクロールコンテナと閾値が必要であることを理解していない、などがあります。
+
+## 解決方法
+
+CSSの `position` は、通常のドキュメントフローに対して要素を移動または調整します。各値には特定の目的があり、間違った値を選ぶと画面サイズによって崩れる脆弱なレイアウトになります。
+
+## コード例
+
+### static（デフォルト）
+
+要素は通常のドキュメントフロー内にあります。`top`、`right`、`bottom`、`left`、`z-index` プロパティは効果がありません。
+
+```css
+.element {
+  position: static; /* default, rarely needs to be written explicitly */
+}
+```
+
+### relative
+
+要素はフロー内に残りますが、元の位置からオフセットできます。絶対配置された子要素の包含ブロックを作成します。
+
+```css
+.parent {
+  position: relative; /* Establishes containing block for children */
+}
+
+.badge {
+  position: relative;
+  top: -4px; /* Shifts up 4px from its normal position */
+}
+```
+
+`position: relative` は主に `position: absolute` の子要素のための包含ブロックの確立、またはレイアウトに影響を与えない軽微な視覚的オフセットに使いましょう。
+
+### absolute
+
+要素はドキュメントフローから外れ、最も近い位置指定された祖先（`static` 以外の `position` を持つ祖先）を基準に配置されます。
+
+```css
+.card {
+  position: relative; /* Containing block */
+}
+
+.card-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+```
+
+```html
+<div class="card">
+  <span class="card-badge">New</span>
+  <p>Card content</p>
+</div>
+```
+
+<CssPreview client:load
+  title="ポジショニング: relative + absolute（カード上のバッジ）"
+  html={`    <div class="card">
+      <span class="badge">New</span>
+      <p class="card-text">Card content goes here. The badge is absolutely positioned relative to this card.</p>
+    </div>`}
+  css={`.card {
+      position: relative;
+      background: #f1f5f9;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #ef4444;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .card-text {
+      margin: 0;
+      color: #334155;
+    }`} />
+
+### inset を使った絶対配置センタリング
+
+`inset` ショートハンドは `top`、`right`、`bottom`、`left` を置き換えます。
+
+```css
+.overlay {
+  position: absolute;
+  inset: 0; /* top: 0; right: 0; bottom: 0; left: 0 */
+}
+
+.modal {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+}
+```
+
+### fixed
+
+要素はドキュメントフローから外れ、ビューポートを基準に配置されます。ページをスクロールしても動きません。
+
+```css
+.sticky-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+/* Prevent content from being hidden behind the fixed header */
+body {
+  padding-top: 60px; /* Match the header height */
+}
+```
+
+<CssPreview client:load
+  title="ポジショニング: Fixed要素（フローティングボタン）"
+  html={`    <div class="page">
+      <div class="content">
+        <p>This area represents a page with scrollable content. Notice the floating button in the bottom-right corner — it stays in place regardless of scroll position.</p>
+      </div>
+      <button class="fab">+</button>
+    </div>`}
+  css={`.page {
+      position: relative;
+      min-height: 200px;
+      background: #f1f5f9;
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+    .content {
+      color: #334155;
+    }
+    .content p {
+      margin: 0;
+      line-height: 1.6;
+    }
+    .fab {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }`} />
+
+### sticky
+
+要素はスクロール閾値を超えるまでは `relative` として動作し、その後は包含ブロック内で `fixed` として振る舞います。
+
+```css
+.table-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+```
+
+```html
+<table>
+  <thead>
+    <tr class="table-header">
+      <th>Name</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- rows -->
+  </tbody>
+</table>
+```
+
+<CssPreview client:load
+  title="ポジショニング: スティッキーヘッダー（スクロールして確認）"
+  html={`    <div class="scroll-container">
+      <div class="sticky-header">Sticky Header — scroll down</div>
+      <div class="content-block">Section 1 content</div>
+      <div class="content-block">Section 2 content</div>
+      <div class="content-block">Section 3 content</div>
+      <div class="content-block">Section 4 content</div>
+      <div class="content-block">Section 5 content</div>
+      <div class="content-block">Section 6 content</div>
+      <div class="content-block">Section 7 content</div>
+    </div>`}
+  css={`.scroll-container {
+      height: 280px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: #3b82f6;
+      color: #fff;
+      padding: 12px 20px;
+      font-weight: 600;
+      z-index: 10;
+    }
+    .content-block {
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+      min-height: 80px;
+    }`}
+  height={300} />
+
+### スティッキーサイドバー
+
+```css
+.page {
+  display: flex;
+  align-items: flex-start; /* Critical: prevents sidebar from stretching */
+}
+
+.sidebar {
+  position: sticky;
+  top: 1rem;
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+```
+
+```html
+<div class="page">
+  <aside class="sidebar">Sticky sidebar</aside>
+  <main class="main-content">Scrollable content</main>
+</div>
+```
+
+## position: sticky が動作しない理由
+
+スティッキーポジショニングはいくつかの状況でサイレントに失敗します。
+
+### 閾値が設定されていない
+
+```css
+/* Broken: no top, bottom, left, or right value */
+.sticky-broken {
+  position: sticky;
+}
+
+/* Fixed: threshold tells the browser when to stick */
+.sticky-working {
+  position: sticky;
+  top: 0;
+}
+```
+
+### 親要素に overflow: hidden または overflow: auto がある
+
+```css
+/* Broken: overflow on parent prevents sticking */
+.parent {
+  overflow: hidden; /* or overflow: auto, overflow: scroll */
+}
+
+.parent .sticky-child {
+  position: sticky;
+  top: 0;
+  /* This will not stick */
+}
+```
+
+### 親要素にスクロール可能な高さがない
+
+スティッキー要素は親要素の中で固定されます。親要素がスティッキー要素自体と同じ高さしかない場合、スクロールする余地がありません。
+
+## AIがよくやるミス
+
+- **レイアウトに `position: absolute` を使う。** 絶対配置は要素をフローから外すため、レイアウトが脆弱になります。レイアウトにはflexboxやgridを使い、絶対配置はオーバーレイ、バッジ、装飾的な要素にのみ使いましょう。
+- **親要素に `position: relative` を忘れる。** 位置指定された祖先がないと、絶対配置された要素は初期包含ブロック（通常はビューポート）を基準に配置され、意図した親要素を基準にしません。
+- **モバイルのスティッキーヘッダーに `position: fixed` を使う。** モバイルでのfixed配置は仮想キーボード、アドレスバーのリサイズ、スクロールパフォーマンスの問題を引き起こすことがあります。実際のモバイルデバイスでテストしましょう。
+- **`position: sticky` に閾値を設定しない。** スティッキー要素には `top`、`right`、`bottom`、`left` のうち少なくとも1つを `auto` 以外の値に設定する必要があります。閾値がないと固定されません。
+- **スタッキングコンテキスト（stacking context）を理解せずに `z-index` を使う。** `z-index: 9999` を設定しても、要素が最前面に表示されるとは限りません。同じスタッキングコンテキスト内での重なり順のみを制御します。詳細はスタッキングコンテキストガイドを参照してください。
+- **`inset: 0` の代わりに `top: 0; right: 0; bottom: 0; left: 0` を使う。** `inset` ショートハンドの方がより簡潔で読みやすいです。
+- **レスポンシブデザインでパーセンテージ幅の絶対配置を使う。** 絶対配置された要素のサイズは包含ブロックを基準にしており、ビューポートを基準にしていません。包含ブロックのサイズが予期せず変わると崩れます。
+
+## 使い分け
+
+### relative
+
+- 絶対配置された子要素のための包含ブロックの確立
+- レイアウトに影響を与えない軽微な視覚的オフセット
+- スタッキングコンテキストの作成（z-indexとの組み合わせ）
+
+### absolute
+
+- カードやモーダル上のバッジ、ラベル、閉じるボタン
+- 位置指定されたコンテナの上に重なるオーバーレイ要素
+- ツールチップの矢印やポップオーバー
+- ドキュメントフローに影響を与えるべきでない装飾的な要素
+
+### fixed
+
+- スクロール中も表示されるナビゲーションバー
+- 「トップに戻る」ボタン
+- Cookie同意バナー
+- フローティングアクションボタン
+
+### sticky
+
+- テーブルのスクロール中に表示されるヘッダー
+- 長いスクロール可能なリスト内のセクションヘッダー
+- コンテナ内でユーザーに追従するサイドバー
+- 商品ページの「カートに追加」バー
+
+## 参考リンク
+
+- [position - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/position)
+- [CSS Position Property - web.dev](https://web.dev/learn/css/layout#positioning)
+- [position: sticky - CSS-Tricks](https://css-tricks.com/position-sticky-2/)
+- [CSS Positioning Explained - InterviewBuzz](https://interviewbuzz.com/blog/css-positioning-explained-master-relative-absolute-fixed-sticky)

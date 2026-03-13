@@ -1,0 +1,266 @@
+---
+title: color-mix()
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+CSSでティント、シェード、半透明のカラーバリアントを作成するには、従来はすべての色値を手動で計算する必要がありました。AIエージェントはすべてのシェードを個別の hex や rgb 値としてハードコードしがちで（例：`#3366cc`、`#5588dd`、`#99bbee` を独立して生成）、パレットが脆く保守しにくくなります。ベースのブランドカラーが変わると、すべての派生値を再計算する必要があります。Sassのような CSSプリプロセッサは `lighten()` や `darken()` でこれを解決しましたが、ネイティブCSSには同等の機能がありませんでした — `color-mix()` が登場するまでは。
+
+## 解決方法
+
+`color-mix()` は、指定されたカラースペースで2つの色をブレンドし、結果の色を返すCSS関数です。カラースペース、2つの色、およびミックス比率を制御するオプションのパーセンテージ値を取ります。
+
+```
+color-mix(in <color-space>, <color> <percentage>?, <color> <percentage>?)
+```
+
+カラースペースパラメータは、補間の計算方法を決定します。`oklch` や `oklab` を使うと、`srgb` よりも知覚的に均一なブレンドが得られます。
+
+## コード例
+
+### 基本構文
+
+```css
+:root {
+  --brand: oklch(55% 0.25 264);
+
+  /* Mix 70% brand with 30% white = a lighter tint */
+  --brand-light: color-mix(in oklch, var(--brand) 70%, white);
+
+  /* Mix 70% brand with 30% black = a darker shade */
+  --brand-dark: color-mix(in oklch, var(--brand) 70%, black);
+
+  /* Equal mix of two colors */
+  --blend: color-mix(in oklch, var(--brand), orange);
+}
+```
+
+### 単一ベースカラーからティントとシェードを作成
+
+```css
+:root {
+  --brand: oklch(50% 0.22 264);
+
+  /* Tints (lighter) — mixing with white */
+  --brand-50: color-mix(in oklch, var(--brand) 5%, white);
+  --brand-100: color-mix(in oklch, var(--brand) 10%, white);
+  --brand-200: color-mix(in oklch, var(--brand) 25%, white);
+  --brand-300: color-mix(in oklch, var(--brand) 40%, white);
+  --brand-400: color-mix(in oklch, var(--brand) 60%, white);
+
+  /* Base */
+  --brand-500: var(--brand);
+
+  /* Shades (darker) — mixing with black */
+  --brand-600: color-mix(in oklch, var(--brand) 80%, black);
+  --brand-700: color-mix(in oklch, var(--brand) 60%, black);
+  --brand-800: color-mix(in oklch, var(--brand) 40%, black);
+  --brand-900: color-mix(in oklch, var(--brand) 25%, black);
+}
+```
+
+<CssPreview client:load
+  title="color-mix() — ティント、シェード、半透明バリアント"
+  html={`    <div class="mix-demo">
+      <div class="section">
+        <h3>Tints (mixing with white)</h3>
+        <div class="row">
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 10%, white)"><span>10%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 25%, white)"><span>25%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 50%, white)"><span>50%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 75%, white)"><span>75%</span></div>
+          <div class="chip" style="background: oklch(50% 0.22 264); color: white"><span>Base</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Shades (mixing with black)</h3>
+        <div class="row">
+          <div class="chip" style="background: oklch(50% 0.22 264); color: white"><span>Base</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 75%, black); color: white"><span>75%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 50%, black); color: white"><span>50%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 25%, black); color: white"><span>25%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 10%, black); color: white"><span>10%</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Semi-transparent variants (mixing with transparent)</h3>
+        <div class="row checkerboard">
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 10%, transparent)"><span>10%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 25%, transparent)"><span>25%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 50%, transparent)"><span>50%</span></div>
+          <div class="chip" style="background: color-mix(in oklch, oklch(50% 0.22 264) 75%, transparent)"><span>75%</span></div>
+          <div class="chip" style="background: oklch(50% 0.22 264); color: white"><span>100%</span></div>
+        </div>
+      </div>
+    </div>`}
+  css={`.mix-demo {
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .section h3 {
+      font-size: 0.8rem;
+      color: #555;
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+    }
+    .chip {
+      height: 48px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chip span {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #333;
+    }
+    .chip[style*="color: white"] span { color: white; }
+    .checkerboard {
+      background-image: repeating-conic-gradient(#e0e0e0 0% 25%, white 0% 50%);
+      background-size: 16px 16px;
+      padding: 0.5rem;
+      border-radius: 8px;
+    }`}
+  height={320} />
+
+### 半透明バリアント
+
+`transparent` とミックスすることで、任意の色の半透明バージョンを作成できます。ホバー状態、オーバーレイ、背景に特に便利です：
+
+```css
+:root {
+  --brand: oklch(55% 0.25 264);
+
+  /* Semi-transparent variants */
+  --brand-alpha-10: color-mix(in oklch, var(--brand) 10%, transparent);
+  --brand-alpha-20: color-mix(in oklch, var(--brand) 20%, transparent);
+  --brand-alpha-50: color-mix(in oklch, var(--brand) 50%, transparent);
+}
+
+.hover-card:hover {
+  background-color: var(--brand-alpha-10);
+}
+
+.overlay {
+  background-color: var(--brand-alpha-50);
+}
+
+.subtle-border {
+  border-color: var(--brand-alpha-20);
+}
+```
+
+### インタラクティブステートカラー
+
+```css
+:root {
+  --btn-bg: oklch(55% 0.22 264);
+
+  --btn-hover: color-mix(in oklch, var(--btn-bg), white 15%);
+  --btn-active: color-mix(in oklch, var(--btn-bg), black 15%);
+  --btn-disabled: color-mix(in oklch, var(--btn-bg) 40%, oklch(70% 0 0));
+}
+
+.button {
+  background: var(--btn-bg);
+}
+
+.button:hover {
+  background: var(--btn-hover);
+}
+
+.button:active {
+  background: var(--btn-active);
+}
+
+.button:disabled {
+  background: var(--btn-disabled);
+}
+```
+
+### カラースペースの比較
+
+```css
+:root {
+  --red: oklch(60% 0.25 30);
+  --blue: oklch(55% 0.25 264);
+
+  /* sRGB interpolation — can produce muddy, desaturated results */
+  --mix-srgb: color-mix(in srgb, var(--red), var(--blue));
+
+  /* oklch interpolation — maintains vibrancy through the blend */
+  --mix-oklch: color-mix(in oklch, var(--red), var(--blue));
+}
+```
+
+### 単一ベースカラーからの動的テーマ
+
+```css
+:root {
+  --base: oklch(55% 0.2 264);
+
+  --surface: color-mix(in oklch, var(--base) 5%, white);
+  --surface-raised: color-mix(in oklch, var(--base) 10%, white);
+  --border: color-mix(in oklch, var(--base) 20%, oklch(80% 0 0));
+  --text: color-mix(in oklch, var(--base) 40%, black);
+  --text-muted: color-mix(in oklch, var(--base) 30%, oklch(50% 0 0));
+  --accent: var(--base);
+  --accent-hover: color-mix(in oklch, var(--base), white 20%);
+}
+```
+
+### 隣接するカラートークンのブレンド
+
+```css
+:root {
+  --success: oklch(60% 0.2 145);
+  --warning: oklch(70% 0.2 85);
+
+  /* Blend between semantic colors for status transitions */
+  --status-improving: color-mix(in oklch, var(--warning) 60%, var(--success));
+}
+```
+
+## AIがよくやるミス
+
+- `color-mix()` で単一ベースからティントとシェードを導出する代わりに、すべての色シェードを個別の hex 値としてハードコードしている
+- `in oklch` や `in oklab` の方が視覚的に均一な結果を生むのに、ブレンドに `in srgb` を使っている — sRGBブレンドは特に彩度の高い色間でくすんだ中間点を作る
+- カラースペースパラメータを完全に省略している — これは仕様で必須です
+- パーセンテージの意味を混同している：`color-mix(in oklch, red 70%, blue)` は70%の赤と30%の青を意味し、青の70%を加えるという意味ではない
+- `color-mix()` がネイティブで処理できる色操作に JavaScript や CSSプリプロセッサ（`sass darken()`、`lighten()`）を使っている
+- `transparent` とミックスすることで色の半透明バージョンが作れることを知らない — AIエージェントは今でも `rgba()` や手動のアルファ値を使いがち
+- 明度を調整したシンプルな `oklch()` 値の方がより明確で保守しやすい場面で `color-mix()` を使っている
+
+## 使い分け
+
+- **デザインシステム**: 単一のブランドカラーからシェードスケール全体を導出
+- **インタラクティブステート**: hover、active、focus、disabled のカラーバリアントを体系的に生成
+- **半透明オーバーレイ**: rgba 値をハードコードせずにセマンティックカラーのアルファバリアントを作成
+- **テーマカスタマイズ**: ユーザーにベースカラーを選ばせ、そこからすべてのUIカラーを導出
+- **セマンティックトークンのブレンド**: ステータス遷移のために success/warning/danger カラー間をミックス
+
+### 使わない方がよい場面
+
+- ベースに関連付ける必要のないシンプルな静的カラー — `oklch()` や `hex` を直接使いましょう
+- すべてのシェードが、白/黒との単純なミックスに従わない、デザイナーが正確に指定した値を必要とする場合
+- 正確な仕様に一致する必要がある重要なブランドカラー（ミックス結果は補間カラースペースに依存します）
+
+## 参考リンク
+
+- [MDN: color-mix()](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/color-mix)
+- [CSS color-mix(): The Complete Guide — DevToolbox](https://devtoolbox.dedyn.io/blog/css-color-mix-complete-guide)
+- [Using color-mix() to create opacity variants — Una Kravets](https://una.im/color-mix-opacity/)
+- [Quick and Dirty Colour Palettes using color-mix() — Always Twisted](https://www.alwaystwisted.com/articles/quick-and-dirty-colour-palettes-using-color-mix)
+- [A deep dive into the CSS color-mix() function — DEV Community](https://dev.to/astrit/a-deep-dive-into-the-css-color-mix-function-and-future-of-colors-on-the-web-2pgi)

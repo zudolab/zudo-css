@@ -1,0 +1,363 @@
+---
+title: Clip-Path and Mask
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+AI agents almost never use `clip-path` or CSS masks, defaulting to rectangular layouts even when the design clearly calls for angled edges, circular reveals, or faded borders. When they do attempt non-rectangular shapes, they reach for images, SVGs, or extra wrapper divs with `overflow: hidden` and rotated pseudo-elements — all far more complex and brittle than the native CSS solutions.
+
+## The Solution
+
+CSS provides two complementary tools for non-rectangular rendering:
+
+- **`clip-path`** — Hard-edge clipping using geometric shape functions (`polygon()`, `circle()`, `ellipse()`, `inset()`) or SVG paths. Content outside the clip is invisible and non-interactive.
+- **`mask-image`** — Soft-edge masking using images or gradients. Where the mask is black (or opaque), the element shows through; where it is transparent, the element is hidden. Gradients create smooth fade effects.
+
+## Code Examples
+
+### Clip-Path: Basic Shapes
+
+```css
+/* Circle clip */
+.avatar-circle {
+  clip-path: circle(50%);
+}
+
+/* Ellipse */
+.banner-ellipse {
+  clip-path: ellipse(60% 40% at 50% 50%);
+}
+
+/* Inset with rounded corners */
+.rounded-inset {
+  clip-path: inset(10px round 16px);
+}
+```
+
+### Clip-Path: Polygon Shapes
+
+```css
+/* Triangle */
+.triangle {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* Angled section edge */
+.angled-section {
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+/* Chevron / arrow */
+.chevron {
+  clip-path: polygon(
+    0% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    0% 100%,
+    25% 50%
+  );
+}
+
+/* Hexagon */
+.hexagon {
+  clip-path: polygon(
+    25% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
+}
+```
+
+### Angled Hero Section
+
+```css
+.hero {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  padding: 80px 24px 120px;
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+.next-section {
+  margin-top: -60px; /* overlap into the angled area */
+  position: relative;
+  z-index: 1;
+}
+```
+
+```html
+<section class="hero">
+  <h1>Angled Hero</h1>
+</section>
+<section class="next-section">
+  <p>Content overlaps the angled edge.</p>
+</section>
+```
+
+### Animating Clip-Path
+
+Clip-path shapes can be transitioned and animated as long as the shape function type and point count stay the same.
+
+```css
+.reveal-circle {
+  clip-path: circle(0% at 50% 50%);
+  transition: clip-path 0.6s ease-out;
+}
+
+.reveal-circle.is-visible {
+  clip-path: circle(75% at 50% 50%);
+}
+```
+
+```css
+/* Morphing between two polygons with the same number of points */
+.morph {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); /* diamond */
+  transition: clip-path 0.4s ease;
+}
+
+.morph:hover {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); /* rectangle */
+}
+```
+
+### CSS Mask: Gradient Fade
+
+Masks use luminance or alpha to determine visibility. A gradient from opaque to transparent creates a smooth fade.
+
+```css
+/* Fade out at the bottom */
+.fade-bottom {
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+/* Fade both edges horizontally */
+.fade-edges {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 15%,
+    black 85%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 15%,
+    black 85%,
+    transparent
+  );
+}
+```
+
+```html
+<div class="fade-bottom">
+  <img src="landscape.jpg" alt="Landscape" />
+</div>
+```
+
+### Scrollable Container with Faded Edges
+
+```css
+.scroll-fade {
+  overflow-x: auto;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 40px,
+    black calc(100% - 40px),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 40px,
+    black calc(100% - 40px),
+    transparent
+  );
+}
+```
+
+### Mask with Radial Gradient (Spotlight Effect)
+
+```css
+.spotlight {
+  mask-image: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    black 0%,
+    black 20%,
+    transparent 60%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    black 0%,
+    black 20%,
+    transparent 60%
+  );
+}
+```
+
+Pair with JavaScript to move `--x` and `--y` custom properties on `mousemove` for an interactive spotlight.
+
+### Combining Clip-Path and Mask
+
+```css
+/* Hard clip for overall shape, soft mask for edge fading */
+.shaped-fade {
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 50% 100%, 0 80%);
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+```
+
+### Mask with SVG Image
+
+```css
+.masked-image {
+  mask-image: url("mask-shape.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-image: url("mask-shape.svg");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+```
+
+## Live Previews
+
+<CssPreview client:load
+  title="Clip-Path Polygon (Angled Section)"
+  html={`<div class="wrapper"><section class="hero"><h1>Angled Hero Section</h1><p>clip-path: polygon() creates the diagonal edge</p></section><section class="content"><p>Content flows beneath the angled edge.</p></section></div>`}
+  css={`
+    .wrapper {
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+    }
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+      padding: 40px 24px 80px;
+      clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+      color: white;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+    .hero p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    .content {
+      margin-top: -30px;
+      padding: 0 24px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .content p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    `}
+  height={260} />
+
+<CssPreview client:load
+  title="Clip-Path Circle"
+  html={`<div class="demo"><div class="circle-clip"></div><div class="circle-clip hex"></div><div class="circle-clip diamond"></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #0f172a;
+      padding: 24px;
+    }
+    .circle-clip {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #3b82f6, #ec4899);
+      clip-path: circle(50%);
+    }
+    .hex {
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    }
+    .diamond {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    }
+    `}
+  height={220} />
+
+<CssPreview client:load
+  title="Gradient Mask Fade-Out Effect"
+  html={`<div class="demo"><div class="fade-box"><p>This content gradually fades out at the bottom using a CSS mask with a linear gradient. The mask transitions from fully opaque (black) to transparent, creating a smooth fade effect without any images.</p><p>This second paragraph is partially hidden by the fade, demonstrating how mask-image works with gradient values.</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100%;
+      background: #0f172a;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .fade-box {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 360px;
+      color: white;
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+    .fade-box p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .fade-box p:last-child {
+      margin-bottom: 0;
+    }
+    `}
+  height={240} />
+
+## Common AI Mistakes
+
+- **Never using clip-path at all** — Defaulting to rectangular layouts and ignoring the design's call for angled, circular, or geometric section edges.
+- **Using rotated pseudo-elements instead of clip-path** — Creating angled edges with `transform: rotate()` on `::before`/`::after` and `overflow: hidden`, which is fragile and harder to maintain.
+- **Animating between different shape functions** — `clip-path` transitions only work when the start and end values use the same function (e.g., both `polygon()`) with the same number of points.
+- **Forgetting the `-webkit-` prefix on mask properties** — Safari requires `-webkit-mask-image`, `-webkit-mask-size`, etc. Without these, masks are invisible in Safari.
+- **Using `mask-image` with `mask` shorthand incorrectly** — The `mask` shorthand has complex sub-property parsing. Use individual properties (`mask-image`, `mask-size`, `mask-repeat`) for clarity and reliability.
+- **Forgetting that clipped areas lose interactivity** — Content outside the `clip-path` region is not just invisible but also non-clickable and non-hoverable, which can break expected interaction areas.
+- **Using images for simple geometric masks** — Loading an external image for a shape that `clip-path: polygon()` or a gradient mask can express natively.
+
+## When to Use
+
+- **Angled section dividers** — Hero sections, feature blocks, and footer edges with diagonal or curved cuts
+- **Circular or geometric image crops** — Avatars, thumbnails, and decorative image shapes without extra markup
+- **Fade-out effects** — Scrollable containers, image reveals, and content previews that fade at edges
+- **Page transition animations** — Circle-wipe or polygon-morph reveals for route changes
+- **Decorative UI shapes** — Hexagonal cards, diamond badges, arrow callouts, and non-rectangular layouts
+
+## References
+
+- [clip-path — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path)
+- [mask-image — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image)
+- [Clipping and Masking in CSS — CSS-Tricks](https://css-tricks.com/clipping-masking-css/)
+- [The Modern Guide for Making CSS Shapes — Smashing Magazine](https://www.smashingmagazine.com/2024/05/modern-guide-making-css-shapes/)
+- [CSS Masking — Ahmad Shadeed](https://ishadeed.com/article/css-masking/)
+- [Fade Out Overflow Using CSS Mask-Image — PQINA](https://pqina.nl/blog/fade-out-overflow-using-css-mask-image/)

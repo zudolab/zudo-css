@@ -1,0 +1,324 @@
+---
+title: サブグリッド
+sidebar_position: 7
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+CSS Gridは直接の子要素のレイアウトに優れていますが、ネストされた要素は親グリッドのトラックサイジングに参加できません。これにより、兄弟コンポーネント間でコンテンツを揃えることが不可能になります — 例えば、カードの行全体でタイトル、説明、ボタンがすべて同じ垂直位置に揃うようにすることができません。AIエージェントが`subgrid`を使うことはほとんどなく、代わりに固定の高さ、JavaScriptベースの揃え、または動的コンテンツで壊れる複雑な回避策に頼ります。
+
+## 解決方法
+
+`grid-template-columns`や`grid-template-rows`の`subgrid`値を使うと、ネストされたグリッドが親のトラック定義を継承できます。子グリッドは親のトラックサイジングに参加するため、兄弟グリッドアイテム間のコンテンツが固定の寸法やトラック定義の重複なしに自然に揃います。
+
+## コード例
+
+### 揃えられたコンテンツのカードレイアウト
+
+最も一般的なsubgridのユースケース：カード間で見出し、コンテンツ、フッターが揃うようにします。
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  display: grid;
+  /* Inherit parent's row tracks for this card's internal layout */
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  gap: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.card h2 {
+  /* Row 1: title — aligns across all cards */
+  align-self: start;
+}
+
+.card p {
+  /* Row 2: description — aligns across all cards */
+  align-self: start;
+}
+
+.card .action {
+  /* Row 3: button — pushed to bottom, aligned across all cards */
+  align-self: end;
+}
+```
+
+```html
+<div class="card-grid">
+  <article class="card">
+    <h2>Short Title</h2>
+    <p>Brief description.</p>
+    <a class="action" href="#">Read more</a>
+  </article>
+
+  <article class="card">
+    <h2>A Much Longer Card Title That Wraps</h2>
+    <p>This card has a longer title, but the description and button still align with the other cards.</p>
+    <a class="action" href="#">Read more</a>
+  </article>
+
+  <article class="card">
+    <h2>Medium Title</h2>
+    <p>Another card with varying content length.</p>
+    <a class="action" href="#">Read more</a>
+  </article>
+</div>
+```
+
+### カラム用のSubgrid
+
+ネストされたフォームのラベルと入力フィールドを親グリッドのカラムに揃えます。
+
+```css
+.form-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+}
+
+.field-group {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+.field-group label {
+  grid-column: 1;
+}
+
+.field-group input {
+  grid-column: 2;
+}
+```
+
+```html
+<form class="form-grid">
+  <div class="field-group">
+    <label for="name">Name</label>
+    <input id="name" type="text" />
+  </div>
+  <div class="field-group">
+    <label for="email">Email</label>
+    <input id="email" type="email" />
+  </div>
+  <div class="field-group">
+    <label for="phone">Phone</label>
+    <input id="phone" type="tel" />
+  </div>
+</form>
+```
+
+### 2次元のSubgrid
+
+親グリッドから行とカラムの両方を継承します。
+
+```css
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+}
+
+.widget {
+  display: grid;
+  grid-column: span 1;
+  grid-row: span 3;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+}
+
+.widget header {
+  /* Aligns with other widgets' headers */
+  font-weight: bold;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.widget footer {
+  /* Aligns with other widgets' footers */
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+```
+
+### 名前付きラインを持つSubgrid
+
+親グリッドの名前付きラインはsubgridに引き継がれます。
+
+```css
+.page-layout {
+  display: grid;
+  grid-template-columns:
+    [full-start] 1fr
+    [content-start] minmax(0, 65ch)
+    [content-end] 1fr
+    [full-end];
+}
+
+.article {
+  display: grid;
+  grid-column: full-start / full-end;
+  grid-template-columns: subgrid;
+}
+
+.article p {
+  grid-column: content-start / content-end;
+}
+
+.article .wide-image {
+  grid-column: full-start / full-end;
+}
+```
+
+### gapを重複させないSubgrid
+
+subgridはデフォルトで親の`gap`を継承します。必要に応じてオーバーライドできます。
+
+```css
+.parent {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.child {
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: subgrid;
+  /* Subgrid inherits parent's 2rem gap */
+  /* Override if needed: */
+  gap: 0.5rem;
+}
+```
+
+## ブラウザサポート
+
+- Chrome 117+
+- Edge 117+
+- Safari 16+
+- Firefox 71+
+
+グローバルサポートは97%を超えています。Firefoxが2019年12月に最初にsubgridをリリースしました。Safariが2022年9月に続き、Chrome/Edgeが2023年9月にサポートを追加しました。Subgridはプロダクション利用に安全です。
+
+## AIがよくやるミス
+
+- `subgrid`をまったく使わない — ほとんどのAIエージェントは、揃えのためにトラック定義を重複させたり固定の高さを使ったりするグリッドレイアウトを生成する
+- 子グリッドで`subgrid`を使う代わりに`grid-template-columns`の値を重複させる
+- 兄弟グリッドアイテム間のコンテンツ揃えにJavaScriptや固定の寸法を使用する
+- subgridを適用する前に、子グリッドアイテムを正しい数の親トラックにまたがらせない
+- subgridが親の`gap`値を継承すること（オーバーライド可能）を忘れる
+- 子要素に最初に`display: grid`を設定せずに`subgrid`を適用する
+- ラベルと入力フィールドに一貫した揃えが必要なフォームレイアウトでsubgridを活用しない
+
+## 使い分け
+
+- カード間でタイトル、コンテンツ、アクションを揃える必要があるカードグリッド
+- ラベルと入力フィールドが共有カラムトラックに揃うフォームレイアウト
+- 共通のヘッダー/コンテンツ/フッター構造を共有するダッシュボードウィジェット
+- ネストされた要素が親グリッドの名前付きラインを参照する必要があるフルブリードコンテンツレイアウト
+- ネストされた要素が親グリッドのトラックサイジングに参加する必要があるあらゆるレイアウト
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="Subgrid — 揃えられたカードコンテンツ"
+  html={`
+    <div class="card-grid">
+      <article class="card">
+        <h2>Short Title</h2>
+        <p>Brief description of this card.</p>
+        <a class="action" href="#">Read more →</a>
+      </article>
+      <article class="card">
+        <h2>A Much Longer Card Title That Wraps to Multiple Lines</h2>
+        <p>Despite the longer title, the description and action button still align perfectly with other cards thanks to subgrid.</p>
+        <a class="action" href="#">Read more →</a>
+      </article>
+      <article class="card">
+        <h2>Medium Title</h2>
+        <p>Another card with varying content length to show alignment.</p>
+        <a class="action" href="#">Read more →</a>
+      </article>
+    </div>
+    <p class="hint">Notice how titles, descriptions, and buttons all align across cards — subgrid shares the parent's row tracks</p>
+    `}
+  css={`
+    .card-grid {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    
+    .card {
+      display: grid;
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+      gap: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.25rem;
+      background: #fff;
+    }
+    
+    .card h2 {
+      font-size: 1rem;
+      color: #1e293b;
+      margin: 0;
+      align-self: start;
+    }
+    
+    .card p {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.5;
+      align-self: start;
+    }
+    
+    .action {
+      align-self: end;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    
+    .action:hover {
+      background: #2563eb;
+    }
+    
+    .hint {
+      font-family: system-ui, sans-serif;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    `}
+  height={320} />
+
+## 参考リンク
+
+- [Subgrid - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Subgrid)
+- [CSS subgrid - web.dev](https://web.dev/articles/css-subgrid)
+- [Brand New Layouts with CSS Subgrid - Josh W. Comeau](https://www.joshwcomeau.com/css/subgrid/)
+- [CSS Subgrid - Can I Use](https://caniuse.com/css-subgrid)

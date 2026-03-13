@@ -1,0 +1,537 @@
+---
+title: CSS 3Dトランスフォーム
+sidebar_position: 9
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+開発者がカードフリップ、回転パネル、キューブなどの3Dエフェクトを試みると、原因不明のバグに遭遇します。カードの裏側が鏡像として透けて見える、回転が3Dではなく平面的に見える、エフェクト全体が2D平面に潰れてしまう、などです。これらのバグは紛らわしいものです。なぜなら、個々のプロパティ（`transform`、`backface-visibility`）は単体では正しく見えるからです。根本原因は、CSS 3Dトランスフォームが4つのプロパティ — `perspective`、`transform-style: preserve-3d`、`backface-visibility`、`perspective-origin` — の**連携したシステム**を必要とし、いずれか1つでも省略や誤配置があると錯覚が壊れるということです。
+
+## 解決方法
+
+CSS 3Dトランスフォームは、各プロパティに特定の役割がある4つのプロパティのシステムとして機能します。
+
+1. **`perspective`** を親コンテナに設定し、3Dの視距離を確立する
+2. **`transform-style: preserve-3d`** を回転する要素に設定し、子要素が共有3D空間でレンダリングされるようにする
+3. **`backface-visibility: hidden`** をカードの各面に設定し、回転して裏向きになったときに非表示にする
+4. **`perspective-origin`** を親に設定し、消失点をずらす
+
+4つすべてが存在し、正しい要素に配置されている必要があります。`perspective` と `perspective-origin` は**親**（ビューイングコンテナ）に設定します。`transform-style` は**回転される要素**に設定します。`backface-visibility` は裏向きになったときに隠すべき**個々の面**に設定します。
+
+### 基本原則
+
+#### perspective が奥行きを作る
+
+`perspective` がないと、回転はフラットな2D投影で行われます。`rotateY(45deg)` は `scaleX()` のように要素を水平方向に圧縮するだけです。親コンテナに `perspective` を追加すると、設定された距離に仮想カメラが作成され、近い端が大きく、遠い端が小さく見えるようになります。これは現実世界の遠近法と同じです。
+
+小さい値（200〜400px）は劇的で誇張された奥行きを作ります。大きい値（800〜1200px）は繊細で自然な3Dになります。カードエフェクトのデフォルトとしては `perspective: 1000px` が適切です。
+
+#### preserve-3d が子要素を3D空間に保つ
+
+デフォルトでは、CSSはトランスフォームされた子要素を親の2D平面にフラット化します。これが `transform-style: flat` です。表と裏のあるカードを構築する場合、両面が同じ3D空間に存在する必要があります。共有の親（カードラッパー）に `transform-style: preserve-3d` を設定すると、このフラット化が防止され、`180deg` 回転した子要素が同じ平面で重なるのではなく、実際に兄弟要素の背後に位置するようになります。
+
+#### backface-visibility が裏面を隠す
+
+すべてのHTML要素には表面と裏面があります。デフォルトでは裏面が表示されます。表面の鏡像としてレンダリングされます。カードフリップの場合、これは表と裏のコンテンツが同時に透けて見えることを意味します。各カード面に `backface-visibility: hidden` を設定すると、90度を超えて回転したときに非表示になり、視聴者に向いている面だけが表示されます。
+
+#### perspective-origin が消失点をずらす
+
+`perspective-origin` は、親コンテナに対する視聴者の目の位置を制御します。デフォルトは `50% 50%`（中央）です。`top left` にずらすと、左上の要素が近くに見え、右下の要素がより後退して見えます。傾いたカードのグリッドでオフセンターの視点が必要な場合に便利です。
+
+## ライブプレビュー
+
+### ホバーでカードフリップ
+
+クラシックなカードフリップは4つのプロパティすべてを使います。親が `perspective` を提供し、カードラッパーが `preserve-3d` を使ってホバー時に回転し、各面が `backface-visibility: hidden` を使って正面を向いているときだけ表示されます。
+
+<CssPreview client:load
+  title="ホバーでカードフリップ"
+  height={320}
+  html={`
+    <div class="card-flip">
+      <div class="card-flip__inner">
+        <div class="card-flip__front">
+          <h3>Front Side</h3>
+          <p>Hover to flip this card</p>
+        </div>
+        <div class="card-flip__back">
+          <h3>Back Side</h3>
+          <p>Here is the hidden content</p>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .card-flip {
+      perspective: 1000px;
+      width: 260px;
+      height: 200px;
+      margin: 40px auto;
+      font-family: system-ui, sans-serif;
+    }
+    
+    .card-flip__inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s ease;
+    }
+    
+    .card-flip:hover .card-flip__inner,
+    .card-flip:focus-within .card-flip__inner {
+      transform: rotateY(180deg);
+    }
+    
+    .card-flip__front,
+    .card-flip__back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    
+    .card-flip__front {
+      background: hsl(220deg 90% 56%);
+      color: hsl(0deg 0% 100%);
+    }
+    
+    .card-flip__back {
+      background: hsl(160deg 70% 40%);
+      color: hsl(0deg 0% 100%);
+      transform: rotateY(180deg);
+    }
+    
+    .card-flip__front h3,
+    .card-flip__back h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    
+    .card-flip__front p,
+    .card-flip__back p {
+      font-size: 14px;
+      opacity: 0.9;
+      margin: 0;
+    }
+    `} />
+
+### パースペクティブの比較
+
+小さい perspective 値は極端な遠近感を作り、大きい値はより繊細な効果を生みます。以下の2つのパネルはどちらも同じ `rotateY(40deg)` トランスフォームです。親の `perspective` 値だけが異なります。
+
+<CssPreview client:load
+  title="パースペクティブ: 低い値 (200px) vs 高い値 (1000px)"
+  height={280}
+  html={`
+    <div class="perspective-demo">
+      <div class="perspective-demo__group">
+        <p class="perspective-demo__label">perspective: 200px</p>
+        <div class="perspective-demo__stage perspective-demo__stage--low">
+          <div class="perspective-demo__box">Hello</div>
+        </div>
+      </div>
+      <div class="perspective-demo__group">
+        <p class="perspective-demo__label">perspective: 1000px</p>
+        <div class="perspective-demo__stage perspective-demo__stage--high">
+          <div class="perspective-demo__box">Hello</div>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .perspective-demo {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: center;
+      padding: 32px 20px;
+      font-family: system-ui, sans-serif;
+      height: 100%;
+    }
+    
+    .perspective-demo__group {
+      text-align: center;
+    }
+    
+    .perspective-demo__label {
+      font-size: 13px;
+      font-weight: 600;
+      color: hsl(220deg 20% 40%);
+      margin: 0 0 16px;
+      font-family: monospace;
+    }
+    
+    .perspective-demo__stage--low {
+      perspective: 200px;
+    }
+    
+    .perspective-demo__stage--high {
+      perspective: 1000px;
+    }
+    
+    .perspective-demo__box {
+      width: 140px;
+      height: 140px;
+      background: hsl(260deg 70% 60%);
+      color: hsl(0deg 0% 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 12px;
+      transform: rotateY(40deg);
+    }
+    `} />
+
+### 3Dキューブ
+
+CSSキューブは `translateZ` と `rotateX`/`rotateY` で配置された6つの面を使います。親が `perspective` を提供し、キューブラッパーが `preserve-3d` を使います。ホバーでキューブを回転させます。
+
+<CssPreview client:load
+  title="ホバー回転する3Dキューブ"
+  height={350}
+  html={`
+    <div class="cube-scene">
+      <div class="cube">
+        <div class="cube__face cube__face--front">Front</div>
+        <div class="cube__face cube__face--back">Back</div>
+        <div class="cube__face cube__face--right">Right</div>
+        <div class="cube__face cube__face--left">Left</div>
+        <div class="cube__face cube__face--top">Top</div>
+        <div class="cube__face cube__face--bottom">Bottom</div>
+      </div>
+    </div>
+    `}
+  css={`
+    .cube-scene {
+      perspective: 600px;
+      width: 150px;
+      height: 150px;
+      margin: 80px auto;
+      font-family: system-ui, sans-serif;
+    }
+    
+    .cube {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transform: rotateX(-20deg) rotateY(-30deg);
+      transition: transform 1s ease;
+    }
+    
+    .cube-scene:hover .cube {
+      transform: rotateX(-20deg) rotateY(150deg);
+    }
+    
+    .cube__face {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: hsl(0deg 0% 100%);
+      border: 2px solid hsl(0deg 0% 100% / 0.3);
+      border-radius: 4px;
+    }
+    
+    .cube__face--front {
+      background: hsl(220deg 80% 55% / 0.9);
+      transform: translateZ(75px);
+    }
+    
+    .cube__face--back {
+      background: hsl(220deg 80% 55% / 0.9);
+      transform: rotateY(180deg) translateZ(75px);
+    }
+    
+    .cube__face--right {
+      background: hsl(160deg 65% 45% / 0.9);
+      transform: rotateY(90deg) translateZ(75px);
+    }
+    
+    .cube__face--left {
+      background: hsl(160deg 65% 45% / 0.9);
+      transform: rotateY(-90deg) translateZ(75px);
+    }
+    
+    .cube__face--top {
+      background: hsl(40deg 80% 55% / 0.9);
+      transform: rotateX(90deg) translateZ(75px);
+    }
+    
+    .cube__face--bottom {
+      background: hsl(40deg 80% 55% / 0.9);
+      transform: rotateX(-90deg) translateZ(75px);
+    }
+    `} />
+
+### パースペクティブオリジン
+
+`perspective-origin` は視聴者の目の位置をずらします。以下では、同じ傾いたカードのグリッドを3つの異なる視点から見ています。各グループにホバーすると、傾いたカードの遠近感がどのように異なるかを確認できます。
+
+<CssPreview client:load
+  title="パースペクティブオリジン: 左上 vs 中央 vs 右下"
+  height={340}
+  html={`
+    <div class="origin-demo">
+      <div class="origin-demo__group">
+        <p class="origin-demo__label">top left</p>
+        <div class="origin-demo__stage origin-demo__stage--top-left">
+          <div class="origin-demo__card">1</div>
+          <div class="origin-demo__card">2</div>
+          <div class="origin-demo__card">3</div>
+          <div class="origin-demo__card">4</div>
+        </div>
+      </div>
+      <div class="origin-demo__group">
+        <p class="origin-demo__label">center (default)</p>
+        <div class="origin-demo__stage origin-demo__stage--center">
+          <div class="origin-demo__card">1</div>
+          <div class="origin-demo__card">2</div>
+          <div class="origin-demo__card">3</div>
+          <div class="origin-demo__card">4</div>
+        </div>
+      </div>
+      <div class="origin-demo__group">
+        <p class="origin-demo__label">bottom right</p>
+        <div class="origin-demo__stage origin-demo__stage--bottom-right">
+          <div class="origin-demo__card">1</div>
+          <div class="origin-demo__card">2</div>
+          <div class="origin-demo__card">3</div>
+          <div class="origin-demo__card">4</div>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .origin-demo {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: system-ui, sans-serif;
+      height: 100%;
+      align-items: flex-start;
+    }
+    
+    .origin-demo__group {
+      text-align: center;
+      flex: 1;
+      max-width: 180px;
+    }
+    
+    .origin-demo__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: hsl(220deg 20% 40%);
+      margin: 0 0 12px;
+      font-family: monospace;
+    }
+    
+    .origin-demo__stage {
+      perspective: 400px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    
+    .origin-demo__stage--top-left {
+      perspective-origin: top left;
+    }
+    
+    .origin-demo__stage--center {
+      perspective-origin: center;
+    }
+    
+    .origin-demo__stage--bottom-right {
+      perspective-origin: bottom right;
+    }
+    
+    .origin-demo__card {
+      width: 100%;
+      aspect-ratio: 1;
+      background: hsl(340deg 75% 55%);
+      color: hsl(0deg 0% 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 8px;
+      transform: rotateY(30deg) rotateX(10deg);
+      transition: transform 0.4s ease;
+    }
+    
+    .origin-demo__stage:hover .origin-demo__card {
+      transform: rotateY(0deg) rotateX(0deg);
+    }
+    `} />
+
+### モーション軽減対応のフリップカード
+
+本番用のカードフリップは `prefers-reduced-motion` を尊重すべきです。ユーザーがモーション軽減を好む場合、カードは3D回転の代わりにオパシティによるクロスフェードで表と裏を切り替えます。
+
+<CssPreview client:load
+  title="モーション軽減対応のアクセシブルなカードフリップ"
+  height={320}
+  html={`
+    <div class="a11y-flip">
+      <div class="a11y-flip__inner">
+        <div class="a11y-flip__front">
+          <h3>Accessible Flip</h3>
+          <p>Hover to reveal the back</p>
+        </div>
+        <div class="a11y-flip__back">
+          <h3>Back Content</h3>
+          <p>Uses cross-fade when motion is reduced</p>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .a11y-flip {
+      perspective: 1000px;
+      width: 280px;
+      height: 200px;
+      margin: 40px auto;
+      font-family: system-ui, sans-serif;
+    }
+    
+    .a11y-flip__inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s ease;
+    }
+    
+    .a11y-flip:hover .a11y-flip__inner,
+    .a11y-flip:focus-within .a11y-flip__inner {
+      transform: rotateY(180deg);
+    }
+    
+    .a11y-flip__front,
+    .a11y-flip__back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    
+    .a11y-flip__front {
+      background: hsl(250deg 65% 55%);
+      color: hsl(0deg 0% 100%);
+    }
+    
+    .a11y-flip__back {
+      background: hsl(20deg 85% 55%);
+      color: hsl(0deg 0% 100%);
+      transform: rotateY(180deg);
+    }
+    
+    .a11y-flip__front h3,
+    .a11y-flip__back h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    
+    .a11y-flip__front p,
+    .a11y-flip__back p {
+      font-size: 14px;
+      opacity: 0.9;
+      margin: 0;
+    }
+    
+    /* Reduced motion: cross-fade instead of 3D rotation */
+    @media (prefers-reduced-motion: reduce) {
+    .a11y-flip {
+      perspective: none;
+    }
+    
+    .a11y-flip__inner {
+      transform-style: flat;
+      transition: none;
+    }
+    
+    .a11y-flip:hover .a11y-flip__inner,
+    .a11y-flip:focus-within .a11y-flip__inner {
+      transform: none;
+    }
+    
+    .a11y-flip__front,
+    .a11y-flip__back {
+      backface-visibility: visible;
+      transition: opacity 0.3s ease;
+    }
+    
+    .a11y-flip__front {
+      opacity: 1;
+    }
+    
+    .a11y-flip__back {
+      opacity: 0;
+      transform: none;
+    }
+    
+    .a11y-flip:hover .a11y-flip__front,
+    .a11y-flip:focus-within .a11y-flip__front {
+      opacity: 0;
+    }
+    
+    .a11y-flip:hover .a11y-flip__back,
+    .a11y-flip:focus-within .a11y-flip__back {
+      opacity: 1;
+    }
+    }
+    `} />
+
+## AIがよくやるミス
+
+- **親に `perspective` がない** — `perspective` を親のスタンドアロンプロパティではなく、要素自体の `transform` ショートハンドの一部として適用してしまう。`transform` 内の `perspective()` 関数はその単一の要素にのみ影響し、子要素には影響しません。
+- **`transform-style: preserve-3d` を忘れる** — これがないと、子要素は親の2D平面にフラット化されます。カードフリップの構造は正しく見えますが、両面が同じ平面にレンダリングされ、回転するのではなく重なります。
+- **`backface-visibility` を間違った要素に配置する** — 回転ラッパーではなく、個々の面に設定する必要があります。ラッパーに設定すると、各面を選択的に隠すのではなく、カード全体が裏返ったときに隠れてしまいます。
+- **裏面を事前に回転していない** — 裏面は初期状態で `transform: rotateY(180deg)` が必要です。これにより、最初は視聴者から離れた方向を向き、ラッパーが回転したときに表示されるようになります。
+- **`preserve-3d` コンテナに `overflow: hidden` を使う** — `overflow: hidden` は `transform-style: flat` を強制し、3Dエフェクトを暗黙的に壊します。クリッピングが必要な場合は、`preserve-3d` を使わない外側のラッパーに適用しましょう。
+- **`prefers-reduced-motion` を無視する** — 3D回転は動揺を引き起こす可能性があります。本番のカードフリップは、ユーザーがモーション軽減を好む場合にオパシティのクロスフェードにフォールバックすべきです。
+
+## 使い分け
+
+- **カードフリップ** — ホバーやクリックで追加情報を表示する商品カード、フラッシュカード、プロフィールカード
+- **3Dショーケース** — 画像ギャラリーやフィーチャーハイライト用の回転キューブやプリズム
+- **パースペクティブティルト** — カーソルに向かって少し傾くホバーエフェクトで触覚的な感触を出す
+- **ヒーローセクション** — 大きな perspective 値を使ったスクロール時のドラマチックな3D登場アニメーション
+
+## 注意点
+
+- `perspective` と `perspective-origin` は回転要素ではなく**親**に設定する必要があります
+- `preserve-3d` 要素に `overflow: hidden` を設定すると、暗黙的に `transform-style: flat` に戻ります
+- `backface-visibility: hidden` は、祖先に `transform-style: preserve-3d` がないと効果がありません
+- ネストされた `preserve-3d` 要素は perspective を合成し、予期しない歪みを生む可能性があります
+- Mobile Safariには歴史的に `preserve-3d` のバグがあります。実際のiOSデバイスでテストしましょう
+
+## 参考リンク
+
+- [perspective — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/perspective)
+- [transform-style — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-style)
+- [backface-visibility — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/backface-visibility)
+- [Intro to CSS 3D Transforms — David DeSandro](https://3dtransforms.desandro.com/)

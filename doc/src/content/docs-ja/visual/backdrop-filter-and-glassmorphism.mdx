@@ -1,0 +1,343 @@
+---
+title: バックドロップフィルターとグラスモーフィズム
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+グラスモーフィズム（glassmorphism）は、AppleのiOSやmacOSで広まったすりガラス風の美しいデザインで、`backdrop-filter: blur()` と半透明の背景を組み合わせて実現します。AIエージェントはこの実装でよく間違いを犯します。要素自体にブラーをかけてしまう、完全に不透明な背景を使ってブラー効果を隠してしまう、Safariに必要な `-webkit-` プレフィックスを忘れる、あるいはブラーすべき視覚的なコンテンツがない単色背景の上にエフェクトを適用してしまう、といったケースです。
+
+## 解決方法
+
+視覚的にリッチな背景（グラデーション、画像、カラフルなコンテンツ）の上に配置した半透明の要素に `backdrop-filter: blur()` を使用します。ブラーは要素自体のコンテンツではなく、要素の**背後**にあるものに対して適用されます。ブラー値は見た目とパフォーマンスのバランスが最も良い8〜16pxの範囲にしましょう。Safariとの互換性のために、常に `-webkit-` プレフィックスを含めてください。
+
+### 基本原則
+
+#### 半透明の背景が必要
+
+要素には半透明の `background-color` が必要です。そうすることでブラーされた背景が透けて見えます。完全に不透明な背景を設定すると、グラスモーフィズムの目的そのものが台無しになります。
+
+#### 背後にリッチなコンテンツが必要
+
+`backdrop-filter` は要素の背後にあるものをブラーします。単色の白い背景の上では、ブラーするものがないためエフェクトは見えません。グラスモーフィズムは常にグラデーション、画像、カラフルなレイヤードコンテンツの上で使いましょう。
+
+#### パフォーマンスの考慮
+
+グラスモーフィズム要素はそれぞれGPUでのブラー計算を発生させます。1つのビューポートにつきガラス要素は2〜3個に制限しましょう。`backdrop-filter` の値を直接アニメーションすることは避けてください。
+
+## コード例
+
+### 基本的なすりガラスカード
+
+```css
+.glass-card {
+  background: hsl(0deg 0% 100% / 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(0deg 0% 100% / 0.2);
+  border-radius: 16px;
+  padding: 24px;
+}
+```
+
+```html
+<div class="vibrant-background">
+  <div class="glass-card">
+    <h2>Frosted Glass</h2>
+    <p>Content is readable over a blurred background.</p>
+  </div>
+</div>
+```
+
+### 鮮やかな背景の設定
+
+ガラスエフェクトは背後にリッチな視覚コンテンツがある場合にのみ機能します。
+
+```css
+.vibrant-background {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 80%, hsl(280deg 80% 60% / 0.6), transparent 50%),
+    radial-gradient(circle at 80% 20%, hsl(200deg 80% 60% / 0.6), transparent 50%),
+    linear-gradient(135deg, hsl(220deg 60% 20%), hsl(280deg 60% 30%));
+  display: grid;
+  place-items: center;
+  padding: 40px;
+}
+```
+
+### ダークテーマのグラスモーフィズム
+
+```css
+.glass-dark {
+  background: hsl(220deg 20% 10% / 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(0deg 0% 100% / 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px hsl(0deg 0% 0% / 0.3);
+}
+```
+
+### ライトテーマのグラスモーフィズム
+
+```css
+.glass-light {
+  background: hsl(0deg 0% 100% / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(0deg 0% 100% / 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px hsl(0deg 0% 0% / 0.08);
+}
+```
+
+### すりガラスのナビゲーションバー
+
+```css
+.glass-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: hsl(0deg 0% 100% / 0.7);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-bottom: 1px solid hsl(0deg 0% 0% / 0.06);
+  padding: 12px 24px;
+}
+```
+
+`blur()` と合わせて `saturate(180%)` を追加すると、ブラーされたコンテンツの色が強調され、Appleのガラスエフェクトのような鮮やかさを再現できます。
+
+### ガラスモーダルオーバーレイ
+
+```css
+.glass-overlay {
+  position: fixed;
+  inset: 0;
+  background: hsl(0deg 0% 0% / 0.3);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 200;
+}
+
+.glass-modal {
+  background: hsl(0deg 0% 100% / 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsl(0deg 0% 100% / 0.15);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 16px 48px hsl(0deg 0% 0% / 0.2);
+}
+```
+
+```html
+<div class="glass-overlay">
+  <div class="glass-modal">
+    <h2>Modal Title</h2>
+    <p>Modal content over a frosted backdrop.</p>
+  </div>
+</div>
+```
+
+### 事前ブラー画像によるパフォーマンス重視の代替手法
+
+パフォーマンスが重要な場合（モバイル端末やガラス要素が多い場合）は、ランタイムの `backdrop-filter` の代わりに事前にブラーした画像を使いましょう。
+
+```css
+.faux-glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.faux-glass::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background: url("background-preblurred.jpg") center / cover;
+  filter: blur(0); /* image is already blurred */
+  z-index: -1;
+}
+
+.faux-glass-content {
+  position: relative;
+  background: hsl(0deg 0% 100% / 0.15);
+  padding: 24px;
+}
+```
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="すりガラスカード"
+  html={`    <div class="vibrant-bg"><div class="glass-card"><h2>Frosted Glass</h2><p>Content is readable over a blurred, colorful background.</p></div></div>`}
+  css={`
+    .vibrant-bg {
+      width: 100%;
+      height: 100%;
+      background:
+      radial-gradient(circle at 20% 80%, hsl(280deg 80% 60% / 0.8), transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(200deg 80% 60% / 0.8), transparent 50%),
+      radial-gradient(circle at 50% 50%, hsl(340deg 80% 50% / 0.5), transparent 60%),
+      linear-gradient(135deg, hsl(220deg 60% 20%), hsl(280deg 60% 30%));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .glass-card {
+      background: hsl(0deg 0% 100% / 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid hsl(0deg 0% 100% / 0.25);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 340px;
+      color: white;
+    }
+    .glass-card h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .glass-card p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    `}
+  height={280} />
+
+<CssPreview client:load
+  title="グラスモーフィズムパネル（ダークテーマ）"
+  html={`    <div class="vibrant-bg"><div class="glass-panel"><h3>Settings</h3><div class="item"><span>Notifications</span><span class="toggle">ON</span></div><div class="item"><span>Dark Mode</span><span class="toggle">ON</span></div><div class="item"><span>Auto-save</span><span class="toggle off">OFF</span></div></div></div>`}
+  css={`
+    .vibrant-bg {
+      width: 100%;
+      height: 100%;
+      background:
+      radial-gradient(circle at 70% 30%, hsl(330deg 80% 50% / 0.6), transparent 50%),
+      radial-gradient(circle at 30% 70%, hsl(180deg 80% 50% / 0.5), transparent 50%),
+      linear-gradient(135deg, #0f172a, #1e1b4b);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .glass-panel {
+      background: hsl(220deg 20% 10% / 0.4);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid hsl(0deg 0% 100% / 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      width: 280px;
+      color: white;
+      box-shadow: 0 8px 32px hsl(0deg 0% 0% / 0.3);
+    }
+    .glass-panel h3 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid hsl(0deg 0% 100% / 0.08);
+      font-size: 14px;
+    }
+    .item:last-child {
+      border-bottom: none;
+    }
+    .toggle {
+      background: hsl(150deg 60% 45% / 0.3);
+      color: hsl(150deg 60% 70%);
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .toggle.off {
+      background: hsl(0deg 0% 50% / 0.3);
+      color: hsl(0deg 0% 70%);
+    }
+    `}
+  height={300} />
+
+## AIがよくやるミス
+
+- **`backdrop-filter: blur()` の代わりに `filter: blur()` を使ってしまう** — `filter` は要素自体とそのすべてのコンテンツをブラーするため、テキストが読めなくなります。`backdrop-filter` は要素の背後にあるものだけをブラーします。
+- **完全に不透明な背景を使う** — `background: white` や `background: rgba(255, 255, 255, 1)` を設定すると、ブラーされた背景が完全に覆い隠され、エフェクトが見えなくなります。
+- **`-webkit-` プレフィックスを忘れる** — Safariでは標準の `backdrop-filter` に加えて `-webkit-backdrop-filter` が必要です。これがないと、Safariユーザーにはブラーが表示されません。
+- **単色背景の上に適用する** — 単一の平坦な色の上にガラスエフェクトを置いても、目に見える効果は得られません。ブラーが意味を持つには、要素の背後に視覚的な変化がなければなりません。
+- **ガラス要素が多すぎる** — 各 `backdrop-filter` はGPUによるコストの高いブラー処理を発生させます。すべてのカード、ボタン、ナビゲーション項目に使用すると、深刻なフレーム落ちを引き起こします。
+- **過度なブラー値** — `blur(40px)` やそれ以上の値を使用すること。16pxを超える値は指数関数的にコストが増加し、12〜16pxより見た目が良くなることはほとんどありません。
+- **ライトテーマとダークテーマで調整しない** — ダーク背景に合わせたガラスエフェクトはライト背景では色あせて見え、その逆も同様です。背景の不透明度とボーダーにはテーマごとの調整が必要です。
+
+## 使い分け
+
+- ページコンテンツの上をスクロールする固定ナビゲーションバー
+- 下のページのコンテキストを維持する必要があるモーダルオーバーレイ
+- 鮮やかな画像やグラデーションの上に配置されたヒーローセクションのカードやオーバーレイ
+- リッチなビジュアルコンテンツの上にあるアプリケーションのサイドバーパネル
+- 空間的なコンテキストの維持が重要なツールチップやポップオーバー要素
+
+## Tailwind CSS
+
+Tailwindは、カスタムCSSを書かずにグラスモーフィズム効果を実現するための `backdrop-blur-*`、`backdrop-brightness-*`、`backdrop-saturate-*` ユーティリティを提供しています。
+
+### すりガラスカード
+
+<TailwindPreview client:load
+  title="Tailwind: すりガラスカード"
+  html={`    <div class="min-h-[280px] flex justify-center items-center p-6" style="background: radial-gradient(circle at 20% 80%, hsl(280deg 80% 60% / 0.8), transparent 50%), radial-gradient(circle at 80% 20%, hsl(200deg 80% 60% / 0.8), transparent 50%), radial-gradient(circle at 50% 50%, hsl(340deg 80% 50% / 0.5), transparent 60%), linear-gradient(135deg, hsl(220deg 60% 20%), hsl(280deg 60% 30%));">
+      <div class="backdrop-blur-xl bg-white/15 border border-white/25 rounded-2xl p-8 max-w-xs text-white">
+        <h2 class="text-xl font-bold mb-2">Frosted Glass</h2>
+        <p class="text-sm opacity-90">Content is readable over a blurred, colorful background.</p>
+      </div>
+    </div>`}
+  height={300} />
+
+### ダークガラスパネル
+
+<TailwindPreview client:load
+  title="Tailwind: ダークグラスモーフィズムパネル"
+  html={`    <div class="min-h-[300px] flex justify-center items-center p-6" style="background: radial-gradient(circle at 70% 30%, hsl(330deg 80% 50% / 0.6), transparent 50%), radial-gradient(circle at 30% 70%, hsl(180deg 80% 50% / 0.5), transparent 50%), linear-gradient(135deg, #0f172a, #1e1b4b);">
+      <div class="backdrop-blur-2xl backdrop-saturate-[1.8] bg-slate-900/40 border border-white/10 rounded-2xl p-6 w-72 text-white shadow-[0_8px_32px_hsl(0deg_0%_0%/0.3)]">
+        <h3 class="text-lg font-semibold mb-4">Settings</h3>
+        <div class="flex justify-between items-center py-2.5 border-b border-white/[0.08] text-sm">
+          <span>Notifications</span>
+          <span class="bg-green-500/30 text-green-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">ON</span>
+        </div>
+        <div class="flex justify-between items-center py-2.5 border-b border-white/[0.08] text-sm">
+          <span>Dark Mode</span>
+          <span class="bg-green-500/30 text-green-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">ON</span>
+        </div>
+        <div class="flex justify-between items-center py-2.5 text-sm">
+          <span>Auto-save</span>
+          <span class="bg-gray-500/30 text-gray-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">OFF</span>
+        </div>
+      </div>
+    </div>`}
+  height={320} />
+
+## 参考リンク
+
+- [backdrop-filter — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter)
+- [Next-level Frosted Glass with backdrop-filter — Josh W. Comeau](https://www.joshwcomeau.com/css/backdrop-filter/)
+- [Glassmorphism Design Trend: Implementation Guide — Developer Playground](https://playground.halfaccessible.com/blog/glassmorphism-design-trend-implementation-guide)
+- [Blending Modes in CSS — Ahmad Shadeed](https://ishadeed.com/article/blending-modes-css/)

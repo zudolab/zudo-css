@@ -1,0 +1,292 @@
+---
+title: スクロールスナップ
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+カルーセル、スライドショー、水平スクロールコンテンツセクションは非常に一般的なUIパターンです。AIエージェントはスナップ・トゥ・スライド動作の実装にほぼ必ずJavaScriptライブラリやカスタムスクロールイベントハンドラーを使おうとします。CSS Scroll Snap はこの機能をわずか数行のCSSでネイティブに提供し、JavaScriptソリューションよりも優れたパフォーマンスとタッチデバイス互換性を実現します。しかし、AIがこれを提案することはまれです。
+
+## 解決方法
+
+CSS Scroll Snap を使用すると、スクロールコンテナ上にスナップポイントを定義でき、スクロールが自然に特定の位置にロックされます。ブラウザがモーメンタム、減速、スナップなどすべての物理演算を処理するため、すべてのデバイスでスムーズなネイティブ感覚のスクロール動作を実現します。
+
+### 主要プロパティ
+
+- **`scroll-snap-type`**（スクロールコンテナに設定）：スナップの軸（`x`、`y`、`both`）と厳密さ（`mandatory` または `proximity`）を定義します。
+- **`scroll-snap-align`**（子要素に設定）：各アイテムがスナップする位置（`start`、`center`、`end`）を定義します。
+- **`scroll-snap-stop`**（子要素に設定）：スクロールがアイテムを飛ばせるか（`normal`）、各アイテムで停止しなければならないか（`always`）を制御します。
+
+### mandatory と proximity
+
+- **`mandatory`**：スクロールが停止すると、スクロールコンテナは**常に**スナップポイントにスナップします。ユーザーがわずかにスクロールしただけでも、最も近いポイントにスナップします。カルーセルやページネーションコンテンツに最適です。
+- **`proximity`**：スナップポイントの近くにいる場合のみスナップします。ユーザーがスナップポイントを通過してスクロールすると、通常のスクロールのように動作します。スナップが便利だが必須ではない長いコンテンツに最適です。
+
+<CssPreview client:load
+  title="水平スクロールスナップカルーセル"
+  height={250}
+  html={`
+    <div class="carousel">
+      <div class="slide" style="background: #3b82f6;">
+        <span class="slide-num">1</span>
+        <span class="slide-label">Slide One</span>
+      </div>
+      <div class="slide" style="background: #ef4444;">
+        <span class="slide-num">2</span>
+        <span class="slide-label">Slide Two</span>
+      </div>
+      <div class="slide" style="background: #22c55e;">
+        <span class="slide-num">3</span>
+        <span class="slide-label">Slide Three</span>
+      </div>
+      <div class="slide" style="background: #f59e0b;">
+        <span class="slide-num">4</span>
+        <span class="slide-label">Slide Four</span>
+      </div>
+      <div class="slide" style="background: #8b5cf6;">
+        <span class="slide-num">5</span>
+        <span class="slide-label">Slide Five</span>
+      </div>
+    </div>
+    <p class="hint">Scroll horizontally — slides snap into place</p>
+    `}
+  css={`
+    .carousel {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: 1rem;
+      padding: 1rem;
+    }
+    
+    .carousel::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .carousel::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+    
+    .carousel::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    
+    .slide {
+      flex: 0 0 calc(80% - 0.5rem);
+      scroll-snap-align: start;
+      border-radius: 0.75rem;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      gap: 0.5rem;
+    }
+    
+    .slide-num {
+      font-size: 2.5rem;
+      font-weight: 800;
+      opacity: 0.9;
+    }
+    
+    .slide-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+    
+    .hint {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-align: center;
+      margin: 0.5rem 0 0;
+      font-style: italic;
+    }
+    `} />
+
+## コード例
+
+### 水平カルーセル
+
+```css
+.carousel {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none;
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+```
+
+```html
+<div class="carousel">
+  <div class="carousel__slide">Slide 1</div>
+  <div class="carousel__slide">Slide 2</div>
+  <div class="carousel__slide">Slide 3</div>
+</div>
+```
+
+### マルチアイテムカルーセル（次のアイテムをチラ見せ）
+
+```css
+.carousel-peek {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+  padding-inline: 1rem;
+}
+
+.carousel-peek__item {
+  flex: 0 0 calc(80% - 0.5rem);
+  scroll-snap-align: start;
+  border-radius: 0.5rem;
+  background: var(--color-surface, #f5f5f5);
+  padding: 1.5rem;
+}
+```
+
+コンテナの `scroll-padding-inline` により、スナップされたアイテムが端からオフセットされ、次のアイテムがチラ見えします。
+
+### 縦方向フルページセクション
+
+```css
+.page-sections {
+  height: 100vh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+}
+
+.section {
+  height: 100vh;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+```
+
+```html
+<div class="page-sections">
+  <section class="section">Section 1</section>
+  <section class="section">Section 2</section>
+  <section class="section">Section 3</section>
+</div>
+```
+
+### 中央スナップの画像ギャラリー
+
+```css
+.gallery {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-block: 1rem;
+}
+
+.gallery__image {
+  flex: 0 0 auto;
+  width: min(300px, 80vw);
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  scroll-snap-align: center;
+}
+```
+
+ここでは `proximity` を使用することで、穏やかなセンタースナップ動作を持つ自由なブラウジングが可能になります。
+
+### 高速スクロールスキップの防止
+
+```css
+.carousel-strict {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.carousel-strict__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* Must stop at every slide */
+}
+```
+
+`scroll-snap-stop: always` により、ユーザーが一度に複数のスライドをスワイプで飛ばすことを防止します。
+
+### レスポンシブ対応：カルーセルからグリッドへ
+
+```css
+.card-scroller {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 1rem;
+}
+
+.card-scroller__item {
+  flex: 0 0 min(280px, 85vw);
+  scroll-snap-align: start;
+}
+
+/* On wider screens, switch to a grid layout */
+@media (min-width: 48rem) {
+  .card-scroller {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .card-scroller__item {
+    scroll-snap-align: unset;
+  }
+}
+```
+
+## AIがよくやるミス
+
+- **Scroll Snap を提案しない**：CSSがネイティブで処理できるスクロールスナップ動作にJavaScriptカルーセルライブラリをデフォルトで使用します。
+- **コンテナに `scroll-snap-type` を忘れる**：子要素に `scroll-snap-align` を設定しながら、親でスナップを有効にしていません。
+- **常に `mandatory` を使用する**：`proximity` の方が適切な長いスクロールコンテンツに `mandatory` を使用します。長いコンテンツでの `mandatory` はユーザーを閉じ込めてしまう可能性があります。
+- **`scroll-padding` を使用しない**：固定ヘッダーがあるページで `scroll-padding` を追加し忘れ、スナップされたコンテンツがヘッダーの背後に隠れてしまいます。
+- **アクセシビリティを維持せずにスクロールバーを非表示にする**：CSSでスクロールバーを削除しながら、代替のナビゲーション（矢印、ドット）を提供しません。
+- **`scroll-snap-stop` を使用しない**：ステップバイステップのコンテンツ（オンボーディングフローなど）で、スキップを防止するための `scroll-snap-stop: always` を使用していません。
+- **スライドアイテムに固定ピクセル幅を使用する**：`min(300px, 85vw)` のようなレスポンシブサイジングの代わりに `flex: 0 0 350px` を使用します。
+
+## 使い分け
+
+- **カルーセルとスライドショー**：フル幅の画像カルーセル、テスティモニアルスライダー、製品ショーケースに使います。
+- **水平スクロールセクション**：カードスクローラー、カテゴリナビゲーション、画像ギャラリーに使います。
+- **フルページセクションスクロール**：縦方向にスナップする個別のセクションを持つランディングページに使います。
+- **オンボーディングフロー**：各ステップがビューにスナップするべきステップバイステップの画面に使います。
+- **複雑なカルーセルロジックには不向き**：自動再生、無限ループ、APIドリブンのスライド管理が必要な場合はJavaScriptが必要になるかもしれませんが、スクロールスナップ動作自体はCSSドリブンのままにすべきです。
+
+## 参考リンク
+
+- [scroll-snap-type — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scroll-snap-type)
+- [Basic Concepts of Scroll Snap — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scroll_snap/Basic_concepts)
+- [Well-Controlled Scrolling with CSS Scroll Snap — web.dev](https://web.dev/articles/css-scroll-snap)
+- [Practical CSS Scroll Snapping — CSS-Tricks](https://css-tricks.com/practical-css-scroll-snapping/)
+- [CSS Scroll Snap — Ahmad Shadeed](https://ishadeed.com/article/css-scroll-snap/)

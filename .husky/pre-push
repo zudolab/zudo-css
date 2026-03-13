@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+# Get the current branch
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+# Only run checks when pushing to main
+if [ "$current_branch" = "main" ]; then
+  echo "Running quality checks before pushing to main..."
+  cd doc && pnpm run check || {
+    echo "Quality checks failed! Please run 'pnpm check:fix' to fix issues."
+    exit 1
+  }
+  echo "Quality checks passed!"
+fi

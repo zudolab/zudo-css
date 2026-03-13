@@ -1,0 +1,363 @@
+---
+title: クリップパスとマスク
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+AIエージェントは `clip-path` やCSSマスクをほとんど使わず、デザインが斜めのエッジ、円形のリビール、フェードするボーダーを明らかに求めている場合でも矩形のレイアウトにデフォルトで落ち着きます。非矩形の形状を試みる場合、画像、SVG、または `overflow: hidden` と回転した擬似要素を使った追加のラッパー div に頼ります。これらはネイティブのCSS解決策よりもはるかに複雑で壊れやすい方法です。
+
+## 解決方法
+
+CSSは非矩形レンダリングのための2つの補完的なツールを提供しています。
+
+- **`clip-path`** — 幾何学的なシェイプ関数（`polygon()`、`circle()`、`ellipse()`、`inset()`）やSVGパスを使ったハードエッジのクリッピングです。クリップの外側のコンテンツは非表示かつインタラクション不可になります。
+- **`mask-image`** — 画像やグラデーションを使ったソフトエッジのマスキングです。マスクが黒（または不透明）の部分では要素が表示され、透明な部分では要素が隠されます。グラデーションにより滑らかなフェード効果が作成できます。
+
+## コード例
+
+### clip-path: 基本シェイプ
+
+```css
+/* Circle clip */
+.avatar-circle {
+  clip-path: circle(50%);
+}
+
+/* Ellipse */
+.banner-ellipse {
+  clip-path: ellipse(60% 40% at 50% 50%);
+}
+
+/* Inset with rounded corners */
+.rounded-inset {
+  clip-path: inset(10px round 16px);
+}
+```
+
+### clip-path: ポリゴンシェイプ
+
+```css
+/* Triangle */
+.triangle {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* Angled section edge */
+.angled-section {
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+/* Chevron / arrow */
+.chevron {
+  clip-path: polygon(
+    0% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    0% 100%,
+    25% 50%
+  );
+}
+
+/* Hexagon */
+.hexagon {
+  clip-path: polygon(
+    25% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
+}
+```
+
+### 斜めのヒーローセクション
+
+```css
+.hero {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  padding: 80px 24px 120px;
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+.next-section {
+  margin-top: -60px; /* overlap into the angled area */
+  position: relative;
+  z-index: 1;
+}
+```
+
+```html
+<section class="hero">
+  <h1>Angled Hero</h1>
+</section>
+<section class="next-section">
+  <p>Content overlaps the angled edge.</p>
+</section>
+```
+
+### clip-path のアニメーション
+
+clip-path のシェイプは、シェイプ関数の種類とポイント数が同じである限り、トランジションやアニメーションが可能です。
+
+```css
+.reveal-circle {
+  clip-path: circle(0% at 50% 50%);
+  transition: clip-path 0.6s ease-out;
+}
+
+.reveal-circle.is-visible {
+  clip-path: circle(75% at 50% 50%);
+}
+```
+
+```css
+/* Morphing between two polygons with the same number of points */
+.morph {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); /* diamond */
+  transition: clip-path 0.4s ease;
+}
+
+.morph:hover {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); /* rectangle */
+}
+```
+
+### CSS マスク: グラデーションフェード
+
+マスクは輝度またはアルファ値で可視性を決定します。不透明から透明へのグラデーションで滑らかなフェードが作成できます。
+
+```css
+/* Fade out at the bottom */
+.fade-bottom {
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+/* Fade both edges horizontally */
+.fade-edges {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 15%,
+    black 85%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 15%,
+    black 85%,
+    transparent
+  );
+}
+```
+
+```html
+<div class="fade-bottom">
+  <img src="landscape.jpg" alt="Landscape" />
+</div>
+```
+
+### フェードするエッジを持つスクロール可能コンテナ
+
+```css
+.scroll-fade {
+  overflow-x: auto;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 40px,
+    black calc(100% - 40px),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 40px,
+    black calc(100% - 40px),
+    transparent
+  );
+}
+```
+
+### 放射状グラデーションマスク（スポットライト効果）
+
+```css
+.spotlight {
+  mask-image: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    black 0%,
+    black 20%,
+    transparent 60%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    black 0%,
+    black 20%,
+    transparent 60%
+  );
+}
+```
+
+JavaScriptと組み合わせて `mousemove` で `--x` と `--y` カスタムプロパティを動かすと、インタラクティブなスポットライト効果になります。
+
+### clip-path と mask の組み合わせ
+
+```css
+/* Hard clip for overall shape, soft mask for edge fading */
+.shaped-fade {
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 50% 100%, 0 80%);
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+```
+
+### SVG画像によるマスク
+
+```css
+.masked-image {
+  mask-image: url("mask-shape.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-image: url("mask-shape.svg");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+```
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="clip-path polygon（斜めセクション）"
+  html={`<div class="wrapper"><section class="hero"><h1>Angled Hero Section</h1><p>clip-path: polygon() creates the diagonal edge</p></section><section class="content"><p>Content flows beneath the angled edge.</p></section></div>`}
+  css={`
+    .wrapper {
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+    }
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+      padding: 40px 24px 80px;
+      clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+      color: white;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+    .hero p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    .content {
+      margin-top: -30px;
+      padding: 0 24px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .content p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+    `}
+  height={260} />
+
+<CssPreview client:load
+  title="clip-path による円形シェイプ"
+  html={`<div class="demo"><div class="circle-clip"></div><div class="circle-clip hex"></div><div class="circle-clip diamond"></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #0f172a;
+      padding: 24px;
+    }
+    .circle-clip {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #3b82f6, #ec4899);
+      clip-path: circle(50%);
+    }
+    .hex {
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    }
+    .diamond {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    }
+    `}
+  height={220} />
+
+<CssPreview client:load
+  title="グラデーションマスクによるフェードアウト効果"
+  html={`<div class="demo"><div class="fade-box"><p>This content gradually fades out at the bottom using a CSS mask with a linear gradient. The mask transitions from fully opaque (black) to transparent, creating a smooth fade effect without any images.</p><p>This second paragraph is partially hidden by the fade, demonstrating how mask-image works with gradient values.</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100%;
+      background: #0f172a;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .fade-box {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 360px;
+      color: white;
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+    .fade-box p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .fade-box p:last-child {
+      margin-bottom: 0;
+    }
+    `}
+  height={240} />
+
+## AIがよくやるミス
+
+- **clip-path を全く使わない** — 矩形レイアウトにデフォルトで落ち着き、デザインが求める斜め、円形、幾何学的なセクションエッジを無視する。
+- **clip-path の代わりに回転した擬似要素を使う** — `::before`/`::after` に `transform: rotate()` と `overflow: hidden` を使って斜めエッジを作成するのは、脆くてメンテナンスが難しい方法です。
+- **異なるシェイプ関数間でアニメーションする** — `clip-path` のトランジションは、開始値と終了値が同じ関数（例：両方とも `polygon()`）を使い、同じポイント数の場合にのみ機能します。
+- **マスクプロパティの `-webkit-` プレフィックスを忘れる** — Safariでは `-webkit-mask-image`、`-webkit-mask-size` などが必要です。これがないと、Safariではマスクが表示されません。
+- **`mask-image` と `mask` ショートハンドを誤って使う** — `mask` ショートハンドは複雑なサブプロパティの解析があります。明確さと信頼性のために、個別のプロパティ（`mask-image`、`mask-size`、`mask-repeat`）を使いましょう。
+- **クリップされた領域がインタラクティビティを失うことを忘れる** — `clip-path` 領域外のコンテンツは、非表示になるだけでなくクリックやホバーもできなくなるため、期待されるインタラクション領域が壊れる可能性があります。
+- **単純な幾何学的マスクに画像を使う** — `clip-path: polygon()` やグラデーションマスクでネイティブに表現できるシェイプに、外部画像をロードしてしまう。
+
+## 使い分け
+
+- **斜めのセクション区切り** — 対角線やカーブのカットを持つヒーローセクション、フィーチャーブロック、フッターのエッジ
+- **円形や幾何学的な画像クロップ** — 追加のマークアップなしでアバター、サムネイル、装飾的な画像シェイプを作る
+- **フェードアウト効果** — エッジでフェードするスクロール可能コンテナ、画像リビール、コンテンツプレビュー
+- **ページ遷移アニメーション** — ルート変更時のサークルワイプやポリゴンモーフのリビール
+- **装飾的なUIシェイプ** — 六角形カード、ダイヤモンドバッジ、矢印コールアウト、非矩形レイアウト
+
+## 参考リンク
+
+- [clip-path — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path)
+- [mask-image — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image)
+- [Clipping and Masking in CSS — CSS-Tricks](https://css-tricks.com/clipping-masking-css/)
+- [The Modern Guide for Making CSS Shapes — Smashing Magazine](https://www.smashingmagazine.com/2024/05/modern-guide-making-css-shapes/)
+- [CSS Masking — Ahmad Shadeed](https://ishadeed.com/article/css-masking/)
+- [Fade Out Overflow Using CSS Mask-Image — PQINA](https://pqina.nl/blog/fade-out-overflow-using-css-mask-image/)

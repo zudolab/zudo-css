@@ -1,0 +1,324 @@
+---
+title: Subgrid
+sidebar_position: 10
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+CSS Grid is excellent for laying out direct children, but nested elements cannot participate in the parent grid's track sizing. This makes it impossible to align content across sibling components — for example, ensuring card titles, descriptions, and buttons all align at the same vertical position across a row of cards. AI agents almost never use `subgrid` and instead resort to fixed heights, JavaScript-based alignment, or complex workarounds that break with dynamic content.
+
+## The Solution
+
+The `subgrid` value for `grid-template-columns` and/or `grid-template-rows` allows a nested grid to inherit its parent's track definitions. The child grid participates in the parent's track sizing, so content across sibling grid items aligns naturally without fixed dimensions or duplication of track definitions.
+
+## Code Examples
+
+### Card Layout with Aligned Content
+
+The most common subgrid use case: ensuring headings, content, and footers align across cards.
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  display: grid;
+  /* Inherit parent's row tracks for this card's internal layout */
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  gap: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.card h2 {
+  /* Row 1: title — aligns across all cards */
+  align-self: start;
+}
+
+.card p {
+  /* Row 2: description — aligns across all cards */
+  align-self: start;
+}
+
+.card .action {
+  /* Row 3: button — pushed to bottom, aligned across all cards */
+  align-self: end;
+}
+```
+
+```html
+<div class="card-grid">
+  <article class="card">
+    <h2>Short Title</h2>
+    <p>Brief description.</p>
+    <a class="action" href="#">Read more</a>
+  </article>
+
+  <article class="card">
+    <h2>A Much Longer Card Title That Wraps</h2>
+    <p>This card has a longer title, but the description and button still align with the other cards.</p>
+    <a class="action" href="#">Read more</a>
+  </article>
+
+  <article class="card">
+    <h2>Medium Title</h2>
+    <p>Another card with varying content length.</p>
+    <a class="action" href="#">Read more</a>
+  </article>
+</div>
+```
+
+### Subgrid for Columns
+
+Align nested form labels and inputs to the parent grid's columns.
+
+```css
+.form-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+}
+
+.field-group {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+.field-group label {
+  grid-column: 1;
+}
+
+.field-group input {
+  grid-column: 2;
+}
+```
+
+```html
+<form class="form-grid">
+  <div class="field-group">
+    <label for="name">Name</label>
+    <input id="name" type="text" />
+  </div>
+  <div class="field-group">
+    <label for="email">Email</label>
+    <input id="email" type="email" />
+  </div>
+  <div class="field-group">
+    <label for="phone">Phone</label>
+    <input id="phone" type="tel" />
+  </div>
+</form>
+```
+
+### Two-Dimensional Subgrid
+
+Inherit both rows and columns from the parent grid.
+
+```css
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+}
+
+.widget {
+  display: grid;
+  grid-column: span 1;
+  grid-row: span 3;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+}
+
+.widget header {
+  /* Aligns with other widgets' headers */
+  font-weight: bold;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.widget footer {
+  /* Aligns with other widgets' footers */
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+```
+
+### Subgrid with Named Lines
+
+Named lines from the parent grid flow through to the subgrid.
+
+```css
+.page-layout {
+  display: grid;
+  grid-template-columns:
+    [full-start] 1fr
+    [content-start] minmax(0, 65ch)
+    [content-end] 1fr
+    [full-end];
+}
+
+.article {
+  display: grid;
+  grid-column: full-start / full-end;
+  grid-template-columns: subgrid;
+}
+
+.article p {
+  grid-column: content-start / content-end;
+}
+
+.article .wide-image {
+  grid-column: full-start / full-end;
+}
+```
+
+### Subgrid Without Duplicating Gap
+
+The subgrid inherits the parent's `gap` by default. You can override it if needed.
+
+```css
+.parent {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.child {
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: subgrid;
+  /* Subgrid inherits parent's 2rem gap */
+  /* Override if needed: */
+  gap: 0.5rem;
+}
+```
+
+## Browser Support
+
+- Chrome 117+
+- Edge 117+
+- Safari 16+
+- Firefox 71+
+
+Global support exceeds 97%. Firefox was the first to ship subgrid in December 2019. Safari followed in September 2022, and Chrome/Edge added support in September 2023. Subgrid is safe for production use.
+
+## Common AI Mistakes
+
+- Not using `subgrid` at all — most AI agents generate grid layouts with duplicated track definitions or fixed heights for alignment
+- Duplicating `grid-template-columns` values in child grids instead of using `subgrid`
+- Using JavaScript or fixed dimensions to align content across sibling grid items
+- Not spanning the child grid item across the correct number of parent tracks before applying `subgrid`
+- Forgetting that subgrid inherits the parent's `gap` value (it can be overridden)
+- Applying `subgrid` without setting `display: grid` on the child element first
+- Not leveraging subgrid for form layouts where labels and inputs need consistent alignment
+
+## When to Use
+
+- Card grids where titles, content, and actions must align across cards
+- Form layouts where labels and inputs align to a shared column track
+- Dashboard widgets that share a common header/content/footer structure
+- Full-bleed content layouts where nested elements need to reference the parent grid's named lines
+- Any layout where nested elements need to participate in the parent grid's track sizing
+
+## Live Previews
+
+<CssPreview client:load
+  title="Subgrid — Aligned Card Content"
+  html={`
+    <div class="card-grid">
+      <article class="card">
+        <h2>Short Title</h2>
+        <p>Brief description of this card.</p>
+        <a class="action" href="#">Read more →</a>
+      </article>
+      <article class="card">
+        <h2>A Much Longer Card Title That Wraps to Multiple Lines</h2>
+        <p>Despite the longer title, the description and action button still align perfectly with other cards thanks to subgrid.</p>
+        <a class="action" href="#">Read more →</a>
+      </article>
+      <article class="card">
+        <h2>Medium Title</h2>
+        <p>Another card with varying content length to show alignment.</p>
+        <a class="action" href="#">Read more →</a>
+      </article>
+    </div>
+    <p class="hint">Notice how titles, descriptions, and buttons all align across cards — subgrid shares the parent's row tracks</p>
+    `}
+  css={`
+    .card-grid {
+      font-family: system-ui, sans-serif;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    
+    .card {
+      display: grid;
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+      gap: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.25rem;
+      background: #fff;
+    }
+    
+    .card h2 {
+      font-size: 1rem;
+      color: #1e293b;
+      margin: 0;
+      align-self: start;
+    }
+    
+    .card p {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.5;
+      align-self: start;
+    }
+    
+    .action {
+      align-self: end;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    
+    .action:hover {
+      background: #2563eb;
+    }
+    
+    .hint {
+      font-family: system-ui, sans-serif;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    `}
+  height={320} />
+
+## References
+
+- [Subgrid - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Subgrid)
+- [CSS subgrid - web.dev](https://web.dev/articles/css-subgrid)
+- [Brand New Layouts with CSS Subgrid - Josh W. Comeau](https://www.joshwcomeau.com/css/subgrid/)
+- [CSS Subgrid - Can I Use](https://caniuse.com/css-subgrid)

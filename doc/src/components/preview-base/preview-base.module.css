@@ -1,0 +1,181 @@
+.wrapper {
+  --preview-border: hsl(0 0% 82%);
+  --preview-bg: hsl(0 0% 96%);
+  --preview-bg-hover: hsl(0 0% 91%);
+  --preview-text: hsl(0 0% 32%);
+  --preview-text-muted: hsl(0 0% 44%);
+  --preview-code-bg: hsl(0 0% 98%);
+  --preview-accent: hsl(220 70% 50%);
+  --preview-accent-dark: hsl(220 70% 42%);
+
+  border: 1px solid var(--preview-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+:global([data-theme="dark"]) .wrapper {
+  --preview-border: hsl(0 0% 28%);
+  --preview-bg: hsl(0 0% 14%);
+  --preview-bg-hover: hsl(0 0% 18%);
+  --preview-text: hsl(0 0% 78%);
+  --preview-text-muted: hsl(0 0% 55%);
+  --preview-code-bg: hsl(0 0% 11%);
+  --preview-accent: hsl(220 70% 55%);
+  --preview-accent-dark: hsl(220 70% 48%);
+}
+
+/* Title bar */
+.titleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--preview-bg);
+  border-bottom: 1px solid var(--preview-border);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--preview-text);
+  margin: 0;
+}
+
+/* Viewport preset buttons */
+.viewportButtons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.viewportBtn {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--preview-border);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--preview-text-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+  line-height: 1.4;
+}
+
+.viewportBtn:hover {
+  background: var(--preview-bg-hover);
+}
+
+.viewportBtnActive {
+  composes: viewportBtn;
+  background: var(--preview-accent);
+  color: #fff;
+  border-color: var(--preview-accent);
+}
+
+.viewportBtnActive:hover {
+  background: var(--preview-accent-dark);
+  border-color: var(--preview-accent-dark);
+}
+
+/* Preview area */
+.previewArea {
+  background: var(--preview-bg);
+  padding: 1rem;
+  border-bottom: 1px solid var(--preview-border);
+}
+
+.previewContainer {
+  resize: horizontal;
+  overflow: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  transition: width 0.2s ease;
+}
+
+.iframe {
+  display: block;
+  width: 100%;
+  border: none;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Code section */
+.codeSection {
+  border-top: 1px solid var(--preview-border);
+}
+
+.codeToggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--preview-text-muted);
+  background: var(--preview-bg);
+  border: none;
+  cursor: pointer;
+  gap: 0.35rem;
+}
+
+.codeToggle:hover {
+  background: var(--preview-bg-hover);
+}
+
+.codeToggleIcon {
+  transition: transform 0.2s;
+  font-size: 0.7rem;
+}
+
+.codeToggleIconOpen {
+  composes: codeToggleIcon;
+  transform: rotate(90deg);
+}
+
+.codeContent {
+  padding: 0;
+}
+
+/* Code block styling */
+.codeBlock {
+  margin: 0;
+  border-radius: 0;
+  overflow-x: auto;
+}
+
+.codeBlock + .codeBlock {
+  border-top: 1px solid var(--preview-border);
+}
+
+.codeBlockTitle {
+  display: block;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--preview-text-muted);
+  background: var(--preview-bg);
+  border-bottom: 1px solid var(--preview-border);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.codeBlockPre {
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--preview-code-bg);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.codeBlockCode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  white-space: pre;
+}

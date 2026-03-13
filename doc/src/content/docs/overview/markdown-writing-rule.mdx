@@ -1,0 +1,271 @@
+---
+title: "Markdown & MDX Rules"
+sidebar_position: 2
+---
+
+Formatting and structural rules for writing MDX documentation in this project. For writing style and tone, see [Writing Style](./writing-style.mdx).
+
+## File Conventions
+
+### File Naming
+
+Use **kebab-case** for all file names:
+
+```
+centering-techniques.mdx    ✅
+centeringTechniques.mdx     ❌
+Centering_Techniques.mdx    ❌
+```
+
+### Frontmatter
+
+Every MDX file requires YAML frontmatter with at least `sidebar_position`:
+
+```yaml
+---
+sidebar_position: 3
+---
+```
+
+Category index pages use `sidebar_position: 0`.
+
+### Directory Structure
+
+Each documentation category lives in its own directory under `doc/docs/`:
+
+```
+doc/docs/<category>/
+  _category_.json     # Category label and sidebar position
+  index.mdx           # Category landing page
+  article-name.mdx    # Individual articles
+```
+
+## Import Patterns
+
+### CssPreview Component
+
+```mdx
+import CssPreview from '@/components/CssPreview';
+```
+
+Place imports immediately after the frontmatter, before any content.
+
+### TailwindPreview Component
+
+```mdx
+import TailwindPreview from '@/components/TailwindPreview';
+```
+
+### CategoryNav Component
+
+Used only in category index pages:
+
+```mdx
+```
+
+## CssPreview Usage
+
+The `CssPreview` component renders a live CSS demo inside an iframe. No JavaScript is available — all interactions must be pure CSS.
+
+### Basic Usage
+
+```mdx
+<CssPreview client:load
+  title="Flexbox Centering"
+  html={`
+<div class="flex-center">
+  <div class="box">Centered</div>
+</div>
+  `}
+  css={`
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  background: hsl(210, 50%, 97%);
+}
+.box {
+  padding: 16px 24px;
+  background: hsl(210, 80%, 55%);
+  color: hsl(0, 0%, 100%);
+  border-radius: 8px;
+  font-family: system-ui, sans-serif;
+}
+  `}
+/>
+```
+
+### Rules
+
+- Always provide a descriptive `title` prop
+- Use `hsl()` for all colors
+- Use descriptive BEM-ish class names
+- Keep HTML and CSS minimal — only what the demo needs
+- CSS-only interactions: `:hover`, `:focus`, `:checked`, `:target`, etc.
+- No JavaScript, no `<script>` tags
+
+## Headings
+
+### Use `h2` for Top-Level Article Sections
+
+Article titles use `h1` (the `# Title` at the top). All sections within an article use `h2` (`##`) or `h3` (`###`).
+
+```markdown
+# Article Title        ← h1 (one per article)
+
+## The Problem         ← h2 (top-level sections)
+
+### Sub-topic          ← h3 (sub-sections)
+```
+
+### Do Not Skip Heading Levels
+
+Go from `h2` to `h3`, never `h2` to `h4`:
+
+```markdown
+## Section          ✅
+### Sub-section     ✅
+#### Sub-sub        ❌ (avoid deep nesting)
+```
+
+### Avoid Contentless Consecutive Headings
+
+Every heading must be followed by content before the next heading:
+
+```markdown
+<!-- ❌ Bad -->
+## Section
+### Sub-section
+
+<!-- ✅ Good -->
+## Section
+
+Brief introduction to this section.
+
+### Sub-section
+```
+
+## Lists
+
+### Do Not Mix Ordered and Unordered Lists
+
+```markdown
+<!-- ❌ Bad -->
+1. First step
+   - Detail A
+   - Detail B
+2. Second step
+
+<!-- ✅ Good -->
+- First step
+  - Detail A
+  - Detail B
+- Second step
+```
+
+### Do Not Put Code Blocks Inside Lists
+
+Place code blocks outside of list items:
+
+````markdown
+<!-- ❌ Bad -->
+- Component usage:
+  ```jsx
+  <CssPreview client:load title="Demo" />
+  ```
+
+<!-- ✅ Good -->
+- Component usage:
+
+```jsx
+<CssPreview client:load title="Demo" />
+```
+````
+
+## Bold and Emphasis
+
+### Bold Is for Inline Emphasis Only
+
+Do not use bold as a section heading. Use proper heading syntax:
+
+```markdown
+<!-- ❌ Bad -->
+**Section Title:**
+
+Content here.
+
+<!-- ✅ Good -->
+### Section Title
+
+Content here.
+```
+
+### Do Not Use Bold as List Item Headers
+
+```markdown
+<!-- ❌ Bad -->
+- **Step one**: Do this
+- **Step two**: Do that
+
+<!-- ✅ Good -->
+- Step one: Do this
+- Step two: Do that
+```
+
+## Tables
+
+Use tables for comparisons and quick-reference content. Keep tables simple with two or three columns.
+
+```markdown
+| Scenario | Technique |
+| --- | --- |
+| Block, horizontal | `margin-inline: auto` |
+| Both axes, single child | `display: grid; place-items: center` |
+```
+
+## Horizontal Rules
+
+Do not use horizontal rules (`---`) between sections. Headings provide sufficient visual separation.
+
+```markdown
+<!-- ❌ Bad -->
+## Section 1
+
+Content...
+
+---
+
+## Section 2
+
+<!-- ✅ Good -->
+## Section 1
+
+Content...
+
+## Section 2
+```
+
+Use `---` only for major topic shifts (e.g., separating appendix content from the main article).
+
+## Admonitions
+
+Use Docusaurus admonitions sparingly. Allowed types:
+
+```markdown
+:::note
+
+Supplementary information related to the main content.
+
+:::
+```
+
+```markdown
+:::info
+
+Tangential but relevant context. "By the way" content.
+
+:::
+```
+
+Do not use `:::tip`, `:::warning`, `:::danger`, or `:::caution`.

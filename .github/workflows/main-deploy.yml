@@ -1,0 +1,130 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect-runner:
+    uses: ./.github/workflows/detect-runner.yml
+    secrets: inherit
+
+  quality:
+    name: Quality Checks
+    needs: detect-runner
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: doc/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm --dir doc install --frozen-lockfile
+      - name: Quality checks
+        run: pnpm --dir doc run check
+
+  build:
+    name: Build
+    needs: [detect-runner, quality]
+    runs-on: ${{ needs.detect-runner.outputs.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: doc/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm --dir doc install --frozen-lockfile
+      - name: Build
+        run: pnpm --dir doc run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doc-dist
+          path: doc/dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: doc-dist
+          path: doc-dist/
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy/pj/zcss
+          cp -r doc-dist/* deploy/pj/zcss/
+      - name: Install wrangler
+        run: npm install -g wrangler
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          wrangler pages deploy deploy \
+            --project-name=zudo-css \
+            --branch=main \
+            --commit-hash=${GITHUB_SHA} \
+            --commit-message="Production deploy: ${GITHUB_SHA}"
+
+  notify:
+    name: Notify
+    needs: [quality, build, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: always()
+    steps:
+      - name: Send IFTTT notification
+        env:
+          IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
+        run: |
+          if [ -z "$IFTTT_PROD_NOTIFY" ]; then
+            echo "IFTTT_PROD_NOTIFY not set, skipping notification"
+            exit 0
+          fi
+
+          QUALITY_RESULT="${{ needs.quality.result }}"
+          BUILD_RESULT="${{ needs.build.result }}"
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
+
+          if [ "$DEPLOY_RESULT" = "success" ]; then
+            STATUS="✅ Deploy succeeded"
+          elif [ "$QUALITY_RESULT" = "failure" ]; then
+            STATUS="❌ Quality checks failed"
+          elif [ "$BUILD_RESULT" = "failure" ]; then
+            STATUS="❌ Build failed"
+          elif [ "$DEPLOY_RESULT" = "failure" ]; then
+            STATUS="❌ Deploy failed"
+          else
+            STATUS="⚠️ Deploy result: quality=$QUALITY_RESULT build=$BUILD_RESULT deploy=$DEPLOY_RESULT"
+          fi
+
+          curl -s -o /dev/null \
+            -H "Content-Type: application/json" \
+            -d "{\"value1\":\"zudo-css\",\"value2\":\"$STATUS\",\"value3\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+            "$IFTTT_PROD_NOTIFY"

@@ -1,0 +1,438 @@
+---
+title: BEM戦略
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+:::note 歴史的背景
+
+BEM は、CSS のスコープが広く利用可能になる以前の時代に生まれた**伝統的な CSS 命名規約**です。他のプログラミング言語では当たり前に使える「スコープ」を、グローバルなプレーン CSS 上でシミュレートするために考案されました。
+
+**最近のプロジェクトのほとんどは BEM を必要としません。** 現代のツールがスコープを自動的に処理してくれます:
+
+- **CSS Modules** — クラス名はビルド時にローカルスコープされる
+- **Vue / Svelte のスコープスタイル** — `<style scoped>` がコンポーネントごとにユニークなセレクタを生成する
+- **Tailwind CSS** — ユーティリティファーストのアプローチにより、命名規約自体が不要になる
+- **CSS-in-JS**（styled-components、Emotion）— スタイルがデフォルトでコンポーネントにスコープされる
+
+BEM は**基礎知識**として依然価値があります。なぜ現代のスコープソリューションが生まれ、コンポーネントの境界をどう考えるかを説明してくれます。また、現代のツールが使えない環境では今も有効です。
+
+BEM は「今日使っているツールの背景にある考え方」を理解するためのものであり、新しいプロジェクトで採用するパターンとして手を伸ばすものではありません。
+
+:::
+
+## 問題
+
+CSS の命名に規約がないと、名前の衝突、詳細度（specificity）の争い、スタイル間の不明瞭な関係が生じます。複数人で開発するプロジェクトでは、チームメンバーごとに異なる命名パターンを使い、一貫性が失われます。AI エージェントは `.title`、`.container`、`.btn-blue` のような汎用的なクラス名を生成しがちで、コンポーネント間で名前が衝突しやすくなります。さらに、`.sidebar .nav ul li a.active` のような深くネストしたセレクタをデフォルトで使い、`!important` なしではオーバーライド不可能な詳細度の連鎖を作ってしまいます。
+
+## 解決方法
+
+BEM（Block Element Modifier）は、`.block__element--modifier` という厳格な命名規約を提供します。これにより、フラットで単一クラスのセレクタが作られ、詳細度の問題を完全に回避しつつ、名前自体でコンポーネントの構造を伝えることができます。
+
+- **Block**: 独立した再利用可能なコンポーネント（`.card`、`.nav`、`.form`）
+- **Element**: Block の一部で、Block 名とダブルアンダースコアで接頭辞を付ける（`.card__title`、`.card__body`）
+- **Modifier**: Block または Element のバリエーションで、ダブルハイフンを末尾に付ける（`.card--featured`、`.card__title--large`）
+
+すべてのセレクタが同じ詳細度（クラス1つ分）を持つため、カスケードが予測可能になり、オーバーライドも簡単です。
+
+## コード例
+
+### BEM の命名規約
+
+```
+.block                    → 独立したコンポーネント
+.block__element           → Block の子要素
+.block--modifier          → Block のバリエーション
+.block__element--modifier → Element のバリエーション
+```
+
+例:
+
+```css
+/* Block */
+.card { }
+.nav { }
+.form { }
+
+/* Element */
+.card__title { }
+.card__body { }
+.card__image { }
+
+/* Modifier */
+.card--featured { }
+.card__title--large { }
+```
+
+### Card コンポーネント
+
+BEM 命名を使った完全な Card コンポーネントです。featured Modifier は、構造を維持しながらカードの外観を変更します。
+
+<CssPreview client:load
+  title="BEM: Card コンポーネント"
+  html={`    <div class="card-grid">
+      <div class="card">
+        <img class="card__image" src="https://picsum.photos/seed/bem1/400/200" alt="Standard card">
+        <div class="card__body">
+          <h3 class="card__title">Standard Card</h3>
+          <p class="card__text">This is a regular card using BEM naming. Each class clearly shows its role within the component.</p>
+          <a class="card__link" href="#">Read more</a>
+        </div>
+      </div>
+      <div class="card card--featured">
+        <img class="card__image" src="https://picsum.photos/seed/bem2/400/200" alt="Featured card">
+        <div class="card__body">
+          <h3 class="card__title">Featured Card</h3>
+          <p class="card__text">This card uses the --featured modifier. The modifier class is added alongside the base block class.</p>
+          <a class="card__link card__link--primary" href="#">Read more</a>
+        </div>
+      </div>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .card-grid {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .card--featured {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    .card__image {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      display: block;
+    }
+    .card__body {
+      padding: 16px;
+    }
+    .card__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    .card__text {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .card__link {
+      font-size: 14px;
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .card__link:hover {
+      text-decoration: underline;
+    }
+    .card__link--primary {
+      background: #3b82f6;
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 4px;
+    }
+    .card__link--primary:hover {
+      background: #2563eb;
+      text-decoration: none;
+    }`}
+  height={340} />
+
+### Navigation コンポーネント
+
+アクティブ状態を `.active` のような別クラスではなく、Modifier として表現する Nav コンポーネントです。
+
+<CssPreview client:load
+  title="BEM: Navigation コンポーネント"
+  html={`    <nav class="nav">
+      <a class="nav__item nav__item--active" href="#">Home</a>
+      <a class="nav__item" href="#">About</a>
+      <a class="nav__item" href="#">Services</a>
+      <a class="nav__item" href="#">Contact</a>
+    </nav>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .nav {
+      display: flex;
+      gap: 4px;
+      background: #1e293b;
+      padding: 8px;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+    }
+    .nav__item {
+      padding: 10px 20px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav__item:hover {
+      background: #334155;
+      color: #f1f5f9;
+    }
+    .nav__item--active {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .nav__item--active:hover {
+      background: #2563eb;
+    }`}
+  height={60} />
+
+### Form コンポーネント
+
+BEM を使ったフォームで、入力フィールドにエラー状態の Modifier を適用しています。エラーのスタイリングは親セレクタではなく、命名によって要素にスコープされています。
+
+<CssPreview client:load
+  title="BEM: Form コンポーネント"
+  html={`    <form class="form">
+      <div class="form__group">
+        <label class="form__label" for="email">Email</label>
+        <input class="form__input" type="email" id="email" placeholder="you@example.com">
+      </div>
+      <div class="form__group">
+        <label class="form__label" for="password">Password</label>
+        <input class="form__input form__input--error" type="password" id="password" placeholder="Enter password">
+        <span class="form__error">Required field</span>
+      </div>
+      <button class="form__submit" type="button">Submit</button>
+    </form>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .form {
+      max-width: 400px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .form__group {
+      margin-bottom: 16px;
+    }
+    .form__label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    .form__input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form__input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .form__input--error {
+      border-color: #ef4444;
+    }
+    .form__input--error:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    .form__error {
+      display: block;
+      font-size: 12px;
+      color: #ef4444;
+      margin-top: 4px;
+    }
+    .form__submit {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .form__submit:hover {
+      background: #2563eb;
+    }`}
+  height={260} />
+
+## よくあるミス
+
+### Element を深くネストしすぎる
+
+BEM の Element は DOM のネスト構造を反映してはいけません。Element 名はフラットにして、Block のみを参照しましょう。
+
+```css
+/* 誤り: DOM ツリーを反映している */
+.card__body__title__text { }
+
+/* 正しい: Block へのフラットな参照 */
+.card__text { }
+```
+
+### ベースクラスなしで Modifier を使う
+
+Modifier クラスは常にベースの Block または Element クラスとペアで使うべきです。Modifier は特定のプロパティのみをオーバーライドし、ベースクラスが基盤を提供します。
+
+```html
+<!-- 誤り: Modifier だけを使用 -->
+<div class="card--featured">...</div>
+
+<!-- 正しい: ベース + Modifier -->
+<div class="card card--featured">...</div>
+```
+
+### BEM をレイアウトに使う
+
+BEM はコンポーネントクラスの命名のためのものであり、ページレベルのレイアウトのためのものではありません。レイアウトの関心事には別のユーティリティクラスやレイアウトクラスを使いましょう。
+
+```html
+<!-- 誤り: BEM をレイアウトに使用 -->
+<div class="page__sidebar">...</div>
+
+<!-- 改善: レイアウトとコンポーネント命名を分離 -->
+<div class="sidebar">
+  <nav class="nav">...</nav>
+</div>
+```
+
+## BEM とモダン CSS
+
+CSS ネスティング（CSS nesting）は現在すべての主要ブラウザでサポートされており、BEM をさらに使いやすくします。`&` セレクタを使えば、すべてのルールを Block 内に書くことができ、命名規約を維持しながら繰り返しを減らせます。
+
+```css
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+
+  &__image {
+    width: 100%;
+    display: block;
+  }
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  &__body {
+    padding: 16px;
+  }
+
+  &--featured {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+}
+```
+
+<CssPreview client:load
+  title="BEM と CSS ネスティング"
+  html={`    <div class="alert">
+      <span class="alert__icon">ℹ️</span>
+      <div class="alert__content">
+        <strong class="alert__title">Information</strong>
+        <p class="alert__text">This is a standard alert message.</p>
+      </div>
+    </div>
+    <div class="alert alert--warning">
+      <span class="alert__icon">⚠️</span>
+      <div class="alert__content">
+        <strong class="alert__title">Warning</strong>
+        <p class="alert__text">Something needs your attention.</p>
+      </div>
+    </div>
+    <div class="alert alert--success">
+      <span class="alert__icon">✅</span>
+      <div class="alert__content">
+        <strong class="alert__title">Success</strong>
+        <p class="alert__text">Operation completed successfully.</p>
+      </div>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border-left: 4px solid #3b82f6;
+      background: #eff6ff;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 16px;
+      font-family: system-ui, sans-serif;
+    
+    &__icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+    
+    &__content {
+      flex: 1;
+    }
+    
+    &__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      display: block;
+      margin-bottom: 2px;
+    }
+    
+    &__text {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.4;
+    }
+    
+    &--warning {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+    }
+    
+    &--success {
+      border-left-color: #22c55e;
+      background: #f0fdf4;
+    }
+    }`}
+  height={230} />
+
+## 使い分け
+
+**最近のプロジェクトのほとんどは BEM を必要としません。** フロントエンドフレームワークを使って新しいプロジェクトを始めるなら、ほぼ確実にもっと良いスコープの手段が利用できます。
+
+### BEM に取って代わったもの
+
+- **CSS Modules** → デフォルトでローカルスコープ。命名規約は不要
+- **Vue / Svelte のスコープスタイル** → `<style scoped>` が衝突防止を自動的に処理する
+- **Tailwind CSS** → クラスに名前をつける必要がなく、ユーティリティを直接組み合わせる
+- **CSS-in-JS** → コンポーネントレベルのスコープが組み込み済み
+
+### BEM が今も有効な場面
+
+- **ビルドツールなし** — グローバルスタイルシートを書くプレーン HTML/CSS プロジェクト
+- **レガシーコードベース** — より良いアーキテクチャに向けて段階的にリファクタリングしている場合
+- **フレームワーク合意なしの複数チーム** — ツールの選定でチームが合意できない場合に、共通の命名規約で衝突を防ぐ
+- **サーバーレンダリングされたアプリ** — スタイルをスコープするビルドステップなしで HTML と CSS が別々に配信される場合
+
+### 基礎知識としての BEM
+
+本番で BEM を一切書かなくても、理解する価値はあります。CSS Modules やスコープスタイルがなぜ存在するのか、どんな問題を解決しているのかを説明してくれます。フラットなセレクタ、単一クラスの詳細度、コンポーネントスコープの命名といった概念は、現代のツールがスタイルをどう考えるかにそのまま引き継がれています。
+
+## 参考リンク
+
+- [BEM — Block Element Modifier](https://getbem.com/)
+- [BEM Methodology — Quick Start](https://en.bem.info/methodology/quick-start/)
+- [MindBEMding — Getting your head round BEM syntax - CSS Wizardry](https://csswizardry.com/2013/01/mindbemding-getting-your-head-round-bem-syntax/)

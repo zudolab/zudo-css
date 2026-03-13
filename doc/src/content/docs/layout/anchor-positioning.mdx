@@ -1,0 +1,358 @@
+---
+title: Anchor Positioning
+sidebar_position: 11
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Positioning elements relative to other elements — tooltips, popovers, dropdown menus, labels — has always required JavaScript. Libraries like Floating UI (Popper.js) calculate positions, handle viewport overflow, and reposition on scroll/resize. This adds bundle size, complexity, and frame-rate concerns. AI agents consistently recommend JavaScript positioning libraries when pure CSS anchor positioning would be more performant and maintainable.
+
+## The Solution
+
+CSS Anchor Positioning lets you declaratively position an element relative to an "anchor" element using pure CSS. It handles the anchor relationship (`anchor-name` / `position-anchor`), positioning (`position-area` or the `anchor()` function), and automatic fallback repositioning when the element overflows the viewport (`position-try-fallbacks`). Combined with the Popover API, this replaces most JavaScript tooltip/dropdown libraries.
+
+## Code Examples
+
+### Basic Tooltip
+
+```css
+.anchor-button {
+  anchor-name: --my-tooltip-anchor;
+}
+
+.tooltip {
+  /* Attach to the anchor */
+  position: fixed;
+  position-anchor: --my-tooltip-anchor;
+
+  /* Position above the anchor, centered */
+  position-area: top center;
+
+  /* Spacing from the anchor */
+  margin-bottom: 8px;
+
+  /* Styling */
+  background: #1f2937;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+```
+
+```html
+<button class="anchor-button">Hover me</button>
+<div class="tooltip" popover="hint">Helpful tooltip text</div>
+```
+
+### Dropdown Menu
+
+```css
+.menu-trigger {
+  anchor-name: --menu-anchor;
+}
+
+.dropdown-menu {
+  position: fixed;
+  position-anchor: --menu-anchor;
+
+  /* Below the trigger, left-aligned */
+  position-area: bottom span-right;
+
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.25rem;
+  min-width: 180px;
+}
+```
+
+```html
+<button class="menu-trigger" popovertarget="dropdown">Menu</button>
+<div class="dropdown-menu" id="dropdown" popover>
+  <button>Option 1</button>
+  <button>Option 2</button>
+  <button>Option 3</button>
+</div>
+```
+
+### Automatic Fallback Positioning
+
+When the positioned element would overflow the viewport, automatically try alternative positions.
+
+```css
+.tooltip {
+  position: fixed;
+  position-anchor: --tooltip-anchor;
+  position-area: top center;
+  margin: 8px;
+
+  /* If top overflows, try bottom, then right, then left */
+  position-try-fallbacks: flip-block, flip-inline;
+}
+```
+
+### Custom Fallback Positions with `@position-try`
+
+```css
+@position-try --below {
+  position-area: bottom center;
+  margin-top: 8px;
+}
+
+@position-try --right {
+  position-area: right center;
+  margin-left: 8px;
+}
+
+@position-try --left {
+  position-area: left center;
+  margin-right: 8px;
+}
+
+.tooltip {
+  position: fixed;
+  position-anchor: --tooltip-anchor;
+
+  /* Default: above */
+  position-area: top center;
+  margin-bottom: 8px;
+
+  /* Try these in order if default overflows */
+  position-try-fallbacks: --below, --right, --left;
+}
+```
+
+### Using the `anchor()` Function for Precise Placement
+
+For more control than `position-area` provides, use the `anchor()` function inside inset properties.
+
+```css
+.popover {
+  position: fixed;
+  position-anchor: --trigger;
+
+  /* Position the popover's top-left corner at the anchor's bottom-left corner */
+  top: anchor(bottom);
+  left: anchor(left);
+
+  /* Or center horizontally relative to anchor */
+  left: anchor(center);
+  translate: -50% 0;
+}
+```
+
+### Connecting Label to Form Field
+
+```css
+.form-field {
+  anchor-name: --field;
+}
+
+.field-hint {
+  position: fixed;
+  position-anchor: --field;
+  position-area: right center;
+  margin-left: 12px;
+
+  font-size: 0.75rem;
+  color: #6b7280;
+  max-width: 200px;
+}
+```
+
+```html
+<div>
+  <input class="form-field" type="email" placeholder="Email" />
+  <p class="field-hint">We'll never share your email.</p>
+</div>
+```
+
+### Dynamic Anchors with `anchor-name` on Multiple Elements
+
+```css
+.list-item {
+  anchor-name: --item;
+}
+
+.list-item:hover {
+  /* The detail panel follows whichever item is hovered */
+}
+
+.detail-panel {
+  position: fixed;
+  position-anchor: --item;
+  position-area: right center;
+  margin-left: 1rem;
+}
+```
+
+### Combining with Popover API
+
+```css
+[popovertarget] {
+  anchor-name: --popover-trigger;
+}
+
+[popover] {
+  position: fixed;
+  position-anchor: --popover-trigger;
+  position-area: bottom center;
+  margin-top: 4px;
+
+  /* Automatic fallback */
+  position-try-fallbacks: flip-block;
+
+  /* Styling */
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+```
+
+```html
+<button popovertarget="info-popover">Info</button>
+<div id="info-popover" popover>
+  <h3>Additional Information</h3>
+  <p>This popover is positioned and managed entirely in CSS/HTML.</p>
+</div>
+```
+
+## Browser Support
+
+- Chrome 125+
+- Edge 125+
+- Safari 26+ (Technology Preview, shipping 2025-2026)
+- Firefox 145+ (behind a flag), fully shipped in Firefox 150+
+
+As of late 2025, anchor positioning is available in all major browsers. For older browsers, the [CSS anchor positioning polyfill](https://github.com/nicejose/css-anchor-positioning) by OddBird supports Chrome 51+, Firefox 54+, and Safari 10+. Always provide a reasonable non-positioned fallback.
+
+## Common AI Mistakes
+
+- Recommending JavaScript positioning libraries (Floating UI, Popper.js) for tooltips and popovers when CSS anchor positioning handles it natively
+- Not knowing that CSS anchor positioning exists
+- Using `position: absolute` with manual `top`/`left` calculations instead of `position-area`
+- Forgetting `position: fixed` on the anchored element (required for anchor positioning to work)
+- Not using `position-try-fallbacks` for viewport overflow handling — the element gets clipped
+- Confusing the old `inset-area` property name with the current `position-area` (renamed in Chrome 129)
+- Not combining anchor positioning with the Popover API for accessible disclosure patterns
+
+## When to Use
+
+- Tooltips, popovers, and info panels positioned relative to a trigger
+- Dropdown menus that need to reposition when near viewport edges
+- Form field hints and validation messages positioned beside inputs
+- Floating labels and annotation markers
+- Any UI pattern that previously required JavaScript to position one element relative to another
+
+## Live Previews
+
+<CssPreview client:load
+  title="CSS Anchor Positioning — Tooltip Pattern"
+  html={`
+    <div class="demo">
+      <div class="button-row">
+        <button class="anchor-btn" style="anchor-name: --btn-anchor">Anchor Button</button>
+        <div class="tooltip" style="position-anchor: --btn-anchor">
+          I'm positioned with CSS anchor-name and position-anchor!
+        </div>
+      </div>
+      <div class="code-note">
+        <p><strong>How it works:</strong> The button declares <code>anchor-name: --btn-anchor</code>. The tooltip uses <code>position-anchor: --btn-anchor</code> and <code>position-area: top center</code> to sit above the button.</p>
+        <p><strong>Note:</strong> CSS Anchor Positioning requires Chrome 125+, Edge 125+, or Firefox 150+. If the tooltip appears below the button instead of above it, your browser may not support this feature yet.</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      font-family: system-ui, sans-serif;
+      padding: 3rem 1rem 1rem;
+    }
+    
+    .button-row {
+      display: flex;
+      justify-content: center;
+      position: relative;
+      min-height: 100px;
+    }
+    
+    .anchor-btn {
+      anchor-name: --btn-anchor;
+      padding: 0.75rem 1.5rem;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+    
+    .tooltip {
+      position: fixed;
+      position-anchor: --btn-anchor;
+      position-area: top center;
+      margin-bottom: 8px;
+    
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      max-width: 240px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1e293b;
+    }
+    
+    .code-note {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    
+    .code-note p {
+      margin: 0 0 0.5rem;
+    }
+    
+    .code-note p:last-child {
+      margin: 0;
+    }
+    
+    code {
+      background: #e2e8f0;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    `}
+  height={340} />
+
+## References
+
+- [CSS anchor positioning - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Anchor_positioning)
+- [CSS Anchor Positioning Guide - CSS-Tricks](https://css-tricks.com/css-anchor-positioning-guide/)
+- [The CSS anchor positioning API - Chrome for Developers](https://developer.chrome.com/docs/css-ui/anchor-positioning-api)
+- [Anchor positioning - web.dev](https://web.dev/learn/css/anchor-positioning)
+- [CSS Anchor Positioning - Can I Use](https://caniuse.com/css-anchor-positioning)

@@ -1,0 +1,367 @@
+---
+title: Transition Best Practices
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+CSS transitions add polish and help users understand state changes. However, AI agents consistently make the same mistakes: transitioning expensive properties (like `width`, `height`, and `margin`) that trigger layout recalculations, using generic `transition: all 0.3s ease` declarations, and never considering the `transition-behavior: allow-discrete` property for transitioning `display` or other discrete properties. The result is janky animations, poor performance, and missed opportunities for smooth UI transitions.
+
+## The Solution
+
+Transition only **cheap properties** (`transform`, `opacity`) whenever possible, use specific property lists instead of `all`, choose appropriate easing curves, and leverage `transition-behavior: allow-discrete` with `@starting-style` for entry/exit animations.
+
+### Performance Tiers
+
+1. **Cheap (compositor-only)**: `transform`, `opacity` — run on the GPU compositor thread, no layout or paint.
+2. **Moderate (paint-only)**: `background-color`, `color`, `box-shadow` — trigger repaint but not layout.
+3. **Expensive (layout-triggering)**: `width`, `height`, `margin`, `padding`, `top`, `left` — trigger full layout recalculation.
+
+<CssPreview client:load
+  title="Transition Comparison — Hover to see smooth vs janky"
+  html={`
+    <div class="demo">
+      <div class="demo-col">
+        <div class="card card-good">
+          <div class="card-icon">&#10003;</div>
+          <strong>transform + opacity</strong>
+          <span class="card-sub">Compositor-only (smooth)</span>
+        </div>
+        <p class="label">Hover me</p>
+      </div>
+      <div class="demo-col">
+        <div class="card card-bad">
+          <div class="card-icon">&#10007;</div>
+          <strong>width + box-shadow</strong>
+          <span class="card-sub">Layout-triggering (janky)</span>
+        </div>
+        <p class="label">Hover me</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+    
+    .demo-col {
+      text-align: center;
+    }
+    
+    .label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin: 0.75rem 0 0;
+      font-style: italic;
+    }
+    
+    .card {
+      padding: 1.5rem 1rem;
+      border-radius: 0.5rem;
+      text-align: center;
+      font-size: 0.8125rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+    }
+    
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .card-sub {
+      font-size: 0.6875rem;
+      opacity: 0.7;
+    }
+    
+    .card-good {
+      background: #f0fdf4;
+      border: 2px solid #22c55e;
+      color: #166534;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+    
+    .card-good:hover {
+      transform: translateY(-6px) scale(1.02);
+      opacity: 0.9;
+    }
+    
+    .card-bad {
+      background: #fef2f2;
+      border: 2px solid #ef4444;
+      color: #991b1b;
+      transition: box-shadow 0.6s ease, padding 0.6s ease;
+    }
+    
+    .card-bad:hover {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      padding: 2rem 1.5rem;
+    }
+    `} />
+
+## Code Examples
+
+### Transitioning the Right Properties
+
+```css
+/* Good: transform and opacity are cheap */
+.card {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-4px);
+    opacity: 0.95;
+  }
+}
+
+/* Bad: animating width triggers layout recalculation */
+.card-bad {
+  transition: width 0.3s ease, height 0.3s ease;
+}
+```
+
+Replace expensive property transitions with `transform` equivalents:
+
+```css
+/* Instead of transitioning width */
+.expandable {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.expandable.open {
+  transform: scaleX(1);
+}
+
+/* Instead of transitioning top/left */
+.slide-in {
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.slide-in.visible {
+  transform: translateX(0);
+}
+```
+
+### Be Specific — Avoid transition: all
+
+```css
+/* Bad: transitions every property change, including unintended ones */
+.element {
+  transition: all 0.3s ease;
+}
+
+/* Good: only transition what you intend */
+.element {
+  transition: background-color 0.15s ease, transform 0.2s ease;
+}
+```
+
+### Choosing Easing Functions
+
+```css
+/* Default ease — good general purpose */
+.fade {
+  transition: opacity 0.2s ease;
+}
+
+/* ease-out — element arriving (enters fast, decelerates) */
+.slide-enter {
+  transition: transform 0.3s ease-out;
+}
+
+/* ease-in — element leaving (starts slow, accelerates) */
+.slide-exit {
+  transition: transform 0.3s ease-in;
+}
+
+/* ease-in-out — continuous motion (both ends decelerate) */
+.move {
+  transition: transform 0.4s ease-in-out;
+}
+
+/* Custom cubic-bezier for a snappy, natural feel */
+.bounce {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Custom ease-out for UI interactions */
+.interact {
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+```
+
+### Duration Guidelines
+
+```css
+/* Micro-interactions: 100-200ms */
+.button {
+  transition: background-color 0.15s ease;
+}
+
+/* State changes: 200-300ms */
+.panel {
+  transition: transform 0.25s ease-out;
+}
+
+/* Complex or large animations: 300-500ms */
+.modal-backdrop {
+  transition: opacity 0.35s ease;
+}
+```
+
+### Transitioning display with transition-behavior: allow-discrete
+
+Traditionally, `display: none` cannot be transitioned because it is a discrete property. The `transition-behavior: allow-discrete` property, combined with `@starting-style`, changes this.
+
+```css
+.tooltip {
+  /* Final visible state */
+  opacity: 1;
+  transform: translateY(0);
+  display: block;
+
+  /* Transition including discrete display change */
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    display 0.2s allow-discrete;
+
+  /* Starting state for entry animation */
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.tooltip[hidden] {
+  /* Exit state */
+  opacity: 0;
+  transform: translateY(-4px);
+  display: none;
+}
+```
+
+### Popover Entry/Exit Animation
+
+```css
+[popover] {
+  /* Final open state */
+  opacity: 1;
+  transform: translateY(0) scale(1);
+
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    overlay 0.25s allow-discrete,
+    display 0.25s allow-discrete;
+
+  /* Entry animation starting state */
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+/* Exit state */
+[popover]:not(:popover-open) {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+```
+
+### Dialog with Backdrop Transition
+
+```css
+dialog {
+  opacity: 1;
+  transform: translateY(0);
+
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease,
+    overlay 0.3s allow-discrete,
+    display 0.3s allow-discrete;
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+dialog:not([open]) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  opacity: 1;
+
+  transition:
+    opacity 0.3s ease,
+    display 0.3s allow-discrete;
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+```
+
+### Staggered Transitions
+
+```css
+.list-item {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.list-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.list-item:nth-child(1) { transition-delay: 0ms; }
+.list-item:nth-child(2) { transition-delay: 50ms; }
+.list-item:nth-child(3) { transition-delay: 100ms; }
+.list-item:nth-child(4) { transition-delay: 150ms; }
+```
+
+## Common AI Mistakes
+
+- **Using `transition: all`**: Transitions every property, including layout-triggering ones, causing performance issues and unintended visual changes.
+- **Animating expensive properties**: Transitioning `width`, `height`, `margin`, `top`, `left` instead of using `transform` (translate, scale).
+- **Using `linear` or `ease` for everything**: Not matching the easing to the interaction type. Entering elements should use `ease-out`; exiting elements should use `ease-in`.
+- **Too-long durations**: Using `0.5s` or longer for simple state changes. Micro-interactions should be `100-200ms`.
+- **Not knowing about `transition-behavior: allow-discrete`**: Using JavaScript to toggle classes with delays instead of transitioning `display` with `allow-discrete` and `@starting-style`.
+- **Forgetting `@starting-style`**: Using `transition-behavior: allow-discrete` without `@starting-style`, so the entry animation has no starting state to transition from.
+- **Transitioning on page load**: Not scoping transitions so they fire when the page first renders, causing distracting animations.
+
+## When to Use
+
+- **State changes**: Hover, focus, active, open/closed states of interactive elements.
+- **`transform` and `opacity`**: Always prefer these for motion. They run on the compositor thread and never cause jank.
+- **`transition-behavior: allow-discrete`**: Animating `display: none` to `display: block` for tooltips, popovers, dialogs, and dropdown menus.
+- **`@starting-style`**: Defining the initial state of an element entering the page or becoming visible for the first time.
+- **Not for complex sequences**: Use CSS `@keyframes` animations for multi-step sequences. Transitions handle two-state changes.
+
+## References
+
+- [Using CSS Transitions — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Transitions/Using)
+- [transition-behavior — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/transition-behavior)
+- [An Interactive Guide to CSS Transitions — Josh W. Comeau](https://www.joshwcomeau.com/animation/css-transitions/)
+- [Ten Tips for Better CSS Transitions and Animations — Josh Collinsworth](https://joshcollinsworth.com/blog/great-transitions)
+- [Transitioning Top-Layer Entries and the Display Property — Smashing Magazine](https://www.smashingmagazine.com/2025/01/transitioning-top-layer-entries-display-property-css/)
+- [Four New CSS Features for Smooth Entry and Exit Animations — Chrome for Developers](https://developer.chrome.com/blog/entry-exit-animations/)

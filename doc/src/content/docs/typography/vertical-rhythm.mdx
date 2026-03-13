@@ -1,0 +1,242 @@
+---
+title: Vertical Rhythm
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+AI-generated layouts frequently look "off" despite using reasonable font sizes and colors. The root cause is inconsistent vertical spacing — margins, padding, and line-heights are set with arbitrary values that bear no mathematical relationship to each other. A heading with `margin-bottom: 12px` followed by a paragraph with `margin-top: 20px` followed by a list with `margin-bottom: 15px` creates visual noise. Humans perceive this inconsistency even without being able to articulate why the layout feels wrong.
+
+## The Solution
+
+Vertical rhythm is the practice of keeping vertical spaces between elements consistent by deriving all spacing from a single base unit. This base unit is typically the body text's `line-height` computed value. All margins, padding, and gaps are then set to multiples (or fractions) of this base unit.
+
+### The Core Principle
+
+1. Define a base line-height (e.g., `1.5` on a `16px` font = `24px` rhythm unit)
+2. Set all vertical spacing to multiples of that unit: `24px`, `48px`, `72px` (or `1×`, `2×`, `3×`)
+3. Use fractional multiples for tighter spacing: `12px` (`0.5×`), `6px` (`0.25×`)
+
+## Code Examples
+
+### Basic Vertical Rhythm System
+
+```css
+:root {
+  --font-size-base: 1rem; /* 16px */
+  --line-height-base: 1.5; /* 24px rhythm unit */
+  --rhythm: calc(var(--font-size-base) * var(--line-height-base)); /* 1.5rem = 24px */
+}
+
+body {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+/* All spacing derived from the rhythm unit */
+h1 {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  margin-block: calc(var(--rhythm) * 2) var(--rhythm);
+}
+
+h2 {
+  font-size: 2rem;
+  line-height: 1.25;
+  margin-block: calc(var(--rhythm) * 2) var(--rhythm);
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin-block: var(--rhythm) calc(var(--rhythm) * 0.5);
+}
+
+p {
+  margin-block-end: var(--rhythm);
+}
+
+ul,
+ol {
+  margin-block-end: var(--rhythm);
+  padding-inline-start: var(--rhythm);
+}
+
+li + li {
+  margin-block-start: calc(var(--rhythm) * 0.25);
+}
+
+blockquote {
+  margin-block: var(--rhythm);
+  padding-block: calc(var(--rhythm) * 0.5);
+  padding-inline-start: var(--rhythm);
+}
+```
+
+<CssPreview client:load
+  title="Consistent Vertical Rhythm vs Inconsistent Spacing"
+  html={`    <div class="vr-demo">
+      <div class="vr-column">
+        <h3 class="label">Consistent rhythm (24px base)</h3>
+        <article class="consistent">
+          <h2>Section Title</h2>
+          <p>First paragraph with body text. Vertical rhythm keeps spacing mathematically related to the base line-height unit.</p>
+          <p>Second paragraph maintains the same spacing. Every gap is a multiple of the 24px rhythm unit.</p>
+          <h2>Another Section</h2>
+          <p>Content flows with predictable, harmonious spacing throughout the layout.</p>
+        </article>
+      </div>
+      <div class="vr-column">
+        <h3 class="label">Inconsistent spacing</h3>
+        <article class="inconsistent">
+          <h2>Section Title</h2>
+          <p>First paragraph with body text. The spacing here uses arbitrary values with no mathematical relationship.</p>
+          <p>Second paragraph has different margin than the first. The gaps feel random and uneven.</p>
+          <h2>Another Section</h2>
+          <p>Content feels visually noisy even though the text is identical.</p>
+        </article>
+      </div>
+    </div>`}
+  css={`.vr-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .vr-column { background: #fafafa; border-radius: 8px; padding: 1rem; }
+    .label {
+      font-size: 0.8rem;
+      color: #6c63ff;
+      margin: 0 0 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .consistent h2 {
+      font-size: 1.4rem;
+      line-height: 1.2;
+      margin: 48px 0 24px;
+      color: #1a1a2e;
+    }
+    .consistent h2:first-child { margin-top: 0; }
+    .consistent p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0 0 24px;
+      color: #444;
+    }
+    .inconsistent h2 {
+      font-size: 1.4rem;
+      line-height: 1.2;
+      margin: 35px 0 10px;
+      color: #1a1a2e;
+    }
+    .inconsistent h2:first-child { margin-top: 0; }
+    .inconsistent p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #444;
+    }
+    .inconsistent p:nth-child(2) { margin: 0 0 18px; }
+    .inconsistent p:nth-child(3) { margin: 0 0 30px; }
+    .inconsistent p:nth-child(5) { margin: 0 0 12px; }`}
+  height={400} />
+
+### Spacing Scale Using the Rhythm Unit
+
+```css
+:root {
+  --rhythm: 1.5rem; /* 24px base unit */
+
+  --space-3xs: calc(var(--rhythm) * 0.125); /* 3px */
+  --space-2xs: calc(var(--rhythm) * 0.25); /* 6px */
+  --space-xs: calc(var(--rhythm) * 0.5); /* 12px */
+  --space-sm: calc(var(--rhythm) * 0.75); /* 18px */
+  --space-md: var(--rhythm); /* 24px */
+  --space-lg: calc(var(--rhythm) * 1.5); /* 36px */
+  --space-xl: calc(var(--rhythm) * 2); /* 48px */
+  --space-2xl: calc(var(--rhythm) * 3); /* 72px */
+  --space-3xl: calc(var(--rhythm) * 4); /* 96px */
+}
+```
+
+### Lobotomized Owl for Consistent Flow Spacing
+
+The "lobotomized owl" selector (`* + *`) applies consistent spacing between adjacent sibling elements:
+
+```css
+.flow > * + * {
+  margin-block-start: var(--rhythm, 1.5rem);
+}
+
+/* Allow overrides for specific elements */
+.flow > h2 + * {
+  margin-block-start: calc(var(--rhythm) * 0.5);
+}
+
+.flow > * + h2 {
+  margin-block-start: calc(var(--rhythm) * 2);
+}
+```
+
+```html
+<article class="flow">
+  <h2>Section Title</h2>
+  <p>First paragraph gets half-rhythm spacing from heading.</p>
+  <p>Subsequent paragraphs get standard rhythm spacing.</p>
+  <p>Consistent spacing throughout the article.</p>
+  <h2>Next Section</h2>
+  <p>More content with predictable spacing.</p>
+</article>
+```
+
+### Vertical Rhythm with Grid
+
+```css
+.content-grid {
+  display: grid;
+  row-gap: var(--rhythm);
+}
+
+.content-grid > h2 {
+  margin-block-start: var(--rhythm); /* Extra space before headings */
+}
+```
+
+## Common AI Mistakes
+
+- Using arbitrary margin/padding values with no mathematical relationship (`margin: 10px`, `padding: 15px`, `gap: 22px`)
+- Mixing spacing units inconsistently — `px` in one place, `rem` in another, `em` in a third
+- Setting `margin-top` AND `margin-bottom` on adjacent elements, causing doubled spacing due to margin collapsing (or lack thereof in flex/grid contexts)
+- Using different spacing between identical element types — one paragraph has `margin-bottom: 16px`, the next has `margin-bottom: 20px`
+- Ignoring that headings need extra space above and less space below to visually associate with their following content
+- Not establishing a spacing scale, instead picking values ad hoc for each element
+- Forgetting that flex and grid containers do not collapse margins, so spacing strategies need adjustment in these contexts
+
+## When to Use
+
+Vertical rhythm should be applied to any content-heavy layout:
+
+- Blog posts and article pages
+- Documentation sites
+- Landing pages with mixed content sections
+- Email templates
+- Any layout where multiple text elements stack vertically
+
+The strictness of the rhythm can vary:
+
+- **Strict rhythm:** Every element aligns to the baseline grid. Best for editorial/publication design
+- **Relaxed rhythm:** Spacing uses multiples of the base unit but does not enforce baseline alignment. Best for web applications where components have varied internal spacing
+
+For dense UI layouts (dashboards, data tables, toolbars), vertical rhythm matters less than efficient use of space. Apply rhythm principles mainly to reading-focused content areas.
+
+## References
+
+- [Why is Vertical Rhythm an Important Typography Practice? — Zell Liew](https://zellwk.com/blog/why-vertical-rhythms/)
+- [Mastering CSS: Vertical Rhythm — DEV Community](https://dev.to/adrianbdesigns/mastering-css-vertical-rhythm-om9)
+- [Baseline Grids in CSS — edg.design](https://edgdesign.co/blog/baseline-grids-in-css)
+- [Creating a Vertical Rhythm with CSS Grid — Aleksandr Hovhannisyan](https://www.aleksandrhovhannisyan.com/blog/vertical-rhythm-with-css-grid/)
+- [8-Point Grid: Vertical Rhythm — Built to Adapt](https://medium.com/built-to-adapt/8-point-grid-vertical-rhythm-90d05ad95032)

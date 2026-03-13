@@ -1,0 +1,369 @@
+---
+title: ブレンドモード
+sidebar_position: 7
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+AIエージェントは、デザインが明らかにブレンドモード（blend mode）を求めている場合でも、CSSブレンドモードに手を伸ばすことがほとんどありません。画像の上のテキストにはブレンドモードではなく不透明なオーバーレイ `div` を使い、画像の色調補正には `background-blend-mode` の方がシンプルなのに `filter` で行います。ブレンドモードを使う場合でも、`isolation` プロパティを忘れて、DOM上位の関係ない背景と意図せずブレンドしてしまうことがよくあります。
+
+## 解決方法
+
+CSSには2つのブレンドモードプロパティがあります。
+
+- **`mix-blend-mode`** — スタッキング順序において、要素の色がその直後のコンテンツとどのようにブレンドされるかを制御します
+- **`background-blend-mode`** — 要素自身の複数の背景レイヤー同士がどのようにブレンドされるかを制御します
+
+両方とも同じブレンドモード値のセット（`multiply`、`screen`、`overlay`、`darken`、`lighten`、`color-dodge`、`color-burn`、`difference`、`exclusion`、`soft-light` など）を受け付けます。コンテナに `isolation: isolate` を設定すると、子要素のブレンドモードが親の背景に漏れ出すのを防げます。
+
+## コード例
+
+### 画像を暗くするオーバーレイ
+
+最も一般的なユースケース：写真の上に読みやすいテキストを表示する方法です。半透明の黒いオーバーレイの代わりに、`multiply` を使ってコントラストを保ちながら画像を暗くします。
+
+```css
+.hero-overlay {
+  position: relative;
+  background: url("hero.jpg") center / cover;
+}
+
+.hero-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(220deg 60% 20%);
+  mix-blend-mode: multiply;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+}
+```
+
+```html
+<section class="hero-overlay">
+  <div class="hero-content">
+    <h1>Hero Title</h1>
+    <p>Text is readable without a flat black overlay.</p>
+  </div>
+</section>
+```
+
+`multiply` は画像のコントラストと色のバリエーションを保ちながら明るい部分を暗くします。すべてを均一にフラットにしてしまう `rgba(0,0,0,0.5)` オーバーレイとは異なります。
+
+### background-blend-mode による画像のカラーティンティング
+
+```css
+/* Duotone effect */
+.duotone {
+  background:
+    url("photo.jpg") center / cover,
+    linear-gradient(#1a1a2e, #3b82f6);
+  background-blend-mode: luminosity;
+}
+
+/* Warm tint */
+.warm-tint {
+  background:
+    url("photo.jpg") center / cover,
+    hsl(30deg 80% 50%);
+  background-blend-mode: overlay;
+}
+
+/* Cool monochrome */
+.cool-mono {
+  background:
+    url("photo.jpg") center / cover,
+    hsl(220deg 80% 30%);
+  background-blend-mode: color;
+}
+```
+
+### 背景に適応するテキスト
+
+テキストに `mix-blend-mode: difference` を設定すると、背景に対してテキストの色が反転し、ライト・ダークどちらの領域でも読みやすくなります。
+
+```css
+.adaptive-text {
+  color: white;
+  mix-blend-mode: difference;
+  font-size: 3rem;
+  font-weight: 700;
+}
+```
+
+### ノックアウトテキスト効果
+
+`screen` を使って、テキストが背景を「切り抜いて」見せるエフェクトを作成します。
+
+```css
+.knockout-container {
+  background: url("texture.jpg") center / cover;
+  isolation: isolate;
+}
+
+.knockout-text {
+  background: black;
+  color: white;
+  mix-blend-mode: screen;
+  font-size: 4rem;
+  font-weight: 900;
+  padding: 20px;
+}
+```
+
+`screen` は黒い部分を透明に、白い部分を不透明にします。そのため白いテキストからテクスチャが透けて見え、黒い背景は消えます。
+
+### `isolation` プロパティ
+
+`isolation: isolate` がないと、ブレンドモードはDOMを上に伝播し、関係のない背景を含む要素の背後にあるすべてのコンテンツとブレンドしてしまいます。コンテナに `isolation: isolate` を設定すると、新しいスタッキングコンテキストが作成され、ブレンドが子要素内に限定されます。
+
+```css
+/* Without isolation — text blends with page background too */
+.card-broken {
+  background: white;
+}
+
+.card-broken .blend-text {
+  mix-blend-mode: multiply;
+  /* Multiplies with everything behind, including page background */
+}
+
+/* With isolation — blending stops at the card */
+.card-fixed {
+  background: white;
+  isolation: isolate;
+}
+
+.card-fixed .blend-text {
+  mix-blend-mode: multiply;
+  /* Only multiplies with the card's white background */
+}
+```
+
+### ブレンドされた背景パターン
+
+```css
+/* Plaid pattern using blended gradients */
+.plaid {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      hsl(220deg 80% 60% / 0.3) 0px,
+      hsl(220deg 80% 60% / 0.3) 20px,
+      transparent 20px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      hsl(350deg 80% 60% / 0.3) 0px,
+      hsl(350deg 80% 60% / 0.3) 20px,
+      transparent 20px,
+      transparent 40px
+    ),
+    hsl(0deg 0% 95%);
+  background-blend-mode: multiply;
+}
+```
+
+### ブレンドモードによるホバーエフェクト
+
+```css
+.image-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-card img {
+  width: 100%;
+  display: block;
+  transition: filter 0.3s ease;
+}
+
+.image-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: hsl(220deg 80% 50%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-card:hover::after {
+  opacity: 1;
+}
+```
+
+### クイックリファレンス：よく使うブレンドモード
+
+```css
+/* Darken family — result is darker than both layers */
+.darken     { mix-blend-mode: darken; }
+.multiply   { mix-blend-mode: multiply; }    /* most useful */
+.color-burn { mix-blend-mode: color-burn; }
+
+/* Lighten family — result is lighter than both layers */
+.lighten      { mix-blend-mode: lighten; }
+.screen       { mix-blend-mode: screen; }     /* most useful */
+.color-dodge  { mix-blend-mode: color-dodge; }
+
+/* Contrast family — darkens darks, lightens lights */
+.overlay    { mix-blend-mode: overlay; }      /* most useful */
+.soft-light { mix-blend-mode: soft-light; }   /* subtle version */
+.hard-light { mix-blend-mode: hard-light; }
+
+/* Difference family — inverts based on brightness */
+.difference { mix-blend-mode: difference; }
+.exclusion  { mix-blend-mode: exclusion; }    /* softer version */
+```
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="mix-blend-mode: カラフルな背景上のテキスト"
+  html={`<div class="demo"><div class="blend-container"><h1 class="blend-text">BLEND</h1></div></div>`}
+  css={`
+    .demo {
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+    }
+    .blend-container {
+      width: 100%;
+      height: 100%;
+      background:
+      linear-gradient(135deg, #3b82f6 0%, #ec4899 50%, #f59e0b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      isolation: isolate;
+    }
+    .blend-text {
+      font-size: 80px;
+      font-weight: 900;
+      color: white;
+      mix-blend-mode: difference;
+      margin: 0;
+      letter-spacing: 8px;
+    }
+    `}
+  height={250} />
+
+<CssPreview client:load
+  title="background-blend-mode: デュオトーンエフェクト"
+  html={`<div class="demo"><div class="duotone"><span class="label">luminosity blend</span></div><div class="no-blend"><span class="label">no blend (normal)</span></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 16px;
+      height: 100%;
+      padding: 16px;
+      background: #0f172a;
+      font-family: system-ui, sans-serif;
+    }
+    .duotone, .no-blend {
+      flex: 1;
+      border-radius: 12px;
+      background:
+      linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6, #06b6d4),
+      linear-gradient(45deg, #000 0%, #fff 100%);
+      background-size: cover;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+      position: relative;
+    }
+    .duotone {
+      background-blend-mode: luminosity;
+    }
+    .no-blend {
+      background-blend-mode: normal;
+    }
+    .label {
+      background: hsl(0deg 0% 0% / 0.5);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    `}
+  height={250} />
+
+<CssPreview client:load
+  title="isolation プロパティのデモ"
+  html={`<div class="demo"><div class="card no-isolate"><div class="overlay"></div><p>Without isolation — blend leaks to page background</p></div><div class="card with-isolate"><div class="overlay"></div><p>With isolation: isolate — blend contained to card</p></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background:
+      repeating-linear-gradient(
+        45deg,
+        #e2e8f0 0px,
+        #e2e8f0 10px,
+        #f1f5f9 10px,
+        #f1f5f9 20px
+      );
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      position: relative;
+      width: 200px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      padding-bottom: 16px;
+    }
+    .with-isolate {
+      isolation: isolate;
+    }
+    .overlay {
+      height: 80px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      mix-blend-mode: multiply;
+    }
+    .card p {
+      font-size: 12px;
+      color: #334155;
+      padding: 0 12px;
+      line-height: 1.5;
+      margin: 8px 0 0;
+    }
+    `}
+  height={240} />
+
+## AIがよくやるミス
+
+- **ブレンドモードの代わりに `rgba(0,0,0,0.5)` オーバーレイを使う** — 半透明の黒いオーバーレイは画像を均一にフラットにします。`multiply` はコントラストと色のバリエーションを保持します。
+- **`isolation: isolate` を忘れる** — これがないと、ブレンドモードがDOMを上に伝播し、関係のない背景とブレンドして予期しない結果を生みます。
+- **`mix-blend-mode` と `background-blend-mode` を混同する** — `mix-blend-mode` は要素をその背後にあるものとブレンドします。`background-blend-mode` は要素自身の背景レイヤー同士をブレンドします。
+- **見えない要素にブレンドモードを使う** — `opacity: 0` や `display: none` の要素に `mix-blend-mode` を設定しても効果はなく、無駄なコードになります。
+- **テキストの可読性を考慮しない** — `difference` や `exclusion` のようなブレンドモードはテキストのコントラストが予測できません。常に背景のライト領域とダーク領域の両方でテストしましょう。
+- **インタラクティブ要素にブレンドモードを適用する** — ブレンドモードにより、ボタンやリンクの色が背景によって予測不能になり、アクセシビリティを損なう可能性があります。
+
+## 使い分け
+
+- **画像オーバーレイ** — コントラストをフラットにせずにヒーロー画像を暗くしたり色調補正する場合
+- **デュオトーンとカラーエフェクト** — `background-blend-mode` で色と `luminosity` または `color` モードを使い、Instagramのような画像処理を行う場合
+- **ノックアウトテキスト** — `screen` を使ってテキスト形状から背景テクスチャを透かして見せる場合
+- **適応テキスト** — `difference` を使って、画像のライト・ダーク両方の領域で読みやすいテキストを表示する場合
+- **装飾的な背景** — 画像なしで複数のグラデーションレイヤーをブレンドしてリッチなパターンを作る場合
+
+## 参考リンク
+
+- [mix-blend-mode — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode)
+- [background-blend-mode — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/background-blend-mode)
+- [Blending Modes in CSS — Ahmad Shadeed](https://ishadeed.com/article/blending-modes-css/)
+- [Blend Modes — web.dev](https://web.dev/learn/css/blend-modes)
+- [Creative Text Styling with mix-blend-mode — LogRocket](https://blog.logrocket.com/creative-text-styling-with-the-css-mix-blend-mode-property/)

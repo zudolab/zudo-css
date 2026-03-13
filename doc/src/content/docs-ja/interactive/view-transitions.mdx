@@ -1,0 +1,362 @@
+---
+title: ビュートランジション
+sidebar_position: 9
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+ページの状態間やナビゲーション時にスムーズなアニメーショントランジションを作成するには、従来、複雑なJavaScriptアニメーションライブラリ、手動のDOM操作、またはReact Transition Groupのようなフレームワーク固有のソリューションが必要でした。ページナビゲーション（SPAとMPAの両方）では、視覚的な連続性のない唐突なコンテンツの切り替えが発生します。AIエージェントはJavaScriptに依存するアニメーションアプローチをデフォルトとし、View Transitions APIを提案することはほとんどありません。
+
+## 解決方法
+
+View Transitions APIは、DOM状態間のアニメーショントランジションを作成するためのネイティブメカニズムを提供します。ブラウザが古い状態のスナップショットをキャプチャし、DOM更新を適用してから、CSSを使って古いスナップショットと新しいスナップショットの間をアニメーションします。同一ドキュメント（SPA）のトランジションには`document.startViewTransition()`を使用します。クロスドキュメント（MPA）のトランジションには`@view-transition` CSSアットルールを使って両方のページをオプトインします。
+
+## コード例
+
+### 同一ドキュメントのView Transition（SPA）
+
+```css
+/* Default crossfade animation — works with no extra CSS */
+::view-transition-old(root) {
+  animation: fade-out 0.3s ease-out;
+}
+
+::view-transition-new(root) {
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+```
+
+```html
+<script>
+  function updateContent(newHTML) {
+    if (!document.startViewTransition) {
+      // Fallback: just update directly
+      document.getElementById('content').innerHTML = newHTML;
+      return;
+    }
+
+    document.startViewTransition(() => {
+      document.getElementById('content').innerHTML = newHTML;
+    });
+  }
+</script>
+```
+
+### 要素レベルのアニメーション用の名前付きView Transition
+
+`view-transition-name`を割り当てることで、特定の要素に独自のトランジションを持たせます。
+
+```css
+.product-image {
+  view-transition-name: product-image;
+}
+
+.product-title {
+  view-transition-name: product-title;
+}
+
+/* Customize the animation for the product image */
+::view-transition-old(product-image) {
+  animation: scale-down 0.4s ease-in;
+}
+
+::view-transition-new(product-image) {
+  animation: scale-up 0.4s ease-out;
+}
+
+@keyframes scale-down {
+  from { transform: scale(1); }
+  to { transform: scale(0.8); opacity: 0; }
+}
+
+@keyframes scale-up {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); }
+}
+```
+
+### クロスドキュメントのView Transition（MPA）
+
+`@view-transition`アットルールで両方のページをトランジションにオプトインします。
+
+```css
+/* Include this in BOTH the source and destination pages */
+@view-transition {
+  navigation: auto;
+}
+
+/* Shared element transitions across pages */
+.hero-image {
+  view-transition-name: hero;
+}
+
+/* Customize the cross-document transition */
+::view-transition-old(hero) {
+  animation-duration: 0.4s;
+}
+
+::view-transition-new(hero) {
+  animation-duration: 0.4s;
+}
+```
+
+### ページ間のスライドトランジション
+
+```css
+@view-transition {
+  navigation: auto;
+}
+
+@keyframes slide-from-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-to-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+::view-transition-old(root) {
+  animation: slide-to-left 0.4s ease-in-out;
+}
+
+::view-transition-new(root) {
+  animation: slide-from-right 0.4s ease-in-out;
+}
+```
+
+### `view-transition-class`によるグループアニメーション
+
+CSSを繰り返すことなく、複数の名前付きトランジションに同じアニメーションを適用します。
+
+```css
+.card-1 { view-transition-name: card-1; }
+.card-2 { view-transition-name: card-2; }
+.card-3 { view-transition-name: card-3; }
+
+/* Apply the same animation class to all cards */
+.card-1, .card-2, .card-3 {
+  view-transition-class: card;
+}
+
+/* One rule animates all card transitions */
+::view-transition-group(*.card) {
+  animation-duration: 0.35s;
+  animation-timing-function: ease-in-out;
+}
+```
+
+### View Transition Typesによる条件付きトランジション
+
+```html
+<script>
+  function navigateForward(updateFn) {
+    const transition = document.startViewTransition({
+      update: updateFn,
+      types: ['slide-forward'],
+    });
+  }
+
+  function navigateBack(updateFn) {
+    const transition = document.startViewTransition({
+      update: updateFn,
+      types: ['slide-back'],
+    });
+  }
+</script>
+```
+
+```css
+/* Forward navigation */
+:active-view-transition-type(slide-forward) {
+  &::view-transition-old(root) {
+    animation: slide-to-left 0.3s ease-in-out;
+  }
+  &::view-transition-new(root) {
+    animation: slide-from-right 0.3s ease-in-out;
+  }
+}
+
+/* Back navigation */
+:active-view-transition-type(slide-back) {
+  &::view-transition-old(root) {
+    animation: slide-to-right 0.3s ease-in-out;
+  }
+  &::view-transition-new(root) {
+    animation: slide-from-left 0.3s ease-in-out;
+  }
+}
+```
+
+### ユーザー設定の尊重
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms;
+  }
+}
+```
+
+## ブラウザサポート
+
+### 同一ドキュメントのView Transitions
+
+- Chrome 111+
+- Edge 111+
+- Safari 18+
+- Firefox 144+（2025年10月リリース — Interop 2025の一部）
+
+### クロスドキュメントのView Transitions
+
+- Chrome 126+
+- Edge 126+
+- Safari 18.2+
+- Firefox：未サポート
+
+同一ドキュメントのトランジションは幅広いサポートがあります。クロスドキュメントのトランジションはChromiumとSafariでサポートされていますが、Firefoxではまだサポートされていません。常に`document.startViewTransition`のサポートを確認してから呼び出すようにフォールバックを提供しましょう。
+
+## AIがよくやるミス
+
+- View Transitions APIがネイティブに処理できるトランジションに対して、JavaScriptアニメーションライブラリ（GSAP、Framer Motion）を使用する
+- `document.startViewTransition`のサポートを呼び出し前に確認しない
+- クロスドキュメントトランジションで**両方**のページに`@view-transition { navigation: auto; }`を追加し忘れる
+- ページとは独立してアニメーションすべき共有要素に`view-transition-name`を割り当てない
+- 同じページ上で`view-transition-name`の値をユニークにしない（トランジション時に各名前はユニークでなければならない）
+- `prefers-reduced-motion`を尊重しない — モーションの軽減を好むユーザーのためにアニメーションを無効化または短縮する
+- 過剰なアニメーション：意味のある状態変化ではなく、すべての小さなUI更新にView Transitionsを使用する
+
+## 使い分け
+
+- ページ間のナビゲーショントランジション（SPAとMPAの両方）
+- ページ内のコンテンツ更新（タブ切り替え、リストフィルタリング、詳細ビュー）
+- リストビューと詳細ビュー間の共有要素トランジション（例：商品サムネイル）
+- 視覚的な連続性がユーザーの変化の理解を助けるあらゆる状態変化
+- 複雑なJavaScriptアニメーションの設定をネイティブブラウザ機能に置き換える
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="View Transition CSSパターン（静的例）"
+  html={`
+    <div class="demo">
+      <div class="page page-old">
+        <div class="header">Page A</div>
+        <div class="content">Original Content</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="page page-new">
+        <div class="header">Page B</div>
+        <div class="content">New Content</div>
+      </div>
+    </div>
+    <div class="code-note">
+      <p><strong>How it works:</strong> The browser captures a snapshot of the old state, updates the DOM, then crossfades between old and new using <code>::view-transition-old</code> and <code>::view-transition-new</code> pseudo-elements.</p>
+      <p>View transitions require JavaScript (<code>document.startViewTransition()</code>) to trigger — this static demo shows the visual pattern.</p>
+    </div>
+    `}
+  css={`
+    .demo {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    
+    .page {
+      width: 140px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+    
+    .page-old {
+      opacity: 0.5;
+      border-color: #fca5a5;
+    }
+    
+    .page-new {
+      border-color: #86efac;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+    }
+    
+    .header {
+      padding: 0.5rem 0.75rem;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    
+    .page-old .header {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    
+    .page-new .header {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    
+    .content {
+      padding: 1.5rem 0.75rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #64748b;
+      background: white;
+    }
+    
+    .arrow {
+      font-size: 2rem;
+      color: #94a3b8;
+      font-weight: 300;
+    }
+    
+    .code-note {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      font-family: system-ui, sans-serif;
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    
+    .code-note p {
+      margin: 0 0 0.5rem;
+    }
+    
+    .code-note p:last-child {
+      margin: 0;
+    }
+    
+    code {
+      background: #e2e8f0;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    `} />
+
+## 参考リンク
+
+- [View Transition API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API)
+- [Smooth transitions with the View Transition API - Chrome for Developers](https://developer.chrome.com/docs/web-platform/view-transitions)
+- [What's new in view transitions (2025 update) - Chrome for Developers](https://developer.chrome.com/blog/view-transitions-in-2025)
+- [@view-transition - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@view-transition)
+- [A Practical Guide to the CSS View Transition API - Cyd Stumpel](https://cydstumpel.nl/a-practical-guide-to-the-css-view-transition-api/)

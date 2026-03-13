@@ -1,0 +1,30 @@
+---
+import type { NavNode } from "@/utils/docs";
+import { docsUrl } from "@/utils/base";
+import type { Locale } from "@/config/i18n";
+
+interface Props {
+  children: NavNode[];
+  locale: Locale;
+  class?: string;
+}
+
+const { children, locale, class: className } = Astro.props;
+const items = children.filter((c) => c.hasPage || c.children.length > 0);
+---
+
+{items.length > 0 && (
+  <nav aria-label="Child pages" class:list={["grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2", className]}>
+    {items.map((child) => (
+      <a
+        href={child.href ?? docsUrl(child.slug, locale)}
+        class="group block rounded border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
+      >
+        <span class="font-medium text-accent group-hover:underline">{child.label}</span>
+        {child.description && (
+          <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">{child.description}</span>
+        )}
+      </a>
+    ))}
+  </nav>
+)}

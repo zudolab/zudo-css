@@ -1,0 +1,705 @@
+---
+title: Parent-State Child Styling
+sidebar_position: 9
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Styling child elements based on a parent's interactive state (hover, focus, checked, etc.) is one of the most common UI patterns — cards where hovering highlights the title, nav items where focusing an input changes an icon, form groups where checking a box reveals more content. AI agents tend to reach for JavaScript event listeners and class toggling for these patterns, or apply hover styles directly to each child element individually. Tailwind CSS solved this elegantly with `group` and `group-hover:` utilities, but the underlying CSS patterns are straightforward and more powerful than many developers realize.
+
+## The Solution
+
+CSS provides three complementary mechanisms for parent-state-driven child styling:
+
+1. **Descendant combinators with pseudo-classes** — `.parent:hover .child` targets children when the parent is hovered
+2. **`:focus-within`** — Matches when the element or any descendant has focus
+3. **`:has()`** — The most powerful: style a parent (and its children) based on any child's state
+
+Together, these cover every scenario that Tailwind's `group-*` utilities handle, and more.
+
+<CssPreview client:load
+  title="Card — Hover or Tab to see coordinated child changes"
+  html={`
+    <div class="demo">
+      <div class="card" tabindex="0">
+        <div class="card__icon">→</div>
+        <h3 class="card__title">Hover this card</h3>
+        <p class="card__desc">The icon shifts, the title changes color, and the background transitions — all from a single parent :hover and :focus-within.</p>
+      </div>
+      <div class="card" tabindex="0">
+        <div class="card__icon">→</div>
+        <h3 class="card__title">Second card</h3>
+        <p class="card__desc">Each card is independent. Hovering one does not affect the other.</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      gap: 1rem;
+      padding: 1.5rem;
+    }
+    
+    .card {
+      flex: 1;
+      padding: 1.5rem;
+      border: 1px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      background: white;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    
+    .card:hover,
+    .card:focus-within {
+      background: hsl(220 60% 97%);
+      border-color: hsl(220 60% 70%);
+    }
+    
+    .card:focus-visible {
+      outline: 2px solid hsl(220 70% 50%);
+      outline-offset: 2px;
+    }
+    
+    .card__icon {
+      font-size: 1.25rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .card:hover .card__icon,
+    .card:focus-within .card__icon {
+      transform: translateX(4px);
+    }
+    
+    .card__title {
+      margin: 0.5rem 0 0.25rem;
+      font-size: 1rem;
+      color: hsl(220 15% 25%);
+      transition: color 0.2s ease;
+    }
+    
+    .card:hover .card__title,
+    .card:focus-within .card__title {
+      color: hsl(220 70% 50%);
+    }
+    
+    .card__desc {
+      margin: 0;
+      font-size: 0.8rem;
+      color: hsl(220 10% 50%);
+      line-height: 1.5;
+    }
+    `} />
+
+## Code Examples
+
+### Basic: Parent Hover → Child Styling
+
+The simplest pattern. When the parent is hovered, children respond.
+
+```css
+.card:hover .card__title {
+  color: blue;
+}
+
+.card:hover .card__icon {
+  transform: translateX(4px);
+}
+
+.card:hover .card__arrow {
+  opacity: 1;
+}
+```
+
+This is what Tailwind's `group` / `group-hover:` compiles to. The parent is the "group" and children react to its state.
+
+### Focus-Within: Keyboard-Accessible Group Focus
+
+`:focus-within` matches when the element itself or **any descendant** has focus. This is essential for keyboard accessibility — it gives you the same coordinated styling that `:hover` provides on the parent, but for focus events.
+
+```css
+/* The search bar container highlights when its input is focused */
+.search-bar:focus-within {
+  border-color: hsl(220 70% 50%);
+  box-shadow: 0 0 0 3px hsl(220 70% 50% / 0.15);
+}
+
+.search-bar:focus-within .search-bar__icon {
+  color: hsl(220 70% 50%);
+}
+
+.search-bar:focus-within .search-bar__label {
+  transform: translateY(-100%) scale(0.85);
+  color: hsl(220 70% 50%);
+}
+```
+
+<CssPreview client:load
+  title="Search Bar — Click or Tab into the input"
+  html={`
+    <div class="demo">
+      <div class="search-bar">
+        <span class="search-bar__icon">⌕</span>
+        <input class="search-bar__input" type="text" placeholder="Search..." />
+      </div>
+      <p class="hint">Click the input or press Tab — the entire search bar highlights via :focus-within</p>
+    </div>
+    `}
+  css={`
+    .demo {
+      padding: 2rem;
+    }
+    
+    .hint {
+      font-size: 0.75rem;
+      color: hsl(220 10% 55%);
+      font-style: italic;
+      margin-top: 0.75rem;
+    }
+    
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border: 2px solid hsl(220 15% 80%);
+      border-radius: 0.5rem;
+      background: white;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .search-bar:focus-within {
+      border-color: hsl(220 70% 50%);
+      box-shadow: 0 0 0 3px hsl(220 70% 50% / 0.15);
+    }
+    
+    .search-bar__icon {
+      font-size: 1.25rem;
+      color: hsl(220 10% 60%);
+      transition: color 0.2s ease;
+    }
+    
+    .search-bar:focus-within .search-bar__icon {
+      color: hsl(220 70% 50%);
+    }
+    
+    .search-bar__input {
+      border: none;
+      outline: 2px solid transparent;
+      font-size: 0.9rem;
+      flex: 1;
+      background: transparent;
+      color: hsl(220 15% 20%);
+    }
+    
+    .search-bar__input::placeholder {
+      color: hsl(220 10% 65%);
+    }
+    `} />
+
+### :has() — The Most Powerful Group Pattern
+
+`:has()` goes beyond hover and focus. It lets you style a parent (and its children) based on **any child state**: checked checkboxes, filled inputs, selected options, or even structural conditions.
+
+```css
+/* Highlight the form group when its checkbox is checked */
+.option-group:has(input:checked) {
+  background: hsl(220 60% 97%);
+  border-color: hsl(220 70% 50%);
+}
+
+.option-group:has(input:checked) .option-group__label {
+  color: hsl(220 70% 40%);
+  font-weight: 600;
+}
+
+/* Reveal extra content when checked */
+.option-group:has(input:checked) .option-group__details {
+  display: block;
+}
+```
+
+<CssPreview client:load
+  title="Option Cards — Click to select (uses :has(:checked))"
+  html={`
+    <div class="demo">
+      <label class="option-card">
+        <input type="radio" name="plan" value="free" class="option-card__input" />
+        <div class="option-card__content">
+          <span class="option-card__indicator"></span>
+          <div>
+            <div class="option-card__title">Free</div>
+            <div class="option-card__desc">Basic features, 1 project</div>
+          </div>
+        </div>
+      </label>
+      <label class="option-card">
+        <input type="radio" name="plan" value="pro" class="option-card__input" checked />
+        <div class="option-card__content">
+          <span class="option-card__indicator"></span>
+          <div>
+            <div class="option-card__title">Pro</div>
+            <div class="option-card__desc">Unlimited projects, priority support</div>
+          </div>
+        </div>
+      </label>
+      <label class="option-card">
+        <input type="radio" name="plan" value="team" class="option-card__input" />
+        <div class="option-card__content">
+          <span class="option-card__indicator"></span>
+          <div>
+            <div class="option-card__title">Team</div>
+            <div class="option-card__desc">Everything in Pro, plus team management</div>
+          </div>
+        </div>
+      </label>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1.5rem;
+    }
+    
+    .option-card {
+      display: block;
+      border: 2px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    
+    .option-card:hover {
+      border-color: hsl(220 30% 70%);
+    }
+    
+    .option-card:has(input:checked) {
+    border-color: hsl(220 70% 50%);
+    background: hsl(220 60% 97%);
+    }
+    
+    .option-card:has(input:focus-visible) {
+    outline: 2px solid hsl(220 70% 50%);
+    outline-offset: 2px;
+    }
+    
+    .option-card__input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    }
+    
+    .option-card__content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    }
+    
+    .option-card__indicator {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid hsl(220 15% 70%);
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color 0.2s ease;
+    }
+    
+    .option-card:has(input:checked) .option-card__indicator {
+    border-color: hsl(220 70% 50%);
+    }
+    
+    .option-card:has(input:checked) .option-card__indicator::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: hsl(220 70% 50%);
+    }
+    
+    .option-card__title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: hsl(220 15% 25%);
+    transition: color 0.2s ease;
+    }
+    
+    .option-card:has(input:checked) .option-card__title {
+    color: hsl(220 70% 40%);
+    }
+    
+    .option-card__desc {
+    font-size: 0.8rem;
+    color: hsl(220 10% 55%);
+    margin-top: 0.125rem;
+    }
+    `} />
+
+### Combining Hover and Focus-Within
+
+For robust interactive components, layer both `:hover` and `:focus-within` so the component works for mouse and keyboard users alike.
+
+```css
+.nav-item:hover .nav-item__tooltip,
+.nav-item:focus-within .nav-item__tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+```
+
+<CssPreview client:load
+  title="Nav Item with Tooltip — Hover or Tab to reveal"
+  html={`
+    <div class="demo">
+      <nav class="nav">
+        <div class="nav-item">
+          <button class="nav-item__btn">Home</button>
+          <div class="nav-item__tooltip">Go to homepage</div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-item__btn">Settings</button>
+          <div class="nav-item__tooltip">Manage your preferences</div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-item__btn">Profile</button>
+          <div class="nav-item__tooltip">View your profile</div>
+        </div>
+      </nav>
+      <p class="hint">Hover or Tab to each button — the tooltip appears via :hover + :focus-within</p>
+    </div>
+    `}
+  css={`
+    .demo {
+      padding: 2rem;
+    }
+    
+    .hint {
+      font-size: 0.75rem;
+      color: hsl(220 10% 55%);
+      font-style: italic;
+      margin-top: 1.5rem;
+    }
+    
+    .nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .nav-item {
+      position: relative;
+    }
+    
+    .nav-item__btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid hsl(220 15% 80%);
+      border-radius: 0.375rem;
+      background: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    
+    .nav-item:hover .nav-item__btn,
+    .nav-item:focus-within .nav-item__btn {
+      background: hsl(220 60% 97%);
+      border-color: hsl(220 60% 70%);
+    }
+    
+    .nav-item__btn:focus-visible {
+      outline: 2px solid hsl(220 70% 50%);
+      outline-offset: 2px;
+    }
+    
+    .nav-item__tooltip {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      padding: 0.375rem 0.75rem;
+      background: hsl(220 20% 20%);
+      color: white;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    
+    .nav-item:hover .nav-item__tooltip,
+    .nav-item:focus-within .nav-item__tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    `} />
+
+### Toggle Visibility with :has(:checked)
+
+A classic pattern: show/hide content sections based on a checkbox or radio state, with no JavaScript.
+
+<CssPreview client:load
+  title="Accordion — Click to expand sections (pure CSS)"
+  html={`
+    <div class="accordion">
+      <div class="accordion__item">
+        <label class="accordion__header">
+          <input type="checkbox" class="accordion__trigger" />
+          <span class="accordion__title">What is parent-state styling?</span>
+          <span class="accordion__chevron">›</span>
+        </label>
+        <div class="accordion__body">
+          <div class="accordion__body-inner">
+            <p>Parent-state styling means applying CSS to child elements based on the parent's interactive state — hover, focus, checked, etc. This is what Tailwind's group/group-hover utilities compile to.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion__item">
+        <label class="accordion__header">
+          <input type="checkbox" class="accordion__trigger" />
+          <span class="accordion__title">Do I need JavaScript for this?</span>
+          <span class="accordion__chevron">›</span>
+        </label>
+        <div class="accordion__body">
+          <div class="accordion__body-inner">
+            <p>No. Descendant combinators with :hover, :focus-within, and :has(:checked) cover the vast majority of interactive parent-child patterns without any JavaScript.</p>
+          </div>
+        </div>
+      </div>
+      <div class="accordion__item">
+        <label class="accordion__header">
+          <input type="checkbox" class="accordion__trigger" />
+          <span class="accordion__title">What about browser support?</span>
+          <span class="accordion__chevron">›</span>
+        </label>
+        <div class="accordion__body">
+          <div class="accordion__body-inner">
+            <p>:hover and :focus-within have universal support. :has() is supported in all major browsers since December 2023 (Chrome 105+, Safari 15.4+, Firefox 121+).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .accordion {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .accordion__item {
+      border: 1px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+    
+    .accordion__item:has(.accordion__trigger:checked) {
+    border-color: hsl(220 60% 70%);
+    }
+    
+    .accordion__item:has(.accordion__trigger:focus-visible) {
+    outline: 2px solid hsl(220 70% 50%);
+    outline-offset: 2px;
+    }
+    
+    .accordion__trigger {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    }
+    
+    .accordion__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    cursor: pointer;
+    background: white;
+    transition: background-color 0.15s ease;
+    }
+    
+    .accordion__header:hover {
+    background: hsl(220 30% 97%);
+    }
+    
+    .accordion__title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: hsl(220 15% 25%);
+    }
+    
+    .accordion__chevron {
+    font-size: 1.25rem;
+    color: hsl(220 10% 55%);
+    transition: transform 0.2s ease;
+    }
+    
+    .accordion__item:has(.accordion__trigger:checked) .accordion__chevron {
+    transform: rotate(90deg);
+    }
+    
+    .accordion__body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+    }
+    
+    .accordion__item:has(.accordion__trigger:checked) .accordion__body {
+    grid-template-rows: 1fr;
+    }
+    
+    .accordion__body-inner {
+    overflow: hidden;
+    }
+    
+    .accordion__body-inner > p {
+    margin: 0;
+    padding: 0 1rem 1rem;
+    font-size: 0.85rem;
+    color: hsl(220 10% 40%);
+    line-height: 1.6;
+    }
+    `} />
+
+### Nested Groups: Multiple Ancestor Levels
+
+When you need different ancestor levels to drive different child styles, use distinct class names for each level.
+
+```css
+/* Outer group: the card */
+.card:hover .card__badge {
+  background: hsl(220 70% 50%);
+}
+
+/* Inner group: the card footer */
+.card__footer:hover .card__footer-link {
+  text-decoration: underline;
+}
+```
+
+This is the CSS equivalent of Tailwind's named groups (`group/card`, `group/footer`) — each ancestor's state independently controls its own descendants.
+
+<CssPreview client:load
+  title="Nested Groups — Hover the card, then hover the footer link"
+  html={`
+    <div class="demo">
+      <div class="card">
+        <span class="card__badge">New</span>
+        <h3 class="card__title">Nested Group Demo</h3>
+        <p class="card__desc">Hover the card to highlight the badge. Then hover the footer area to see the link underline.</p>
+        <div class="card__footer">
+          <a href="#" class="card__footer-link">Read more →</a>
+        </div>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      padding: 1.5rem;
+      max-width: 320px;
+    }
+    
+    .card {
+      border: 1px solid hsl(220 15% 85%);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      background: white;
+      transition: border-color 0.2s ease;
+      position: relative;
+    }
+    
+    .card:hover {
+      border-color: hsl(220 50% 70%);
+    }
+    
+    .card__badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 0.25rem;
+      background: hsl(220 15% 88%);
+      color: hsl(220 15% 40%);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    
+    /* Outer group: card hover changes badge */
+    .card:hover .card__badge {
+      background: hsl(220 70% 50%);
+      color: white;
+    }
+    
+    .card__title {
+      font-size: 1rem;
+      margin: 0.75rem 0 0.25rem;
+      color: hsl(220 15% 20%);
+    }
+    
+    .card__desc {
+      font-size: 0.8rem;
+      color: hsl(220 10% 50%);
+      line-height: 1.5;
+      margin: 0;
+    }
+    
+    .card__footer {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid hsl(220 15% 90%);
+    }
+    
+    .card__footer-link {
+      font-size: 0.85rem;
+      color: hsl(220 70% 50%);
+      transition: text-decoration-color 0.15s ease;
+      text-decoration: underline transparent;
+    }
+    
+    .card__footer-link:focus-visible {
+      outline: 2px solid hsl(220 70% 50%);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+    
+    /* Inner group: footer hover changes link */
+    .card__footer:hover .card__footer-link,
+    .card__footer:focus-within .card__footer-link {
+      text-decoration: underline hsl(220 70% 50%);
+    }
+    `} />
+
+## Tailwind group → CSS Mapping
+
+| Tailwind Utility | CSS Equivalent |
+|---|---|
+| `group` + `group-hover:text-blue` | `.parent:hover .child { color: blue; }` |
+| `group` + `group-focus:opacity-100` | `.parent:focus .child { opacity: 1; }` |
+| `group` + `group-focus-within:ring-2` | `.parent:focus-within .child { ... }` |
+| `group` + `group-active:scale-95` | `.parent:active .child { transform: scale(0.95); }` |
+| `group/name` (named groups) | Use distinct class names per ancestor level |
+| `group-has-[:checked]:bg-blue` | `.parent:has(:checked) { background: blue; }` |
+
+## Common AI Mistakes
+
+- **Using JavaScript to toggle classes for hover effects** — Use `.parent:hover .child` instead. No event listeners needed.
+- **Duplicating hover styles on every child element** — Apply `:hover` to the parent once, then style all children from that single rule.
+- **Forgetting keyboard accessibility** — Always pair `:hover` with `:focus-within` for interactive containers. Hover-only patterns exclude keyboard users.
+- **Over-nesting with :has()** — When a simple `.parent:hover .child` suffices, don't reach for `:has()`. Use `:has()` when you need to react to a child's internal state (checked, valid, empty).
+
+## When to Use
+
+- **Card hover effects**: Coordinated title, icon, and background changes
+- **Form groups**: Highlight the entire group when an input is focused or invalid
+- **Navigation menus**: Show tooltips or dropdowns on hover/focus
+- **Option selectors**: Style selected options based on radio/checkbox state
+- **Accordion/disclosure**: Toggle visibility with `:has(:checked)`
+- **Any pattern where Tailwind uses `group`** — the CSS is always a descendant combinator + pseudo-class

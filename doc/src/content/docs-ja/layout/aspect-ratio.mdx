@@ -1,0 +1,305 @@
+---
+title: aspect-ratio
+sidebar_position: 2
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+画像、動画、埋め込みコンテンツ、カードレイアウトのアスペクト比を維持することはよくある要件です。長年にわたり、唯一の信頼できるテクニックは「padding-top ハック」でした。パーセントベースの padding を使って比率を持つボックスを作る方法です。AIエージェントは今でも古いハックを生成したり、さらに悪い場合には画面サイズが変わると崩れる固定ピクセルサイズを使ったりします。モダンな `aspect-ratio` プロパティは、追加のマークアップなしで1行でこの問題を解決します。
+
+## 解決方法
+
+`aspect-ratio` CSSプロパティは、要素の推奨アスペクト比を設定します。ブラウザはこの比率を維持するように要素の寸法を調整し、比率を超えるコンテンツは `overflow` や `object-fit` で処理できます。
+
+```css
+.element {
+  aspect-ratio: 16 / 9;
+}
+```
+
+これだけで十分です。ラッパーの div も、absolute positioning も、パーセント padding の計算も不要です。
+
+## コード例
+
+### 基本的な画像のアスペクト比
+
+```css
+.thumbnail {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+```
+
+```html
+<img class="thumbnail" src="photo.jpg" alt="Landscape photo" />
+```
+
+画像はコンテナの幅いっぱいに広がり、16:9の比率を維持します。`object-fit: cover` により、画像は歪みなくボックスを埋め、必要に応じてトリミングされます。
+
+<CssPreview client:load
+  title="aspect-ratio: 画像コンテナ（16/9）"
+  html={`    <div class="container">
+      <div class="thumbnail">
+        <div class="label">16 / 9</div>
+      </div>
+      <div class="thumbnail ratio-4-3">
+        <div class="label">4 / 3</div>
+      </div>
+      <div class="thumbnail ratio-1">
+        <div class="label">1 / 1</div>
+      </div>
+    </div>`}
+  css={`.container {
+      display: flex;
+      gap: 12px;
+      padding: 8px;
+      font-family: system-ui, sans-serif;
+    }
+    .thumbnail {
+      flex: 1;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ratio-4-3 {
+      aspect-ratio: 4 / 3;
+      background: linear-gradient(135deg, #22c55e, #14b8a6);
+    }
+    .ratio-1 {
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+    .label {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+    }`} />
+
+### レスポンシブ動画コンテナ
+
+```css
+.video-wrapper {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.video-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+```
+
+```html
+<div class="video-wrapper">
+  <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+</div>
+```
+
+### 正方形カードグリッド
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 1rem;
+}
+
+.card {
+  aspect-ratio: 1;  /* Square */
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+```
+
+```html
+<div class="card-grid">
+  <div class="card"><img src="1.jpg" alt="" /></div>
+  <div class="card"><img src="2.jpg" alt="" /></div>
+  <div class="card"><img src="3.jpg" alt="" /></div>
+</div>
+```
+
+<CssPreview client:load
+  title="aspect-ratio: カードレイアウトグリッド"
+  html={`    <div class="card-grid">
+      <div class="card">
+        <div class="card-img"></div>
+        <div class="card-body">Card Title</div>
+      </div>
+      <div class="card">
+        <div class="card-img img2"></div>
+        <div class="card-body">Card Title</div>
+      </div>
+      <div class="card">
+        <div class="card-img img3"></div>
+        <div class="card-body">Card Title</div>
+      </div>
+    </div>`}
+  css={`.card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 8px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+    .card-img {
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+    }
+    .card-img.img2 {
+      background: linear-gradient(135deg, #22c55e, #14b8a6);
+    }
+    .card-img.img3 {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+    }
+    .card-body {
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+    }`} />
+
+### フォールバックコンテンツ付きアスペクト比
+
+コンテンツがアスペクト比ボックスからはみ出す可能性がある場合：
+
+```css
+.card-fixed {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 1rem;
+}
+```
+
+コンテンツが4:3の比率で許容される高さを超えた場合、クリップされます。スクロール可能なオーバーフローにするには、代わりに `overflow: auto` を使いましょう。
+
+### 古い padding-top ハック（参考用）
+
+これはAIエージェントが生成をやめるべきレガシーテクニックです：
+
+```css
+/* OLD: padding-top hack — do not use in new code */
+.video-wrapper-old {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 9/16 = 0.5625 */
+  height: 0;
+}
+
+.video-wrapper-old iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+```
+
+```css
+/* NEW: aspect-ratio — use this instead */
+.video-wrapper-new {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.video-wrapper-new iframe {
+  width: 100%;
+  height: 100%;
+}
+```
+
+モダンなバージョンはより短く、読みやすく、ラッパーのトリックが不要で、`padding` プロパティを誤用しません。
+
+### 画像のレイアウトシフト防止
+
+画像に `aspect-ratio` を設定すると、画像の読み込み前にスペースが確保され、Cumulative Layout Shift（CLS）を防止できます：
+
+```css
+img {
+  aspect-ratio: attr(width) / attr(height);
+  width: 100%;
+  height: auto;
+}
+```
+
+実際には、ブラウザは `width` と `height` のHTML属性からアスペクト比を自動計算します。`<img>` タグには必ず両方の属性を含めましょう：
+
+```html
+<!-- Good: browser reserves space using width/height ratio -->
+<img src="photo.jpg" alt="Photo" width="800" height="450" />
+
+<!-- Bad: no dimensions, causes layout shift -->
+<img src="photo.jpg" alt="Photo" />
+```
+
+### 円形アバター
+
+```css
+.avatar {
+  width: 3rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+}
+```
+
+```html
+<img class="avatar" src="user.jpg" alt="User avatar" />
+```
+
+## AIがよくやるミス
+
+- **まだ padding-top ハックを生成している。** `aspect-ratio` プロパティは2021年から完全なブラウザサポートがあります（グローバルカバレッジ96%以上）。モダンブラウザのターゲットであれば padding ハックはもう不要です。
+- **画像に `object-fit` を忘れている。** `<img>` に `aspect-ratio` を設定して `object-fit: cover`（または `contain`）を付けないと、画像の自然な比率が指定された比率と異なる場合に歪みが発生します。
+- **aspect-ratio の代わりに固定ピクセルサイズを使っている。** AIエージェントは16:9要素に `width: 640px; height: 360px` を設定しがちです。これは小さい画面で崩れます。レスポンシブな動作には `width: 100%; aspect-ratio: 16 / 9` を使いましょう。
+- **`<img>` タグに `width` と `height` 属性を含めていない。** これらの属性により、ブラウザは画像読み込み前に正しいスペースを確保でき、レイアウトシフトを防止します。これは Core Web Vitals の要件です。
+- **CSS で `width` と `height` の両方を `aspect-ratio` と一緒に設定している。** 両方の寸法が明示的に設定されていると、`aspect-ratio` は効果がありません。一方の寸法（通常は `width`）を設定し、`aspect-ratio` にもう一方を計算させましょう。
+- **flex/grid アイテムで `aspect-ratio` がストレッチとどう相互作用するか理解していない。** `align-items: stretch`（デフォルト）の flex コンテナでは、アイテムの高さはコンテナによって決定され、`aspect-ratio` を上書きします。アイテムに `align-items: flex-start` または `align-self: start` を設定しましょう。
+
+## 使い分け
+
+### aspect-ratio が最適な場面
+
+- レイアウトシフトを防ぐための画像と画像プレースホルダー
+- 動画埋め込み（YouTube、Vimeo iframe）
+- 一貫したプロポーションが必要なカードレイアウト
+- アバター画像（正方形/円形には `aspect-ratio: 1` を使用）
+- 固定プロポーションのヒーローセクション
+- 幅と高さの関係を維持する必要があるすべての要素
+
+### aspect-ratio と一緒に object-fit を使う場面
+
+- コンテンツ（画像または動画）が指定された比率に合わない可能性がある場合
+- `cover` はボックスを完全に埋め、必要に応じて端をトリミングします
+- `contain` はコンテンツ全体をボックス内に収め、空きスペースを残します
+
+### padding-top ハックを残す場面
+
+- Internet Explorer をサポートする必要がある場合（2022年6月にサポート終了済み）
+- まだ更新できないレガシーコードベースで作業している場合
+
+## 参考リンク
+
+- [aspect-ratio - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/aspect-ratio)
+- [CSS aspect-ratio property - web.dev](https://web.dev/articles/aspect-ratio)
+- [Aspect Ratio Boxes - CSS-Tricks](https://css-tricks.com/aspect-ratio-boxes/)
+- [A closer look at the CSS aspect-ratio property - LogRocket Blog](https://blog.logrocket.com/a-closer-look-at-the-css-aspect-ratio/)

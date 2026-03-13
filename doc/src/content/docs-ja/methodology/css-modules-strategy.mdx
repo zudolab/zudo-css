@@ -1,0 +1,630 @@
+---
+title: CSS Modules 戦略
+sidebar_position: 4
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+CSS はデフォルトでグローバル名前空間で動作します。記述したすべてのクラス名がどこからでもアクセスできるため、あるスタイルシートが別のスタイルを意図せず上書きする可能性があります。プロジェクトが成長すると、名前の衝突は避けられなくなります。2人の開発者が独立して `.title` クラスを作成したり、新機能の `.container` が既存のものと競合したりします。使われていない CSS も蓄積されていきます。コードベース全体を検索して未使用であることを確認しないと、安全にクラスを削除できないからです。
+
+AI エージェントにとって、グローバル CSS は特に危険です。`.card` や `.header` クラスを生成するエージェントには、それらの名前がプロジェクト内に既に存在するかどうかを知る方法がありません。その結果、診断が困難な意図しないスタイルのオーバーライドが発生します。
+
+## 解決方法
+
+CSS Modules はグローバル名前空間の問題をビルド時に解決します。各 CSS ファイルはローカルスコープとして扱われ、クラス名は自動的にユニークな識別子（通常はハッシュを付加）に変換されるため、他のファイルのクラスと衝突することがありません。スタイルを JavaScript オブジェクトとしてインポートし、キーで参照します。
+
+```jsx
+import styles from './Button.module.css';
+
+function Button() {
+  return <button className={styles.primary}>Click me</button>;
+}
+```
+
+ビルドツール（Webpack、Vite など）が `.primary` を `.Button_primary_x7f2a` のようなものに変換し、命名規約なしでユニーク性を保証します。作成した名前と生成された名前のマッピングは、インポートした `styles` オブジェクトを通じて自動的に処理されます。
+
+## コード例
+
+### クラス名のスコープの仕組み
+
+CSS Modules ファイルを記述すると、ビルドツールが各クラス名をユニークなハッシュ付きバージョンに変換します。記述する元の名前は可読性のためのもので、ブラウザが見るのは生成された名前だけです。
+
+<CssPreview client:load
+  title="変換前後: クラス名の変換"
+  html={`    <div class="scope">
+      <h4 class="scope__heading">What you write (authored CSS)</h4>
+      <pre class="scope__code"><code>.title { color: #1e293b; font-size: 1.5rem; }
+          .subtitle { color: #64748b; font-size: 1rem; }
+          .highlight { background: #fef08a; padding: 2px 6px; }</code></pre>
+    
+      <h4 class="scope__heading">What the browser receives (generated CSS)</h4>
+      <pre class="scope__code scope__code--generated"><code>.Card_title_x7f2a { color: #1e293b; font-size: 1.5rem; }
+          .Card_subtitle_k9m3p { color: #64748b; font-size: 1rem; }
+          .Card_highlight_q2w8r { background: #fef08a; padding: 2px 6px; }</code></pre>
+    
+      <div class="scope__demo">
+        <span class="title">Title styled with scoped class</span>
+        <span class="subtitle">Subtitle with its own scoped class</span>
+        <span>Text with <span class="highlight">highlighted</span> word</span>
+      </div>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .scope {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+    }
+    .scope__heading {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 12px 0 6px;
+    }
+    .scope__heading:first-child {
+      margin-top: 0;
+    }
+    .scope__code {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      font-family: "SF Mono", Monaco, monospace;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .scope__code--generated {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .scope__demo {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .title {
+      color: #1e293b;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .subtitle {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+    .highlight {
+      background: #fef08a;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }`}
+  height={370} />
+
+### 基本的な使い方: インポートと適用
+
+CSS Modules のワークフローでは、CSS ファイルを JavaScript モジュールとしてインポートします。インポートされたオブジェクトは、作成したクラス名を生成されたユニークな名前にマッピングします。
+
+```jsx
+// Button.module.css
+// .primary { background: #3b82f6; color: #fff; }
+// .secondary { background: #e2e8f0; color: #1e293b; }
+
+import styles from './Button.module.css';
+
+function Button({ variant = 'primary', children }) {
+  return (
+    <button className={styles[variant]}>
+      {children}
+    </button>
+  );
+}
+```
+
+<CssPreview client:load
+  title="CSS Modules: スタイルバリアントを持つコンポーネント"
+  html={`    <div class="button-demo">
+      <div class="button-demo__group">
+        <button class="Button_primary_x7f2a">Primary Action</button>
+        <button class="Button_secondary_k9m3p">Secondary</button>
+        <button class="Button_danger_q2w8r">Delete</button>
+      </div>
+      <p class="button-demo__note">Each class is scoped: <code>Button_primary_x7f2a</code> instead of <code>.primary</code></p>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .button-demo {
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+    }
+    .button-demo__group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .button-demo__note {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .button-demo__note code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: "SF Mono", Monaco, monospace;
+    }
+    .Button_primary_x7f2a {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .Button_primary_x7f2a:hover {
+      background: #2563eb;
+    }
+    .Button_secondary_k9m3p {
+      background: #e2e8f0;
+      color: #1e293b;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .Button_secondary_k9m3p:hover {
+      background: #cbd5e1;
+    }
+    .Button_danger_q2w8r {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .Button_danger_q2w8r:hover {
+      background: #dc2626;
+    }`}
+  height={120} />
+
+### コンポーネント間で衝突しない
+
+CSS Modules の最大の利点は、異なるファイルで同じクラス名を使っても、生成される名前が異なることです。2つのコンポーネントがどちらも `.title` を使っても、衝突は起きません。
+
+<CssPreview client:load
+  title="同じクラス名、異なるコンポーネント — 衝突なし"
+  html={`    <div class="collision-demo">
+      <div class="collision-demo__panel">
+        <div class="collision-demo__label">Card component</div>
+        <div class="Card_wrapper_a1b2c">
+          <h3 class="Card_title_d4e5f">Card Title</h3>
+          <p class="Card_text_g7h8i">Card description text styled by Card.module.css</p>
+        </div>
+        <code class="collision-demo__class">.Card_title_d4e5f</code>
+      </div>
+      <div class="collision-demo__panel">
+        <div class="collision-demo__label">Modal component</div>
+        <div class="Modal_wrapper_j1k2l">
+          <h3 class="Modal_title_m3n4o">Modal Title</h3>
+          <p class="Modal_text_p5q6r">Modal description text styled by Modal.module.css</p>
+        </div>
+        <code class="collision-demo__class">.Modal_title_m3n4o</code>
+      </div>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .collision-demo {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+    }
+    .collision-demo__panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .collision-demo__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .collision-demo__class {
+      font-size: 12px;
+      font-family: "SF Mono", Monaco, monospace;
+      color: #16a34a;
+      background: #f0fdf4;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: block;
+    }
+    /* Card component styles */
+    .Card_wrapper_a1b2c {
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .Card_title_d4e5f {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+    .Card_text_g7h8i {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    /* Modal component styles */
+    .Modal_wrapper_j1k2l {
+      padding: 16px;
+      background: #fefce8;
+      border: 2px solid #facc15;
+      border-radius: 8px;
+    }
+    .Modal_title_m3n4o {
+      font-size: 18px;
+      font-weight: 700;
+      color: #854d0e;
+      margin-bottom: 4px;
+    }
+    .Modal_text_p5q6r {
+      font-size: 14px;
+      color: #a16207;
+      line-height: 1.5;
+    }`}
+  height={210} />
+
+### composes によるコンポジション
+
+CSS Modules は `composes` キーワードをサポートしており、同じファイルや他のファイルからクラスを組み合わせることができます。これは CSS Modules での共通スタイルの共有方法で、重複を避けることができます。
+
+```css
+/* shared.module.css */
+.baseButton {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Button.module.css */
+.primary {
+  composes: baseButton from './shared.module.css';
+  background: #3b82f6;
+  color: #fff;
+}
+```
+
+<CssPreview client:load
+  title="CSS Modules: composes によるスタイルの再利用"
+  html={`    <div class="compose-demo">
+      <div class="compose-demo__section">
+        <div class="compose-demo__label">Base style (shared.module.css)</div>
+        <pre class="compose-demo__code"><code>.baseButton {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            }</code></pre>
+      </div>
+      <div class="compose-demo__section">
+        <div class="compose-demo__label">Composed variants (Button.module.css)</div>
+        <pre class="compose-demo__code"><code>.primary {
+            composes: baseButton from './shared.module.css';
+            background: #3b82f6;
+            color: #fff;
+            }
+            .outline {
+            composes: baseButton from './shared.module.css';
+            background: transparent;
+            color: #3b82f6;
+            border: 2px solid #3b82f6;
+            }</code></pre>
+      </div>
+      <div class="compose-demo__section">
+        <div class="compose-demo__label">Result: element receives both classes</div>
+        <div class="compose-demo__buttons">
+          <button class="baseButton primary">Primary</button>
+          <button class="baseButton outline">Outline</button>
+        </div>
+      </div>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .compose-demo {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .compose-demo__section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .compose-demo__label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .compose-demo__code {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-family: "SF Mono", Monaco, monospace;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .compose-demo__buttons {
+      display: flex;
+      gap: 12px;
+    }
+    .baseButton {
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .primary {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .primary:hover {
+      background: #2563eb;
+    }
+    .outline {
+      background: transparent;
+      color: #3b82f6;
+      border: 2px solid #3b82f6;
+    }
+    .outline:hover {
+      background: #eff6ff;
+    }`}
+  height={360} />
+
+### :global によるグローバルセレクタ
+
+ローカルスコープされていないクラス名をターゲットにする必要がある場合があります。たとえば、サードパーティライブラリのクラスや body レベルの状態クラスなどです。CSS Modules はこの目的で `:global()` を提供しています。
+
+```css
+/* デフォルトでローカルスコープ */
+.container {
+  padding: 16px;
+}
+
+/* 特定のセレクタでスコープを解除 */
+:global(.ReactModal__Overlay) {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ローカルとグローバルの混在 */
+.container :global(.highlight) {
+  background: yellow;
+}
+```
+
+<CssPreview client:load
+  title="CSS Modules: ローカルセレクタ vs グローバルセレクタ"
+  html={`    <div class="global-demo">
+      <div class="global-demo__row">
+        <div class="global-demo__tag global-demo__tag--local">.container → .App_container_f3g8k</div>
+        <span class="global-demo__desc">Locally scoped (default)</span>
+      </div>
+      <div class="global-demo__row">
+        <div class="global-demo__tag global-demo__tag--global">.ReactModal__Overlay → .ReactModal__Overlay</div>
+        <span class="global-demo__desc">Global — keeps original name via :global()</span>
+      </div>
+      <div class="global-demo__row">
+        <div class="global-demo__tag global-demo__tag--mixed">.App_container_f3g8k .highlight</div>
+        <span class="global-demo__desc">Mixed — local parent, global child</span>
+      </div>
+      <div class="global-demo__example">
+        <div class="App_container_f3g8k">
+          <p>This container is scoped. The <span class="highlight">highlighted text</span> uses a global class inside it.</p>
+        </div>
+      </div>
+    </div>`}
+  css={`* { box-sizing: border-box; margin: 0; }
+    .global-demo {
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .global-demo__row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .global-demo__tag {
+      font-size: 12px;
+      font-family: "SF Mono", Monaco, monospace;
+      padding: 4px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .global-demo__tag--local {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .global-demo__tag--global {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    .global-demo__tag--mixed {
+      background: #fefce8;
+      color: #a16207;
+      border: 1px solid #fde68a;
+    }
+    .global-demo__desc {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .global-demo__example {
+      margin-top: 4px;
+    }
+    .App_container_f3g8k {
+      background: #f8fafc;
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .highlight {
+      background: #fef08a;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+    }`}
+  height={230} />
+
+## 他のアプローチとの比較
+
+| アプローチ | スコープの仕組み | 命名 | ビルドツールが必要 | ランタイムコスト |
+|---|---|---|---|---|
+| **CSS Modules** | ビルド時のハッシュ | 作成者が選択、ローカルスコープ | はい | なし |
+| **BEM** | 手動の命名規約 | 手動の規律（`block__element--modifier`） | いいえ | なし |
+| **ユーティリティファースト** | カスタムクラス不要 | 定義済みのユーティリティ語彙 | 推奨 | なし |
+| **CSS-in-JS** | ランタイムまたはビルド時 | JS コンポーネントと同じ場所に配置 | 場合による | ランタイムコストあり |
+
+- **BEM との比較**: BEM は手動の命名規律で衝突回避を実現します。CSS Modules はそれを自動化します。`.title` と書くだけでツールがユニーク性を保証します。BEM は規約であり、CSS Modules は強制です。
+- **ユーティリティファーストとの比較**: ユーティリティフレームワークはカスタムクラス名を完全に排除します。CSS Modules はセマンティックなクラス名を書きつつ自動的にスコープ化します。両者は共存可能で、コンポーネント固有のスタイルに CSS Modules、レイアウトにユーティリティを使うプロジェクトもあります。
+- **CSS-in-JS との比較**: styled-components のようなライブラリは `<style>` タグを注入してランタイムでスタイルをスコープ化します。CSS Modules はビルド時に同じスコープ化を実現し、ランタイムコストはゼロです。CSS-in-JS は props に基づく動的なスタイリングを提供しますが、CSS Modules では CSS カスタムプロパティまたは条件付きクラス名が必要です。
+
+## よくあるミス
+
+### :global を多用しすぎる
+
+すべてを `:global` で囲むと、CSS Modules の目的が失われます。サードパーティのクラスや body レベルの状態をターゲットにする場合にのみ使い、利便性のために使うのは避けましょう。
+
+```css
+/* 誤り: 理由なくスコープを解除 */
+:global(.card) {
+  padding: 16px;
+}
+:global(.card-title) {
+  font-size: 18px;
+}
+
+/* 正しい: デフォルトでローカルスコープを使用 */
+.card {
+  padding: 16px;
+}
+.cardTitle {
+  font-size: 18px;
+}
+```
+
+### composes を活用していない
+
+`composes` がまさにこの目的のために存在するのに、複数の `.module.css` ファイルで共通スタイルを重複させてしまうケースです。
+
+```css
+/* 誤り: ベーススタイルの重複 */
+/* Button.module.css */
+.primary {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: #fff;
+}
+.secondary {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* 正しい: 共通ベースを compose する */
+.primary {
+  composes: base from './shared.module.css';
+  background: #3b82f6;
+  color: #fff;
+}
+.secondary {
+  composes: base from './shared.module.css';
+  background: #e2e8f0;
+  color: #1e293b;
+}
+```
+
+### グローバルスタイルとモジュールスタイルを1つのコンポーネントで混在させる
+
+同じコンポーネントでグローバルスタイルシートと CSS Module の両方をインポートすると、どのスタイルがスコープされていてどれがされていないか曖昧になります。
+
+```jsx
+// 誤り: スコープモデルの混在
+import './global-card.css';        // グローバルスタイル
+import styles from './Card.module.css';  // スコープされたスタイル
+
+// 正しい: コンポーネントごとに1つのアプローチを一貫して使用
+import styles from './Card.module.css';
+```
+
+### JavaScript でケバブケースのクラス名を使う
+
+CSS Modules はクラス名をオブジェクトのプロパティとしてエクスポートします。ケバブケースの名前はブラケット記法が必要になり、扱いにくくなります。
+
+```jsx
+// 扱いにくい: ブラケット記法が必要
+<div className={styles['card-title']}>
+
+// 改善: .module.css でキャメルケースを使用
+// .cardTitle { font-size: 18px; }
+<div className={styles.cardTitle}>
+```
+
+## 使い分け
+
+CSS Modules が適している場面:
+
+- **React、Vue、その他のフレームワークプロジェクト**: ビルドツール（Webpack、Vite）が既に導入されている場合
+- **コンポーネントライブラリ**: コンポーネントごとのスタイル分離が重要な場合
+- **グローバル CSS からの移行プロジェクト**: CSS-in-JS やユーティリティフレームワークを採用せずにスコープ化したい場合
+- **標準的な CSS を書きたいチーム**: 自動的な衝突防止が必要だが、従来の CSS の書き方を維持したい場合
+
+CSS Modules が適さない場面:
+
+- **ビルドツールが利用できない場合** — CSS Modules はクラス名を変換するバンドラーが必要です
+- **ユーティリティファーストのスタイリングを使いたい場合** — Tailwind や UnoCSS はカスタムクラス名の必要性を完全に排除します
+- **高度に動的なスタイルが必要な場合** — スタイルが多くのコンポーネント props に依存する場合、CSS-in-JS の方が使いやすいことがあります
+
+## 参考リンク
+
+- [CSS Modules — GitHub Repository](https://github.com/css-modules/css-modules)
+- [css-loader CSS Modules — Webpack Documentation](https://webpack.js.org/loaders/css-loader/#modules)
+- [CSS Modules — Vite Documentation](https://vite.dev/guide/features.html#css-modules)
+- [Adding a CSS Modules Stylesheet — Create React App](https://create-react-app.dev/docs/adding-a-css-modules-stylesheet/)

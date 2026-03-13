@@ -1,0 +1,335 @@
+---
+title: タッチターゲットのサイズ設定
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+小さなインタラクティブターゲットは、ウェブで最もよく見られるアクセシビリティの問題の1つです。運動障害のあるユーザー、高齢者、モバイルデバイスを使用するすべての人が、小さなボタンやリンクを正確にタップすることに苦労します。AIエージェントは、特にアイコンのみのコントロール（16-24pxしかない場合もあります）など、小さすぎるボタン、アイコンボタン、ナビゲーションリンクを日常的に生成します。WCAGは最小ターゲットサイズを要求しており、これを満たさないとフラストレーションの多いアクセス不能な体験を生み出します。
+
+## 解決方法
+
+すべてのインタラクティブ要素は、最小タッチターゲットサイズとして **44x44 CSSピクセル**（WCAG 2.1 Level AAA / ベストプラクティス）、または最低でも **24x24 CSSピクセル**（WCAG 2.2 Level AA）を持つ必要があります。ターゲット領域には要素のコンテンツ、パディング、追加のクリック可能なスペースが含まれるため、パディングが要件を満たすための主要なツールになります。
+
+### WCAGターゲットサイズ要件
+
+- **Level AAA（2.5.5）**：すべてのインタラクティブターゲットで少なくとも **44x44px**。これが推奨される基準です。
+- **Level AA（2.5.8）**：少なくとも **24x24px**、隣接するターゲット間に少なくとも **24px** のスペース。
+
+<CssPreview client:load
+  title="タッチターゲットの比較: 44px最小値 vs 小さすぎるもの"
+  html={`
+    <div class="demo">
+      <div class="section">
+        <h3 class="section-title good-title">&#10003; 44px targets (accessible)</h3>
+        <div class="btn-row">
+          <button class="btn btn-good">Save</button>
+          <button class="btn btn-good">Edit</button>
+          <button class="btn btn-good icon-btn-good">&#10005;</button>
+        </div>
+        <p class="size-label">min-height: 44px &middot; min-width: 44px</p>
+      </div>
+      <div class="section">
+        <h3 class="section-title bad-title">&#10007; 24px targets (too small)</h3>
+        <div class="btn-row">
+          <button class="btn btn-bad">Save</button>
+          <button class="btn btn-bad">Edit</button>
+          <button class="btn btn-bad icon-btn-bad">&#10005;</button>
+        </div>
+        <p class="size-label">height: 24px — hard to tap on mobile</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+    
+    .section {
+      text-align: center;
+    }
+    
+    .section-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      display: inline-block;
+    }
+    
+    .good-title {
+      background: #f0fdf4;
+      color: #166534;
+    }
+    
+    .bad-title {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      border: none;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn-good {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.5rem 1rem;
+      background: #3b82f6;
+      color: white;
+      font-size: 0.875rem;
+    }
+    
+    .icon-btn-good {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    
+    .btn-bad {
+      height: 24px;
+      min-width: 24px;
+      padding: 0 0.5rem;
+      background: #94a3b8;
+      color: white;
+      font-size: 0.6875rem;
+    }
+    
+    .icon-btn-bad {
+      padding: 0 0.375rem;
+      font-size: 0.625rem;
+    }
+    
+    .size-label {
+      font-size: 0.6875rem;
+      color: #94a3b8;
+      margin: 0.75rem 0 0;
+    }
+    `} />
+
+## コード例
+
+### 最小ボタンサイズ
+
+```css
+.button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.625rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+```
+
+### 十分なターゲットを持つアイコンボタン
+
+アイコンボタンは見た目のアイコンは小さいですが、大きなクリック可能領域を維持する必要があります：
+
+```css
+.icon-button {
+  /* Visual size is small, but clickable area is 44x44 */
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 0.375rem;
+}
+
+.icon-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+```
+
+### 擬似要素によるクリック可能領域の拡張
+
+要素の見た目のサイズを大きくできない場合、クリックターゲットを不可視に拡張します：
+
+```css
+.compact-link {
+  position: relative;
+  /* Visual styling stays compact */
+  font-size: 0.875rem;
+  padding: 0.25rem;
+}
+
+.compact-link::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem; /* Expand touch area by 8px in each direction */
+  /* Ensures minimum 44x44 clickable area */
+}
+```
+
+### ナビゲーションリンク
+
+```css
+.nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+/* On touch devices, ensure even more generous sizing */
+@media (pointer: coarse) {
+  .nav-link {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+```
+
+### チェックボックスとラジオボタンのターゲット
+
+ネイティブのチェックボックスとラジオボタンは非常に小さいことで知られています。ラベルとパディングを使いましょう：
+
+```css
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+
+.form-check input[type="checkbox"],
+.form-check input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  cursor: pointer;
+}
+```
+
+input を `<label>` で囲むことで、ラベルテキスト全体がクリック可能になり、実効タッチターゲットが大幅に拡大します。
+
+### 狭いスペースでの閉じるボタン
+
+```css
+.close-button {
+  /* Visually compact but tap-friendly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* Negative margin to visually align while maintaining target */
+  margin: -0.375rem;
+}
+```
+
+### ターゲット間のスペーシング
+
+隣接するターゲットには、誤タップを防ぐために十分なスペースが必要です：
+
+```css
+.button-group {
+  display: flex;
+  gap: 0.5rem; /* At least 8px between targets */
+}
+
+.button-group .button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Vertical list of tappable items */
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.action-list__item {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+```
+
+### pointer クエリによるレスポンシブターゲットサイジング
+
+```css
+.interactive {
+  min-height: 36px;
+  padding: 0.5rem 1rem;
+}
+
+/* Fine pointer (mouse): slightly smaller targets acceptable */
+@media (pointer: fine) {
+  .interactive {
+    min-height: 32px;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* Coarse pointer (touch): larger targets needed */
+@media (pointer: coarse) {
+  .interactive {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+```
+
+## AIがよくやるミス
+
+- **アイコンボタンを小さくしすぎる**：44px最小値に達するためのパディングなしで、24pxや32pxのアイコンボタンを生成します。
+- **見た目のサイズのみに頼る**：要素の視覚的サイズがタッチターゲットサイズと等しいと思い込みます。パディングや擬似要素もターゲット領域にカウントされます。
+- **インラインリンクを無視する**：段落内のリンクは非常に小さなタッチターゲットになりえます。`padding-block` を追加するか `line-height` を増やすことで改善できます。
+- **実際のタッチデバイスでテストしない**：マウスを使ったデスクトップでは問題なく見えるターゲットサイズが、スマートフォンではタップ不可能になります。
+- **ターゲットを密集させる**：複数の小さなボタンやリンクを十分なスペースなしに隣接させ、誤タップを引き起こします。
+- **`min-width`/`min-height` ではなく `width`/`height` のみを使用する**：固定サイズでは、テキストが折り返したりコンテンツが予想より長い場合に要素が拡大できません。
+- **`@media (pointer: coarse)` を忘れる**：精度が低いタッチデバイスでターゲットサイズを増やしていません。
+
+## 使い分け
+
+- **すべてのインタラクティブ要素**：ボタン、リンク、フォームコントロール、アイコンボタン — すべて最小ターゲットサイズを満たす必要があります。
+- **モバイルファーストデザイン**：タッチターゲットはデフォルトで少なくとも44x44pxにし、マウスのみのコンテキストではわずかに縮小するオプションを用意します。
+- **アイコンのみのコントロール**：閉じるボタン、メニュートグル、アクションアイコン — これらが最もサイズ不足になりやすい要素です。
+- **ナビゲーションアイテム**：水平・垂直両方のナビゲーションリンクに適用します。
+- **フォームコントロール**：チェックボックス、ラジオボタン、セレクト、およびそのラベルに適用します。
+
+## 参考リンク
+
+- [Understanding SC 2.5.5: Target Size (Enhanced) — W3C](https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html)
+- [Understanding SC 2.5.8: Target Size (Minimum) — W3C](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)
+- [Accessible Target Sizes Cheatsheet — Smashing Magazine](https://www.smashingmagazine.com/2023/04/accessible-tap-target-sizes-rage-taps-clicks/)
+- [Foundations: Target Sizes — TetraLogical](https://tetralogical.com/blog/2022/12/20/foundations-target-size/)
+- [All Accessible Touch Target Sizes — LogRocket](https://blog.logrocket.com/ux-design/all-accessible-touch-target-sizes/)

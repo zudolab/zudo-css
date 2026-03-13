@@ -1,0 +1,106 @@
+---
+import "@/styles/global.css";
+import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
+import Header from "@/components/header.astro";
+import Sidebar from "@/components/sidebar.astro";
+import { ClientRouter } from "astro:transitions";
+import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
+import { settings } from "@/config/settings";
+import { withBase } from "@/utils/base";
+import { buildNavTree } from "@/utils/docs";
+import { loadLocaleDocs } from "@/utils/locale-docs";
+import SiteTreeNav from "@/components/site-tree-nav.tsx";
+
+const lang = "ja" as const;
+const ctaNav = settings.headerNav[0] ?? null;
+
+// Build full nav tree for site index
+const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
+const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const tree = buildNavTree(navDocs, lang, categoryMeta);
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{settings.siteName}</title>
+    <meta name="description" content={settings.siteDescription} />
+    {settings.noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:title" content={settings.siteName} />
+    <meta property="og:description" content={settings.siteDescription} />
+    <ColorSchemeProvider />
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen antialiased">
+    <Header lang={lang}>
+      <Sidebar slot="sidebar" lang={lang} />
+    </Header>
+
+    <div class="flex min-h-[calc(100vh-3.5rem)]">
+      <!-- Left: sticky sidebar with title and link -->
+      <div class="hidden lg:flex w-[18rem] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] flex-col justify-center px-hsp-2xl">
+        <h1 class="text-heading font-bold mb-vsp-xs">{settings.siteName}</h1>
+        <p class="text-muted mb-vsp-lg text-small">
+          {settings.siteDescription}
+        </p>
+        {ctaNav && (
+          <a
+            href={withBase(`/${lang}${ctaNav.path}`)}
+            class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-center text-small"
+          >
+            {ctaNav.label}
+          </a>
+        )}
+      </div>
+
+      <!-- Right: main content -->
+      <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl max-w-[56rem]">
+        <!-- Mobile header (shown when sidebar is hidden) -->
+        <div class="lg:hidden mb-vsp-xl">
+          <h1 class="text-heading font-bold mb-vsp-xs">{settings.siteName}</h1>
+          <p class="text-muted mb-vsp-md text-small">
+            {settings.siteDescription}
+          </p>
+          {ctaNav && (
+            <a
+              href={withBase(`/${lang}${ctaNav.path}`)}
+              class="inline-block bg-fg text-bg px-hsp-lg py-vsp-xs font-medium hover:underline focus:underline text-small"
+            >
+              {ctaNav.label}
+            </a>
+          )}
+        </div>
+
+        <!-- Category cards -->
+        <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-3">
+          {settings.headerNav.map((item) => (
+              <a
+                href={withBase(`/${lang}${item.path}`)}
+                class="group block border border-muted bg-surface px-hsp-xl py-vsp-lg hover:border-accent"
+              >
+                <h2 class="text-subheading font-bold text-fg group-hover:text-accent mb-vsp-xs">
+                  {item.label}
+                </h2>
+                <span class="text-small text-muted">
+                  Browse {item.label.toLowerCase()} &rarr;
+                </span>
+              </a>
+          ))}
+        </div>
+
+        <!-- Full site tree nav -->
+        <div class="mt-vsp-2xl">
+          <SiteTreeNav
+            tree={tree}
+            ariaLabel="サイトインデックス"
+            expandLabel="展開"
+            collapseLabel="折りたたむ"
+            client:idle
+          />
+        </div>
+      </main>
+    </div>
+    <PageLoadingOverlay />
+  </body>
+</html>

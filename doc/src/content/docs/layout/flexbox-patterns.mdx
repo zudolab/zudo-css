@@ -1,0 +1,364 @@
+---
+title: Flexbox Patterns
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## The Problem
+
+Flexbox is the most commonly used CSS layout model, yet AI agents frequently misapply it. Common mistakes include using flexbox when CSS Grid is more appropriate, forgetting to set `min-width: 0` to prevent overflow, using fixed heights instead of flex-grow for sticky footers, and defaulting to `justify-content` and `align-items` without understanding the flex axis.
+
+## The Solution
+
+Flexbox is a one-dimensional layout model. It excels at distributing space along a single axis (row or column). Use it for component-level layouts, navigation bars, toolbars, and any scenario where items flow in one direction.
+
+## Code Examples
+
+### Centering (Horizontal and Vertical)
+
+```css
+.centered-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+```
+
+```html
+<div class="centered-container">
+  <div class="content">Perfectly centered</div>
+</div>
+```
+
+<CssPreview client:load
+  title="Flexbox: Centering"
+  html={`    <div class="centered-container">
+      <div class="content">Perfectly centered</div>
+    </div>`}
+  css={`.centered-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    .content {
+      background: #3b82f6;
+      color: #fff;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: system-ui, sans-serif;
+    }`}
+  height={220} />
+
+### Equal-Height Columns
+
+Flex items in a row container stretch to the same height by default via `align-items: stretch`.
+
+```css
+.columns {
+  display: flex;
+  gap: 1rem;
+}
+
+.column {
+  flex: 1;
+  /* No need for align-items or explicit height */
+}
+```
+
+```html
+<div class="columns">
+  <div class="column">Short content</div>
+  <div class="column">
+    <p>Much longer content that determines the height of all columns.</p>
+    <p>All siblings will match this height automatically.</p>
+  </div>
+  <div class="column">Medium content here</div>
+</div>
+```
+
+<CssPreview client:load
+  title="Flexbox: Equal Height Columns"
+  html={`    <div class="columns">
+      <div class="column">Short</div>
+      <div class="column">
+        <p>Much longer content that determines the height of all columns.</p>
+        <p>All siblings match this height automatically.</p>
+      </div>
+      <div class="column">Medium content here</div>
+    </div>`}
+  css={`.columns {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      font-family: system-ui, sans-serif;
+    }
+    .column {
+      flex: 1;
+      background: #8b5cf6;
+      color: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .column p {
+      margin: 0 0 8px 0;
+    }`} />
+
+### Sticky Footer
+
+The footer sticks to the bottom of the viewport when content is short, and flows naturally below content when it is tall.
+
+```css
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+}
+
+main {
+  flex: 1;
+}
+
+/* header and footer need no special styles */
+```
+
+```html
+<body>
+  <header>Header</header>
+  <main>Main content</main>
+  <footer>Footer</footer>
+</body>
+```
+
+<CssPreview client:load
+  title="Flexbox: Sticky Footer"
+  html={`    <div class="page">
+      <header class="header">Header</header>
+      <main class="main">Main content (short)</main>
+      <footer class="footer">Footer sticks to bottom</footer>
+    </div>`}
+  css={`.page {
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+    }
+    .header {
+      background: #3b82f6;
+      color: #fff;
+      padding: 12px 20px;
+    }
+    .main {
+      flex: 1;
+      padding: 20px;
+      background: #f1f5f9;
+    }
+    .footer {
+      background: #22c55e;
+      color: #fff;
+      padding: 12px 20px;
+    }`}
+  height={320} />
+
+### Space-Between with Wrapping
+
+When items wrap, `justify-content: space-between` can leave awkward gaps on the last row. Use `gap` instead for consistent spacing.
+
+```css
+/* Problematic: last row items spread apart */
+.bad-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+/* Better: consistent gaps between items */
+.good-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.good-wrap > * {
+  flex: 0 1 calc(33.333% - 1rem);
+}
+```
+
+<CssPreview client:load
+  title="Flexbox: space-between Wrapping Problem vs gap Solution"
+  html={`    <div class="label">space-between (broken last row):</div>
+    <div class="bad-wrap">
+      <div class="item">1</div>
+      <div class="item">2</div>
+      <div class="item">3</div>
+      <div class="item">4</div>
+      <div class="item">5</div>
+    </div>
+    <div class="label">gap (consistent spacing):</div>
+    <div class="good-wrap">
+      <div class="item good">1</div>
+      <div class="item good">2</div>
+      <div class="item good">3</div>
+      <div class="item good">4</div>
+      <div class="item good">5</div>
+    </div>`}
+  css={`.label {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #334155;
+    }
+    .bad-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .good-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .item {
+      width: 30%;
+      background: #ef4444;
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-family: system-ui, sans-serif;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    .item.good {
+      background: #22c55e;
+      width: calc(33.333% - 12px);
+      margin-bottom: 0;
+    }`} />
+
+### Preventing Overflow with min-width: 0
+
+Flex items have `min-width: auto` by default, which prevents them from shrinking below their content size. This causes text overflow in constrained layouts.
+
+```css
+.card {
+  display: flex;
+  gap: 1rem;
+}
+
+.card-content {
+  flex: 1;
+  min-width: 0; /* Allow content to shrink and enable text-overflow */
+}
+
+.card-content h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+```
+
+### Navigation Bar
+
+```css
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-logo {
+  margin-right: auto; /* Pushes nav items to the right */
+}
+```
+
+```html
+<nav class="navbar">
+  <a class="navbar-logo" href="/">Logo</a>
+  <a href="/about">About</a>
+  <a href="/contact">Contact</a>
+</nav>
+```
+
+## Common AI Mistakes
+
+- **Using flexbox for two-dimensional layouts.** If items need to align in both rows and columns simultaneously, CSS Grid is the correct choice. Flexbox only controls one axis.
+- **Using `height: 100vh` instead of `min-height: 100vh` for sticky footer.** A fixed height causes content overflow on long pages.
+- **Forgetting `min-width: 0` on flex items.** Without it, flex items refuse to shrink below their content width, causing horizontal overflow.
+- **Using `margin` instead of `gap` for spacing.** Margin on flex items creates double spacing where items meet and requires workarounds for first/last child. `gap` applies only between items.
+- **Using `flex-wrap: wrap` with `justify-content: space-between`.** This creates unpredictable gaps on the last row. Use `gap` with calculated flex-basis instead.
+- **Writing `flex: 1 1 0` when `flex: 1` suffices.** The shorthand `flex: 1` already sets `flex-grow: 1; flex-shrink: 1; flex-basis: 0%`.
+- **Nesting flex containers unnecessarily.** If a simple `margin-right: auto` or `gap` can achieve the spacing, avoid wrapping items in extra containers.
+
+## When to Use
+
+### Flexbox is ideal for
+
+- Single-axis layouts (a row of buttons, a navigation bar, a toolbar)
+- Distributing space among items of unknown or varying size
+- Vertically centering content within a container
+- Component-level layout (card internals, form rows, media objects)
+- Sticky footers using `flex-direction: column`
+
+### Use CSS Grid instead when
+
+- You need items to align in both rows and columns (a grid of cards)
+- You have a complex page-level layout with named areas
+- You want auto-placement of items into a responsive grid
+- You need items to span multiple rows or columns
+
+## Tailwind CSS
+
+Tailwind provides utility classes for all flexbox properties. Here are the key patterns from this article expressed with Tailwind classes.
+
+### Centering
+
+<TailwindPreview client:load
+  title="Tailwind: Flexbox Centering"
+  html={`    <div class="flex justify-center items-center min-h-[200px] bg-slate-100 rounded-lg">
+      <div class="bg-blue-500 text-white px-8 py-4 rounded-lg text-base">
+        Perfectly centered
+      </div>
+    </div>`}
+  height={220} />
+
+### Equal-Height Columns
+
+<TailwindPreview client:load
+  title="Tailwind: Equal Height Columns"
+  html={`    <div class="flex gap-3 p-3">
+      <div class="flex-1 bg-violet-500 text-white p-4 rounded-lg">Short</div>
+      <div class="flex-1 bg-violet-500 text-white p-4 rounded-lg">
+        <p>Much longer content that determines the height of all columns.</p>
+        <p class="mt-2">All siblings match this height automatically.</p>
+      </div>
+      <div class="flex-1 bg-violet-500 text-white p-4 rounded-lg">Medium content here</div>
+    </div>`} />
+
+### Sticky Footer
+
+<TailwindPreview client:load
+  title="Tailwind: Sticky Footer"
+  html={`    <div class="flex flex-col min-h-[300px]">
+      <header class="bg-blue-500 text-white px-5 py-3">Header</header>
+      <main class="flex-1 p-5 bg-slate-100">Main content (short)</main>
+      <footer class="bg-green-500 text-white px-5 py-3">Footer sticks to bottom</footer>
+    </div>`}
+  height={320} />
+
+## References
+
+- [A Complete Guide to Flexbox - CSS-Tricks](https://css-tricks.com/snippets/css/a-guide-to-flexbox/)
+- [Flexbox - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Flexbox)
+- [Solved by Flexbox](https://philipwalton.github.io/solved-by-flexbox/)
+- [Flexbox Layout - web.dev](https://web.dev/learn/css/flexbox)

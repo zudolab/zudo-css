@@ -1,0 +1,122 @@
+---
+import "@/styles/global.css";
+import Header from "@/components/header.astro";
+import Sidebar from "@/components/sidebar.astro";
+import { Toc } from "@/components/toc";
+import { MobileToc } from "@/components/mobile-toc";
+import { DocHistory } from "@/components/doc-history";
+import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
+import CodeBlockEnhancer from "@/components/code-block-enhancer.astro";
+import TabsInit from "@/components/tabs-init.astro";
+import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
+import { ClientRouter } from "astro:transitions";
+import { settings } from "@/config/settings";
+import type { Heading } from "@/types/heading";
+import { getNavSectionForSlug } from "@/utils/nav-scope";
+import { defaultLocale, t, type Locale } from "@/config/i18n";
+import { withBase } from "@/utils/base";
+
+interface Props {
+  title: string;
+  description?: string;
+  lang?: Locale;
+  currentSlug?: string;
+  headings?: Heading[];
+  unlisted?: boolean;
+}
+
+const { title, description, lang = defaultLocale, currentSlug, headings = [], unlisted = false } = Astro.props;
+const fullTitle = `${title} | ${settings.siteName}`;
+const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
+const currentPath = Astro.url.pathname;
+const htmlColorAttrs = settings.colorMode
+  ? { "data-theme": settings.colorMode.defaultMode, style: `color-scheme: ${settings.colorMode.defaultMode}` }
+  : {};
+
+const contentAnim = {
+  old: {
+    name: "contentFadeOut",
+    duration: 150,
+    easing: "ease-in",
+    fillMode: "both",
+  },
+  new: {
+    name: "contentFadeIn",
+    duration: 300,
+    easing: "ease-out",
+    fillMode: "both",
+  },
+};
+const contentTransition = {
+  forwards: contentAnim,
+  backwards: contentAnim,
+};
+---
+
+<html lang={lang} {...htmlColorAttrs}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    {settings.noindex && <meta name="robots" content="noindex, nofollow" />}
+    {!settings.noindex && unlisted && <meta name="robots" content="noindex" />}
+    <meta property="og:title" content={fullTitle} />
+    {description && <meta property="og:description" content={description} />}
+    <ColorSchemeProvider />
+    {settings.math && (
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" crossorigin="anonymous" />
+    )}
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen antialiased">
+    <Header lang={lang} currentPath={currentPath}>
+      <Sidebar slot="sidebar" currentSlug={currentSlug} lang={lang} navSection={navSection} />
+    </Header>
+
+    <div class="flex min-h-[calc(100vh-3.5rem)]">
+      <!-- Desktop sidebar -->
+      <aside
+        id="desktop-sidebar"
+        transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
+        class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"
+      >
+        <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} />
+      </aside>
+
+      <!-- Content + TOC wrapper -->
+      <div class="flex-1 min-w-0 flex justify-center">
+        <div class="flex w-full max-w-[clamp(50rem,75vw,90rem)] gap-[clamp(1.5rem,3vw,4rem)]">
+          <!-- Main content -->
+          <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
+            <slot name="breadcrumb" />
+            <MobileToc headings={headings} title={t("toc.title", lang)} client:load />
+            <article class="zd-content max-w-none">
+              <slot />
+            </article>
+            {settings.docHistory && currentSlug && (
+              <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
+            )}
+          </main>
+
+          <!-- Table of contents -->
+          <Toc headings={headings} client:load />
+        </div>
+      </div>
+    </div>
+    <CodeBlockEnhancer />
+    <TabsInit />
+    <PageLoadingOverlay />
+    <script>
+      let _sidebarScrollTop = 0;
+      document.addEventListener("astro:before-swap", () => {
+        const el = document.getElementById("desktop-sidebar");
+        if (el) _sidebarScrollTop = el.scrollTop;
+      });
+      document.addEventListener("astro:after-swap", () => {
+        const el = document.getElementById("desktop-sidebar");
+        if (el) el.scrollTop = _sidebarScrollTop;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,302 @@
+---
+title: Smooth Shadow Transitions
+sidebar_position: 6
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Hover effects on cards commonly involve changing `box-shadow` to make the element appear to lift. AI agents naively write `transition: box-shadow 0.3s ease`, which works visually but triggers expensive repaints on every animation frame. The browser must recalculate and repaint the shadow pixels each frame because `box-shadow` is not a compositor-friendly property. On pages with many interactive cards, this causes visible frame drops and jank, especially on lower-powered devices.
+
+## The Solution
+
+Instead of transitioning `box-shadow` directly, place the heavier shadow on a pseudo-element (`::after`) and transition only its `opacity`. Since `opacity` is handled entirely by the GPU compositor without triggering layout or paint, the animation runs at a smooth 60 FPS regardless of shadow complexity.
+
+For cases where you need to animate individual shadow parameters (blur, spread, color) independently, the `@property` rule lets the browser treat custom properties as typed, animatable values.
+
+## Code Examples
+
+### The Naive (Expensive) Approach
+
+This works but performs poorly because `box-shadow` changes trigger paint on every frame.
+
+```css
+/* Avoid this for performance-critical animations */
+.card-naive {
+  box-shadow: 0 1px 2px hsl(0deg 0% 0% / 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-naive:hover {
+  box-shadow:
+    0 4px 8px hsl(0deg 0% 0% / 0.1),
+    0 16px 32px hsl(0deg 0% 0% / 0.08);
+}
+```
+
+### The Performant Approach: Pseudo-Element Opacity
+
+```css
+.card {
+  position: relative;
+  border-radius: 12px;
+  background: white;
+  /* Base shadow — always visible */
+  box-shadow: 0 1px 2px hsl(0deg 0% 0% / 0.1);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Hover shadow — pre-rendered but invisible */
+  box-shadow:
+    0 4px 8px hsl(220deg 60% 50% / 0.08),
+    0 12px 24px hsl(220deg 60% 50% / 0.06),
+    0 24px 48px hsl(220deg 60% 50% / 0.04);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  /* Keep pseudo-element behind content */
+  z-index: -1;
+}
+
+.card:hover::after {
+  opacity: 1;
+}
+```
+
+```html
+<div class="card">
+  <h3>Performant Shadow Hover</h3>
+  <p>Shadow transitions via opacity, not box-shadow.</p>
+</div>
+```
+
+The browser renders both shadows once (at their full values), then simply fades the pseudo-element's opacity on hover. No repaint needed — just compositing.
+
+### Complete Card with Lift Effect
+
+Combine the pseudo-element shadow with a subtle `transform: translateY()` for a convincing "lift off the page" hover.
+
+```css
+.lift-card {
+  position: relative;
+  border-radius: 12px;
+  background: white;
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.06),
+    0 2px 4px hsl(220deg 60% 50% / 0.06);
+  transition: transform 0.3s ease;
+}
+
+.lift-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    0 2px 4px hsl(220deg 60% 50% / 0.05),
+    0 8px 16px hsl(220deg 60% 50% / 0.05),
+    0 16px 32px hsl(220deg 60% 50% / 0.05),
+    0 32px 64px hsl(220deg 60% 50% / 0.04);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.lift-card:hover {
+  transform: translateY(-4px);
+}
+
+.lift-card:hover::after {
+  opacity: 1;
+}
+```
+
+Both `transform` and `opacity` are compositor-friendly, so this entire hover effect runs without layout or paint.
+
+### The @property Trick for Individual Shadow Parameters
+
+When you need granular control — for example, animating only the shadow's blur or color independently — use `@property` to create typed custom properties that the browser can interpolate.
+
+```css
+@property --shadow-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 2px;
+}
+
+@property --shadow-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 1px;
+}
+
+@property --shadow-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: hsl(220deg 60% 50% / 0.1);
+}
+
+.card-property {
+  box-shadow: 0 var(--shadow-y) var(--shadow-blur) var(--shadow-color);
+  transition:
+    --shadow-blur 0.3s ease,
+    --shadow-y 0.3s ease,
+    --shadow-color 0.5s ease;
+}
+
+.card-property:hover {
+  --shadow-blur: 24px;
+  --shadow-y: 12px;
+  --shadow-color: hsl(220deg 60% 50% / 0.2);
+}
+```
+
+This transitions each shadow parameter on its own timing. The browser still repaints per frame (like the naive approach), but you gain precise control over individual parameters. Use this when creative control outweighs performance concerns, such as a single hero element.
+
+### Comparing All Three Approaches
+
+```css
+/* 1. Naive — simple but expensive */
+.approach-naive {
+  box-shadow: 0 2px 4px hsl(0deg 0% 0% / 0.1);
+  transition: box-shadow 0.3s;
+}
+
+/* 2. Pseudo-element opacity — performant */
+.approach-pseudo {
+  position: relative;
+  box-shadow: 0 2px 4px hsl(0deg 0% 0% / 0.1);
+}
+
+.approach-pseudo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 12px 24px hsl(0deg 0% 0% / 0.15);
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
+}
+
+/* 3. @property — creative control, moderate performance */
+@property --blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 4px;
+}
+
+.approach-property {
+  box-shadow: 0 2px var(--blur) hsl(0deg 0% 0% / 0.1);
+  transition: --blur 0.3s;
+}
+
+.approach-property:hover {
+  --blur: 24px;
+}
+```
+
+## Live Previews
+
+<CssPreview client:load
+  title="Expensive box-shadow Transition vs Cheap Opacity Approach"
+  html={`<div class="demo"><div class="card naive"><h3>Naive Approach</h3><p>Transitions box-shadow directly (triggers repaint every frame)</p><span class="hint">Hover to see effect</span></div><div class="card performant"><h3>Performant Approach</h3><p>Transitions pseudo-element opacity (GPU compositing only)</p><span class="hint">Hover to see effect</span></div></div>`}
+  css={`
+    .demo {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: #f1f5f9;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      padding: 24px;
+      border-radius: 12px;
+      background: white;
+      width: 220px;
+      cursor: pointer;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: #0f172a;
+    }
+    .card p {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0 0 12px;
+      line-height: 1.5;
+    }
+    .hint {
+      font-size: 12px;
+      color: #3b82f6;
+      font-weight: 500;
+    }
+    .naive {
+      box-shadow: 0 1px 3px hsl(0deg 0% 0% / 0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    .naive:hover {
+      box-shadow:
+      0 4px 8px hsl(0deg 0% 0% / 0.1),
+      0 16px 32px hsl(0deg 0% 0% / 0.08);
+    }
+    .performant {
+      position: relative;
+      box-shadow: 0 1px 3px hsl(0deg 0% 0% / 0.1);
+      transition: transform 0.3s ease;
+    }
+    .performant::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow:
+      0 4px 8px hsl(220deg 60% 50% / 0.08),
+      0 12px 24px hsl(220deg 60% 50% / 0.06),
+      0 24px 48px hsl(220deg 60% 50% / 0.04);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+    }
+    .performant:hover {
+      transform: translateY(-2px);
+    }
+    .performant:hover::after {
+      opacity: 1;
+    }
+    `}
+  height={280} />
+
+## Common AI Mistakes
+
+- **Always using `transition: box-shadow`** — This is the most common mistake. It works visually but causes jank on pages with many hoverable cards because the browser repaints the shadow every frame.
+- **Forgetting `position: relative` on the parent** — The pseudo-element needs a positioned parent to anchor itself. Without it, the shadow renders in unexpected positions.
+- **Missing `border-radius: inherit`** — The pseudo-element does not inherit border-radius by default. Without it, the hover shadow has square corners while the card has round ones.
+- **Forgetting `z-index: -1` on the pseudo-element** — Without negative z-index, the pseudo-element's shadow sits on top of the card content, blocking text selection and click events.
+- **Using `will-change: box-shadow`** — This does not help. `will-change` promotes an element to its own compositor layer, but `box-shadow` changes still require repaints within that layer. The pseudo-element opacity trick is the correct solution.
+- **Not using `@property` for typed custom properties** — Standard `--custom-properties` are treated as strings and cannot be interpolated. `@property` with explicit `syntax` is required for animated custom properties.
+- **Overly complex shadows in frequently animated elements** — Even with the opacity trick, rendering very complex shadows (6+ layers) on many elements simultaneously can impact initial paint performance.
+
+## When to Use
+
+- **Card hover effects** — The pseudo-element opacity trick is the standard approach for hoverable card grids
+- **Interactive lists and tables** — Row hover effects that need shadow changes without performance cost
+- **Hero elements with creative shadows** — The `@property` trick for single elements where precise parameter animation matters
+- **Any element with `transition: box-shadow`** — Replace with the pseudo-element technique whenever you see it in performance-sensitive contexts
+
+## References
+
+- [How to Animate Box-Shadow with Silky Smooth Performance — Tobias Ahlin](https://tobiasahlin.com/blog/how-to-animate-box-shadow/)
+- [Box-Shadow Transition Performance — Cloud 66](https://blog.cloud66.com/box-shadow-transition-performance)
+- [Exploring @property and Its Animating Powers — CSS-Tricks](https://css-tricks.com/exploring-property-and-its-animating-powers/)
+- [The Times You Need a Custom @property Instead of a CSS Variable — Smashing Magazine](https://www.smashingmagazine.com/2024/05/times-need-custom-property-instead-css-variable/)
+- [box-shadow — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow)

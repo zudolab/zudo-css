@@ -1,0 +1,223 @@
+---
+title: Layered Natural Shadows
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## The Problem
+
+Shadows are one of the most important depth cues in UI design, yet AI agents almost always generate a single, flat `box-shadow` declaration. A single shadow looks artificial because real-world shadows are not uniform blurs. When an object sits on a surface, it casts a tight, dark contact shadow near its base and a softer, lighter shadow that spreads further. A single `box-shadow` cannot reproduce this layered behavior.
+
+## The Solution
+
+Use multiple comma-separated `box-shadow` values with progressively increasing blur radius and vertical offset. Each layer represents a different aspect of natural light behavior. Keep all shadows consistent with a single implied light source direction across the entire page.
+
+### Core Principles
+
+#### Consistent Light Source
+
+Every shadow on the page should share the same ratio between horizontal and vertical offsets. A common convention is a light source above and slightly to the left, meaning vertical offset is roughly 2x the horizontal offset.
+
+#### Elevation Model
+
+As elements "rise" toward the viewer, three properties change:
+
+- **Offset increases** — the shadow moves further from the element
+- **Blur expands** — the shadow becomes softer and more diffused
+- **Opacity decreases** — the shadow fades as the element lifts higher
+
+#### Color-Matched Shadows
+
+Avoid pure black shadows (`rgba(0, 0, 0, ...)`). Instead, match the hue of the background at low saturation. This prevents the washed-out, desaturated appearance that black shadows cause.
+
+## Code Examples
+
+### Basic Layered Shadow
+
+```css
+.card {
+  box-shadow:
+    0 1px 1px hsl(0deg 0% 0% / 0.075),
+    0 2px 2px hsl(0deg 0% 0% / 0.075),
+    0 4px 4px hsl(0deg 0% 0% / 0.075),
+    0 8px 8px hsl(0deg 0% 0% / 0.075),
+    0 16px 16px hsl(0deg 0% 0% / 0.075);
+}
+```
+
+Each layer doubles the previous offset and blur. The cumulative effect is a smooth, natural-looking shadow with depth.
+
+### Elevation Levels
+
+```css
+/* Low elevation — resting on surface */
+.elevation-1 {
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.07),
+    0 2px 2px hsl(220deg 60% 50% / 0.07),
+    0 4px 4px hsl(220deg 60% 50% / 0.07);
+}
+
+/* Medium elevation — card hover */
+.elevation-2 {
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.06),
+    0 2px 2px hsl(220deg 60% 50% / 0.06),
+    0 4px 4px hsl(220deg 60% 50% / 0.06),
+    0 8px 8px hsl(220deg 60% 50% / 0.06),
+    0 16px 16px hsl(220deg 60% 50% / 0.06);
+}
+
+/* High elevation — modal / dialog */
+.elevation-3 {
+  box-shadow:
+    0 1px 1px hsl(220deg 60% 50% / 0.05),
+    0 2px 2px hsl(220deg 60% 50% / 0.05),
+    0 4px 4px hsl(220deg 60% 50% / 0.05),
+    0 8px 8px hsl(220deg 60% 50% / 0.05),
+    0 16px 16px hsl(220deg 60% 50% / 0.05),
+    0 32px 32px hsl(220deg 60% 50% / 0.05);
+}
+```
+
+### Color-Matched Shadows on Colored Backgrounds
+
+```css
+/* On a blue-tinted background */
+.card-on-blue {
+  background: hsl(220deg 80% 98%);
+  box-shadow:
+    0 1px 2px hsl(220deg 60% 50% / 0.1),
+    0 3px 6px hsl(220deg 60% 50% / 0.08),
+    0 8px 16px hsl(220deg 60% 50% / 0.06);
+}
+
+/* On a warm background */
+.card-on-warm {
+  background: hsl(30deg 80% 98%);
+  box-shadow:
+    0 1px 2px hsl(30deg 40% 40% / 0.1),
+    0 3px 6px hsl(30deg 40% 40% / 0.08),
+    0 8px 16px hsl(30deg 40% 40% / 0.06);
+}
+```
+
+### Sharp + Diffuse Combination
+
+```css
+/* Tight contact shadow + wide ambient shadow */
+.card-sharp-diffuse {
+  box-shadow:
+    0 1px 3px hsl(0deg 0% 0% / 0.12),
+    0 8px 24px hsl(0deg 0% 0% / 0.06);
+}
+```
+
+### Complete Card Example
+
+```html
+<div class="shadow-card">
+  <h3>Card Title</h3>
+  <p>Card content goes here.</p>
+</div>
+```
+
+```css
+.shadow-card {
+  padding: 24px;
+  border-radius: 8px;
+  background: white;
+  box-shadow:
+    0 0.5px 1px hsl(220deg 60% 50% / 0.06),
+    0 1px 2px hsl(220deg 60% 50% / 0.06),
+    0 2px 4px hsl(220deg 60% 50% / 0.06),
+    0 4px 8px hsl(220deg 60% 50% / 0.06),
+    0 8px 16px hsl(220deg 60% 50% / 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-card:hover {
+  box-shadow:
+    0 1px 2px hsl(220deg 60% 50% / 0.05),
+    0 2px 4px hsl(220deg 60% 50% / 0.05),
+    0 4px 8px hsl(220deg 60% 50% / 0.05),
+    0 8px 16px hsl(220deg 60% 50% / 0.05),
+    0 16px 32px hsl(220deg 60% 50% / 0.05),
+    0 32px 64px hsl(220deg 60% 50% / 0.05);
+}
+```
+
+## Live Preview
+
+<CssPreview client:load
+  title="Flat Shadow vs Layered Shadow"
+  html={`
+    <div class="demo">
+      <div class="card flat">
+        <h3>Flat Shadow</h3>
+        <p>Single box-shadow value</p>
+      </div>
+      <div class="card layered">
+        <h3>Layered Shadow</h3>
+        <p>Multiple layered values</p>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      padding: 40px 20px;
+      background: #f8fafc;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      padding: 24px;
+      border-radius: 8px;
+      background: white;
+      width: 200px;
+    }
+    .card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 14px;
+      color: #64748b;
+    }
+    .flat {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .layered {
+      box-shadow:
+      0 1px 1px hsl(220deg 60% 50% / 0.075),
+      0 2px 2px hsl(220deg 60% 50% / 0.075),
+      0 4px 4px hsl(220deg 60% 50% / 0.075),
+      0 8px 8px hsl(220deg 60% 50% / 0.075),
+      0 16px 16px hsl(220deg 60% 50% / 0.075);
+    }
+    `} />
+
+## Common AI Mistakes
+
+- **Single flat shadow** — Using `box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1)` everywhere. This produces a uniform, artificial look that lacks depth.
+- **Pure black shadow color** — `rgba(0, 0, 0, ...)` desaturates the area beneath the shadow, creating a gray, washed-out appearance over colored backgrounds.
+- **Inconsistent light direction** — Generating different offset angles for different elements, breaking the illusion of a unified light source.
+- **Same shadow for all elevations** — Using the same shadow for cards, modals, dropdowns, and tooltips, when each should have a distinct elevation level.
+- **Overly dark shadows** — Setting high opacity values (0.2-0.5) for a single shadow instead of distributing lower opacities across multiple layers.
+
+## When to Use
+
+- Cards and raised surfaces that need to feel physically present
+- Elevation systems where multiple UI layers overlap (cards, dropdowns, modals, tooltips)
+- Hover states that should make an element appear to lift off the page
+- Any element that benefits from a sense of depth without feeling artificially heavy
+
+## References
+
+- [Designing Beautiful Shadows in CSS — Josh W. Comeau](https://www.joshwcomeau.com/css/designing-shadows/)
+- [Smoother & Sharper Shadows with Layered Box-Shadows — Tobias Ahlin](https://tobiasahlin.com/blog/layered-smooth-box-shadows/)
+- [box-shadow — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow)
