@@ -79,7 +79,7 @@ const tree = buildNavTree(navDocs, "en", categoryMeta);
       <SiteTreeNav
         tree={tree}
         categoryOrder={categoryOrder}
-        categoryIgnore={["inbox"]}
+        categoryIgnore={["inbox", "overview"]}
         client:idle
       />
     </main>
