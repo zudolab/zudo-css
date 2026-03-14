@@ -250,9 +250,7 @@ import TailwindPreview from '@/components/TailwindPreview';
 
 ## 注意書き
 
-注意書き（Admonitions）は控えめに使用します。2つの構文が使えます（importは不要）：
-
-**ディレクティブ構文**（読みやすさの点で推奨）：
+注意書き（Admonitions）は控えめに使用します。importは不要です。
 
 ```markdown
 :::note[任意のタイトル]
@@ -260,16 +258,6 @@ import TailwindPreview from '@/components/TailwindPreview';
 メインコンテンツに関連する補足情報。
 
 :::
-```
-
-**JSXコンポーネント構文**：
-
-```mdx
-<Note title="任意のタイトル">
-
-メインコンテンツに関連する補足情報。
-
-</Note>
 ```
 
 使用可能なタイプ：`note`、`tip`、`info`、`warning`、`danger`。ほとんどの場合は`note`と`info`を使用してください。
