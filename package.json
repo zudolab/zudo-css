@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
   "scripts": {
     "// ── Core ─────────────────────────────────────────": "",
     "predev": "lsof -ti :8811 | xargs kill 2>/dev/null; true",
@@ -10,17 +11,17 @@
     "build": "astro build",
     "preview": "astro preview --port 8811",
     "// ── Quality ──────────────────────────────────────": "",
-    "check": "NODE_OPTIONS='--max-old-space-size=6144' astro check",
+    "check": "astro sync && tsc --noEmit",
     "// ── Tools ──────────────────────────────────────": "",
     "generate:css-wisdom": "node scripts/generate-css-wisdom.js",
     "setup:symlink": "node scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked'"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.13",
-    "@astrojs/react": "^4.4.2",
+    "@astrojs/mdx": "^5.0.0",
+    "@astrojs/react": "^5.0.0",
     "@shikijs/transformers": "^4.0.1",
     "@takazudo/mdx-formatter": "latest",
-    "astro": "^5.18.0",
+    "astro": "^6.0.4",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
     "github-slugger": "^2.0.0",
@@ -28,11 +29,10 @@
     "minisearch": "^7.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "shiki": "^4.0.2",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.7",
     "@types/hast": "^3.0.4",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^25.3.5",
@@ -45,7 +45,10 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp"
-    ]
+    ],
+    "patchedDependencies": {
+      "astro@6.0.4": "patches/astro@6.0.4.patch"
+    }
   },
   "engines": {
     "node": ">=20.0"

@@ -1,0 +1,19 @@
+diff --git a/dist/vite-plugin-astro/index.js b/dist/vite-plugin-astro/index.js
+index 79347811e95a59d817a7dd3531115832e5101609..a887d8d93d585ac65ce8de2c777ba4fe44a83c23 100644
+--- a/dist/vite-plugin-astro/index.js
++++ b/dist/vite-plugin-astro/index.js
+@@ -108,6 +108,14 @@ function astro({ settings, logger }) {
+             if (server) {
+               const code = await loadId(server.pluginContainer, filename);
+               if (code != null) await compile(code, filename);
++            } else {
++              // Build-mode fallback: read and compile the parent .astro file
++              // when its metadata is missing due to Rollup module ordering.
++              const fs = await import("node:fs");
++              try {
++                const code = fs.readFileSync(filename, "utf-8");
++                if (code) await compile(code, filename);
++              } catch {}
+             }
+             compileMetadata = astroFileToCompileMetadata.get(filename);
+           }
