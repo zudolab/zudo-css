@@ -4,6 +4,7 @@ import { buildSidebarForSection } from "@/utils/sidebar";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { withBase } from "@/utils/base";
 import { loadLocaleDocs } from "@/utils/locale-docs";
+import { settings } from "@/config/settings";
 
 interface Props {
   currentSlug?: string;
@@ -13,8 +14,15 @@ interface Props {
 
 const { currentSlug, lang = defaultLocale, navSection } = Astro.props;
 const isNonDefaultLocale = lang !== defaultLocale;
-const backToMenuHref = navSection ? withBase(isNonDefaultLocale ? `/${lang}/` : "/") : undefined;
 const backToMenuLabel = navSection ? t("nav.backToMenu", lang) : undefined;
+
+// Build root menu items from headerNav (for Docusaurus-style "back to main menu")
+const rootMenuItems = navSection
+  ? settings.headerNav.map((item) => ({
+      label: item.labelKey ? t(item.labelKey as Parameters<typeof t>[0], lang) : item.label,
+      href: withBase(isNonDefaultLocale ? `/${lang}${item.path}` : item.path),
+    }))
+  : undefined;
 
 const { allDocs, categoryMeta } = await loadLocaleDocs(lang);
 const docs = allDocs.filter((d) => !d.data.unlisted);
@@ -22,4 +30,4 @@ const docs = allDocs.filter((d) => !d.data.unlisted);
 const nodes = buildSidebarForSection(docs, lang, navSection, categoryMeta);
 ---
 
-<SidebarTree nodes={nodes} currentSlug={currentSlug} backToMenuHref={backToMenuHref} backToMenuLabel={backToMenuLabel} client:load />
+<SidebarTree nodes={nodes} currentSlug={currentSlug} rootMenuItems={rootMenuItems} backToMenuLabel={backToMenuLabel} client:load />

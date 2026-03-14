@@ -91,16 +91,22 @@ function filterTree(nodes: NavNode[], query: string): NavNode[] {
   }, []);
 }
 
+interface RootMenuItem {
+  label: string;
+  href: string;
+}
+
 interface SidebarTreeProps {
   nodes: NavNode[];
   currentSlug?: string;
-  backToMenuHref?: string;
+  rootMenuItems?: RootMenuItem[];
   backToMenuLabel?: string;
 }
 
-export default function SidebarTree({ nodes, currentSlug, backToMenuHref, backToMenuLabel }: SidebarTreeProps) {
+export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
+  const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
 
   // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
@@ -123,18 +129,47 @@ export default function SidebarTree({ nodes, currentSlug, backToMenuHref, backTo
     [nodes, query],
   );
 
+  // Root menu view: show headerNav items as a simple list (Docusaurus-style)
+  if (showingRootMenu && rootMenuItems) {
+    return (
+      <nav>
+        <button
+          type="button"
+          onClick={() => setShowingRootMenu(false)}
+          className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
+        >
+          <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          {backToMenuLabel ?? "Back to main menu"}
+        </button>
+        {rootMenuItems.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
+          >
+            <CategoryLinkIcon />
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    );
+  }
+
   return (
     <nav>
-      {backToMenuHref && (
-        <a
-          href={backToMenuHref}
-          className="flex items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
+      {rootMenuItems && (
+        <button
+          type="button"
+          onClick={() => setShowingRootMenu(true)}
+          className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
         >
           <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           {backToMenuLabel ?? "Back to main menu"}
-        </a>
+        </button>
       )}
       <div className="px-hsp-sm py-vsp-xs border-b border-muted">
         <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
