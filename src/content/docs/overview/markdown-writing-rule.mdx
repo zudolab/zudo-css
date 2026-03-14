@@ -250,22 +250,14 @@ Use `---` only for major topic shifts (e.g., separating appendix content from th
 
 ## Admonitions
 
-Use Docusaurus admonitions sparingly. Allowed types:
+Use admonitions sparingly. No imports needed.
 
 ```markdown
-:::note
+:::note[Optional Title]
 
 Supplementary information related to the main content.
 
 :::
 ```
 
-```markdown
-:::info
-
-Tangential but relevant context. "By the way" content.
-
-:::
-```
-
-Do not use `:::tip`, `:::warning`, `:::danger`, or `:::caution`.
+Available types: `note`, `tip`, `info`, `warning`, `danger`. Use `note` and `info` for most cases.

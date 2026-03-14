@@ -12,6 +12,8 @@ import { claudeResourcesIntegration } from "./src/integrations/claude-resources"
 import { docHistoryIntegration } from "./src/integrations/doc-history";
 import { searchIndexIntegration } from "./src/integrations/search-index";
 import { sitemapIntegration } from "./src/integrations/sitemap";
+import remarkDirective from "remark-directive";
+import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
 import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";
@@ -66,7 +68,7 @@ export default defineConfig({
   },
   markdown: {
     shikiConfig,
-    remarkPlugins: [],
+    remarkPlugins: [remarkDirective, remarkAdmonitions],
     rehypePlugins: [
       rehypeCodeTitle,
       rehypeHeadingLinks,

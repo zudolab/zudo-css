@@ -250,22 +250,14 @@ import TailwindPreview from '@/components/TailwindPreview';
 
 ## 注意書き
 
-Docusaurusの注意書き（Admonitions）は控えめに使用します。使用可能なタイプ：
+注意書き（Admonitions）は控えめに使用します。importは不要です。
 
 ```markdown
-:::note
+:::note[任意のタイトル]
 
 メインコンテンツに関連する補足情報。
 
 :::
 ```
 
-```markdown
-:::info
-
-関連はあるが付随的なコンテキスト。「ちなみに」的なコンテンツ。
-
-:::
-```
-
-`:::tip`、`:::warning`、`:::danger`、`:::caution`は使用しないでください。
+使用可能なタイプ：`note`、`tip`、`info`、`warning`、`danger`。ほとんどの場合は`note`と`info`を使用してください。
