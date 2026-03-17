@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import node from "@astrojs/node";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import {
@@ -11,12 +12,16 @@ import { settings } from "./src/config/settings";
 import { claudeResourcesIntegration } from "./src/integrations/claude-resources";
 import { docHistoryIntegration } from "./src/integrations/doc-history";
 import { searchIndexIntegration } from "./src/integrations/search-index";
+import { llmsTxtIntegration } from "./src/integrations/llms-txt";
 import { sitemapIntegration } from "./src/integrations/sitemap";
 import remarkDirective from "remark-directive";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
+import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
 import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 const activeScheme = colorSchemes[settings.colorScheme];
 const shikiTheme = activeScheme?.shikiTheme ?? "dracula";
@@ -45,11 +50,14 @@ const shikiConfig = settings.colorMode
 
 export default defineConfig({
   output: "static",
+  trailingSlash: settings.trailingSlash ? "always" : "never",
+  ...(settings.aiAssistant ? { adapter: node({ mode: "standalone" }) } : {}),
   base: settings.base,
   integrations: [
     mdx(),
     react(),
     searchIndexIntegration(),
+    ...(settings.llmsTxt ? [llmsTxtIntegration()] : []),
     ...(settings.sitemap && !settings.noindex ? [sitemapIntegration()] : []),
     ...(settings.docHistory ? [docHistoryIntegration()] : []),
     ...(settings.claudeResources
@@ -68,11 +76,17 @@ export default defineConfig({
   },
   markdown: {
     shikiConfig,
-    remarkPlugins: [remarkDirective, remarkAdmonitions],
+    remarkPlugins: [
+      remarkDirective, // Must run before remarkAdmonitions
+      remarkAdmonitions,
+      ...(settings.math ? [remarkMath] : []),
+    ],
     rehypePlugins: [
       rehypeCodeTitle,
-      rehypeHeadingLinks,
+      rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
       rehypeStripMdExtension,
+      ...(settings.mermaid ? [rehypeMermaid] : []),
+      ...(settings.math ? [rehypeKatex] : []),
     ],
   },
 });

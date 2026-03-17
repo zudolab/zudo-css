@@ -1,80 +1,174 @@
 ---
 import SidebarToggle from "@/components/sidebar-toggle";
-import HeaderNav from "@/components/header-nav";
-import ColorSchemePicker from "@/components/color-scheme-picker";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageSwitcher from "@/components/language-switcher.astro";
+import VersionSwitcher from "@/components/version-switcher.astro";
 import Search from "@/components/search.astro";
 import { settings } from "@/config/settings";
-import { withBase, stripBase, getPathForLocale } from "@/utils/base";
-import { defaultLocale, locales, getLocaleLabel, t, type Locale } from "@/config/i18n";
+import { withBase, stripBase } from "@/utils/base";
+import { defaultLocale, locales, t, type Locale } from "@/config/i18n";
+import type { VersionAvailability } from "@/utils/version-availability";
 
 interface Props {
   lang?: Locale;
   currentPath?: string;
+  currentVersion?: string;
+  currentSlug?: string;
+  versionAvailability?: VersionAvailability;
 }
 
-const { lang, currentPath = Astro.url.pathname } = Astro.props;
+const {
+  lang,
+  currentPath = "",
+  currentVersion,
+  currentSlug,
+  versionAvailability,
+} = Astro.props;
 const isNonDefaultLocale = lang != null && lang !== defaultLocale;
 const pathWithoutBase = stripBase(currentPath);
-const pathForMatch = isNonDefaultLocale ? pathWithoutBase.replace(new RegExp(`^/${lang}`), "") : pathWithoutBase;
-
-// Prepare nav items for the React overflow-aware component
-const activeNavPath = settings.headerNav
-  .filter((item) => pathForMatch.startsWith(item.path))
-  .sort((a, b) => b.path.length - a.path.length)[0]?.path;
-
-const navItems = settings.headerNav.map((item) => ({
-  label: item.labelKey ? t(item.labelKey, lang) : item.label,
-  href: withBase(isNonDefaultLocale ? `/${lang}${item.path}` : item.path),
-  isActive: item.path === activeNavPath,
-}));
-
-// Prepare locale links for the mobile sidebar
-const localeLinks = lang && locales.length > 1
-  ? locales.map((code) => ({
-      code,
-      label: getLocaleLabel(code),
-      href: getPathForLocale(currentPath, lang, code),
-      isCurrent: code === lang,
-    }))
-  : undefined;
-
-const themeConfig = settings.colorMode
-  ? { defaultMode: settings.colorMode.defaultMode }
-  : undefined;
+const pathForMatch = isNonDefaultLocale
+  ? pathWithoutBase.replace(new RegExp(`^/${lang}`), "")
+  : pathWithoutBase;
 ---
 
 <header
   class="sticky top-0 z-50 flex h-[3.5rem] items-center border-b border-muted bg-surface px-hsp-lg"
 >
-  <SidebarToggle
-    client:media="(max-width: 1023px)"
-    themeConfig={themeConfig}
-    localeLinks={localeLinks}
-  >
+  <SidebarToggle client:media="(max-width: 1023px)">
     <slot name="sidebar" />
+    <Fragment slot="bottomContent">
+      {
+        settings.colorMode && (
+          <ThemeToggle
+            defaultMode={settings.colorMode.defaultMode}
+            client:load
+          />
+        )
+      }
+      {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
+    </Fragment>
   </SidebarToggle>
 
-  <a href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")} class="shrink-0 text-subheading font-bold text-fg hover:underline focus:underline">
+  <a
+    href={withBase(isNonDefaultLocale ? `/${lang}/` : "/")}
+    class="whitespace-nowrap text-subheading font-bold text-fg hover:underline focus:underline"
+  >
     {settings.siteName}
   </a>
 
-  <HeaderNav items={navItems} client:load />
+  <nav
+    aria-label="Main"
+    class="ml-hsp-xl hidden items-center gap-x-hsp-2xs whitespace-nowrap lg:flex"
+  >
+    {
+      (() => {
+        // Longest-prefix match: only highlight the most specific nav item
+        const activeNavPath = settings.headerNav
+          .filter((item) => pathForMatch.startsWith(item.path))
+          .sort((a, b) => b.path.length - a.path.length)[0]?.path;
 
-  <div class="ml-auto flex shrink-0 items-center gap-x-hsp-md">
+        return settings.headerNav.map((item) => {
+          const isActive = item.path === activeNavPath;
+          const href = withBase(
+            isNonDefaultLocale ? `/${lang}${item.path}` : item.path,
+          );
+          return (
+            <a
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              class:list={[
+                "px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
+                isActive
+                  ? "bg-fg text-bg"
+                  : "text-muted hover:underline focus:underline",
+              ]}
+            >
+              {item.labelKey ? t(item.labelKey, lang) : item.label}
+            </a>
+          );
+        });
+      })()
+    }
+  </nav>
+
+  <div class="ml-auto flex items-center gap-x-hsp-md">
+    {
+      settings.versions && currentSlug && (
+        <div class="hidden lg:block">
+          <VersionSwitcher
+            currentVersion={currentVersion}
+            currentSlug={currentSlug}
+            lang={lang}
+            availability={versionAvailability}
+            idSuffix="header"
+          />
+        </div>
+      )
+    }
+    {
+      settings.colorTweakPanel && (
+        <button
+          id="color-tweak-trigger"
+          type="button"
+          class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+          aria-label="Toggle color tweak panel"
+          onclick="window.dispatchEvent(new CustomEvent('toggle-color-tweak-panel'))"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="13.5" cy="6.5" r="2.5" />
+            <circle cx="17.5" cy="10.5" r="2.5" />
+            <circle cx="8.5" cy="7.5" r="2.5" />
+            <circle cx="6.5" cy="12.5" r="2.5" />
+            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+          </svg>
+        </button>
+      )
+    }
+    {
+      settings.aiAssistant && (
+        <button
+          id="ai-chat-trigger"
+          type="button"
+          class="flex items-center justify-center text-muted transition-colors hover:text-fg"
+          aria-label="Open AI assistant"
+          onclick="window.dispatchEvent(new CustomEvent('toggle-ai-chat'))"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M9.5 2.5Q10.5 11.5 18 13Q10.5 14.5 9.5 23.5Q8.5 14.5 1 13Q8.5 11.5 9.5 2.5Z" />
+            <path d="M19 0.5Q19.5 4 23.5 5Q19.5 6 19 9.5Q18.5 6 14.5 5Q18.5 4 19 0.5Z" />
+          </svg>
+        </button>
+      )
+    }
     <Search />
-    {settings.colorMode ? (
-      <span class="hidden lg:block">
-        <ThemeToggle defaultMode={settings.colorMode.defaultMode} client:load />
-      </span>
-    ) : (
-      <ColorSchemePicker client:load />
-    )}
-    {lang && locales.length > 1 && (
-      <span class="hidden lg:block">
-        <LanguageSwitcher lang={lang} />
-      </span>
-    )}
+    <div class="hidden lg:flex items-center gap-x-hsp-md">
+      {
+        settings.colorMode && (
+          <ThemeToggle
+            defaultMode={settings.colorMode.defaultMode}
+            client:load
+          />
+        )
+      }
+      {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
+    </div>
   </div>
 </header>

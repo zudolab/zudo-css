@@ -1,6 +1,4 @@
-<!-- Initializes tab containers: creates tab buttons, handles switching, and syncs grouped tabs via localStorage. -->
-<!-- Include once in the layout — it self-initializes via a <script> tag. -->
-
+<!-- Initializes tab containers: creates tab buttons, handles switching, and syncs grouped tabs via localStorage. --><!-- Include once in the layout — it self-initializes via a <script> tag. -->
 <script>
   function initTabs() {
     const containers = document.querySelectorAll<HTMLDivElement>("[data-tabs]");
@@ -22,14 +20,19 @@
       if (groupId) {
         const stored = localStorage.getItem(`tabs-group-${groupId}`);
         // Only use stored value if a panel with that value exists
-        if (stored && Array.from(panels).some((p) => p.dataset.tabValue === stored)) {
+        if (
+          stored &&
+          Array.from(panels).some((p) => p.dataset.tabValue === stored)
+        ) {
           activeValue = stored;
         }
       }
 
       // Fall back to default panel or first panel
       if (!activeValue) {
-        const defaultPanel = container.querySelector<HTMLDivElement>(".tab-panel[data-tab-default]");
+        const defaultPanel = container.querySelector<HTMLDivElement>(
+          ".tab-panel[data-tab-default]",
+        );
         activeValue = defaultPanel
           ? defaultPanel.dataset.tabValue!
           : panels[0].dataset.tabValue!;
@@ -64,7 +67,8 @@
   }
 
   function getButtonClasses(isActive: boolean): string {
-    const base = "px-hsp-lg py-vsp-xs text-small font-medium border-b-2 -mb-px transition-colors";
+    const base =
+      "px-hsp-lg py-vsp-xs text-small font-medium border-b-[5px] -mb-px transition-colors";
     return isActive
       ? `${base} text-accent border-accent`
       : `${base} text-muted border-transparent hover:text-fg`;
@@ -72,7 +76,8 @@
 
   function activateTab(container: HTMLDivElement, value: string) {
     // Update buttons
-    const buttons = container.querySelectorAll<HTMLButtonElement>("[data-tab-btn]");
+    const buttons =
+      container.querySelectorAll<HTMLButtonElement>("[data-tab-btn]");
     for (const btn of buttons) {
       const isActive = btn.dataset.tabBtn === value;
       btn.className = getButtonClasses(isActive);
@@ -92,12 +97,14 @@
 
   function syncGroup(groupId: string, value: string, source: HTMLDivElement) {
     const others = document.querySelectorAll<HTMLDivElement>(
-      `[data-tabs][data-group-id="${CSS.escape(groupId)}"]`
+      `[data-tabs][data-group-id="${CSS.escape(groupId)}"]`,
     );
     for (const container of others) {
       if (container === source) continue;
       // Only sync if the container has a panel with the selected value
-      const hasPanel = container.querySelector(`.tab-panel[data-tab-value="${CSS.escape(value)}"]`);
+      const hasPanel = container.querySelector(
+        `.tab-panel[data-tab-value="${CSS.escape(value)}"]`,
+      );
       if (hasPanel) {
         activateTab(container, value);
       }

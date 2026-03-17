@@ -80,12 +80,19 @@ export function docHistoryIntegration(): AstroIntegration {
                       const requestedSlug = decodeURIComponent(match[1]);
 
                       // Parse locale prefix from requested slug
+                      // Check locale-prefixed entries first, then default (empty prefix)
                       const dirEntries = getContentDirEntries();
-                      for (const [localeKey, contentDir] of dirEntries) {
+                      const sorted = [...dirEntries].sort(
+                        ([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1),
+                      );
+                      const hasLocalePrefix = sorted.some(
+                        ([k]) => k && requestedSlug.startsWith(`${k}/`),
+                      );
+                      for (const [localeKey, contentDir] of sorted) {
                         const prefix = localeKey ? `${localeKey}/` : "";
                         if (
                           (prefix && requestedSlug.startsWith(prefix)) ||
-                          !prefix
+                          (!prefix && !hasLocalePrefix)
                         ) {
                           const slug = prefix
                             ? requestedSlug.slice(prefix.length)

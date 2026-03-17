@@ -67,6 +67,30 @@ function escapeTitle(s: string): string {
   return s.replace(/"/g, '\\"');
 }
 
+function listFiles(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isFile())
+    .map((d) => d.name)
+    .sort();
+}
+
+function writeCategoryMeta(
+  outputDir: string,
+  label: string,
+  position: number,
+  description: string,
+  noPage = true,
+) {
+  const meta: Record<string, unknown> = { label, position, description };
+  if (noPage) meta.noPage = true;
+  fs.writeFileSync(
+    path.join(outputDir, "_category_.json"),
+    JSON.stringify(meta, null, 2) + "\n",
+  );
+}
+
 // ---------------------------------------------------------------------------
 // CLAUDE.md discovery
 // ---------------------------------------------------------------------------
@@ -135,6 +159,7 @@ title: "${escapeTitle(displayPath)}"
 description: "CLAUDE.md at ${escapeTitle(displayPath)}"
 sidebar_position: ${pos}
 sidebar_label: "${escapeTitle(relPath)}"
+generated: true
 ---
 
 **Path:** \`${relPath}\`
@@ -151,24 +176,7 @@ ${escapeForMdx(content.trim())}
     return a.displayPath.localeCompare(b.displayPath);
   });
 
-  // Index page
-  const list = items
-    .map((item) => `- [\`${item.displayPath}\`](./${item.slug}/)`)
-    .join("\n");
-
-  const index = `---
-title: "CLAUDE.md"
-description: "CLAUDE.md files provide project-specific instructions to Claude Code."
-sidebar_position: 900
----
-
-CLAUDE.md files found in this project.
-
-## Files (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  writeCategoryMeta(outputDir, "CLAUDE.md", 900, "Project-specific instructions");
   return items;
 }
 
@@ -204,6 +212,7 @@ function generateCommandsDocs(config: ClaudeResourcesConfig): CommandItem[] {
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(description)}"
 sidebar_label: "${escapeTitle(name)}"
+generated: true
 ---
 
 ${escapeForMdx(parsed.content.trim())}
@@ -213,29 +222,65 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const list = items
-    .map((cmd) => `- [\`/${cmd.name}\`](./${cmd.name}/) — ${cmd.description}`)
-    .join("\n");
-
-  const index = `---
-title: "Commands"
-description: "Claude Code custom slash commands reference."
-sidebar_position: 901
----
-
-Custom slash commands reference.
-
-## Available Commands (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  writeCategoryMeta(outputDir, "Commands", 901, "Custom slash commands");
   return items;
 }
 
 // ---------------------------------------------------------------------------
 // Skills generation
 // ---------------------------------------------------------------------------
+
+type TreeEntry =
+  | { isDir: false; name: string }
+  | { isDir: true; name: string; children: string[] };
+
+function getSkillFileTree(
+  skillDir: string,
+  subDirs: { name: string; files: string[] }[],
+): string {
+  const lines: string[] = [`${skillDir}/`];
+  const entries: TreeEntry[] = [{ isDir: false, name: "SKILL.md" }];
+
+  for (const sub of subDirs) {
+    entries.push({ isDir: true, name: sub.name, children: sub.files });
+  }
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const isLast = i === entries.length - 1;
+    const prefix = isLast ? "└── " : "├── ";
+
+    if (!entry.isDir) {
+      lines.push(`${prefix}${entry.name}`);
+    } else {
+      lines.push(`${prefix}${entry.name}/`);
+      for (let j = 0; j < entry.children.length; j++) {
+        const child = entry.children[j];
+        const childIsLast = j === entry.children.length - 1;
+        const continuation = isLast ? "    " : "│   ";
+        const childPrefix = childIsLast ? "└── " : "├── ";
+        lines.push(`${continuation}${childPrefix}${child}`);
+      }
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function getScriptDescription(filePath: string): string {
+  try {
+    const topLines = fs.readFileSync(filePath, "utf8").split("\n", 2);
+    // Skip shebang, use second line if available
+    const commentLine = topLines[0].startsWith("#!")
+      ? topLines[1] || ""
+      : topLines[0];
+    // Match # comments (shell/python) or // comments (JS/TS)
+    const match = commentLine.match(/^(?:#|\/\/)\s*(.+)/);
+    return match ? ` — ${match[1]}` : "";
+  } catch {
+    return "";
+  }
+}
 
 function getSkillReferences(
   skillsDir: string,
@@ -292,93 +337,116 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
 
     items.push({ name, dir, description, references });
 
-    const hasScripts = fs.existsSync(path.join(skillsDir, dir, "scripts"));
-    const hasAssets = fs.existsSync(path.join(skillsDir, dir, "assets"));
-    const resourceList = [
-      references.length > 0 && "references",
-      hasScripts && "scripts",
-      hasAssets && "assets",
-    ].filter(Boolean);
+    const scriptFiles = listFiles(path.join(skillsDir, dir, "scripts"));
+    const assetFiles = listFiles(path.join(skillsDir, dir, "assets"));
+    const refFiles = references.map((r) => `${r.name}.md`);
 
-    const resourcesNote =
-      resourceList.length > 0
-        ? `> Bundled resources: ${resourceList.join(", ")}\n`
-        : "";
+    // Collect non-empty subdirectories for tree display
+    const subDirs: { name: string; files: string[] }[] = [];
+    if (scriptFiles.length > 0) subDirs.push({ name: "scripts", files: scriptFiles });
+    if (refFiles.length > 0) subDirs.push({ name: "references", files: refFiles });
+    if (assetFiles.length > 0) subDirs.push({ name: "assets", files: assetFiles });
 
-    let referencesSection = "";
-    if (references.length > 0) {
-      const refLinks = references
-        .map((ref) => `- [${ref.title}](./${dir}--${ref.name}/)`)
-        .join("\n");
-      referencesSection = `\n\n## References\n\n${refLinks}\n`;
+    // File tree + links to renderable .md sub-files
+    let fileStructureSection = "";
+    if (subDirs.length > 0) {
+      const tree = `\`\`\`\n${getSkillFileTree(dir, subDirs)}\n\`\`\``;
+
+      // Collect links to all .md sub-files that get pages
+      // Links use ./<subpage> which resolves correctly from the skill page URL
+      // (the page URL already includes the dir, e.g. /docs/claude-skills/<dir>/)
+      const links: string[] = [];
+      for (const ref of references) {
+        links.push(`- [references/${ref.name}.md](./ref-${ref.name})`);
+      }
+      for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
+        const slug = f.replace(/\.md$/, "");
+        links.push(`- [scripts/${f}](./script-${slug})`);
+      }
+      for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
+        const slug = f.replace(/\.md$/, "");
+        links.push(`- [assets/${f}](./asset-${slug})`);
+      }
+
+      const linkList = links.length > 0 ? `\n\n${links.join("\n")}` : "";
+      fileStructureSection = `## File Structure\n\n${tree}${linkList}`;
     }
 
     const shortDesc = description.length > 200
       ? description.substring(0, 200) + "..."
       : description;
 
+    const body = [
+      fileStructureSection,
+      escapeForMdx(parsed.content.trim()),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
     const mdx = `---
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(shortDesc)}"
 sidebar_label: "${escapeTitle(name)}"
+generated: true
 ---
 
-${resourcesNote}
+${body}`;
 
-${escapeForMdx(parsed.content.trim())}
-${referencesSection}`;
-
+    // Write skill page as flat file
     fs.writeFileSync(path.join(outputDir, `${dir}.mdx`), mdx);
 
-    // Generate reference pages
+    // Generate unlisted sub-pages (flat files with custom slug for nested breadcrumbs)
+    // File: <dir>--ref-<name>.mdx, slug: claude-skills/<dir>/ref-<name>
+    const skillSlugBase = `claude-skills/${dir}`;
+
     for (const ref of references) {
+      const subSlug = `${skillSlugBase}/ref-${ref.name}`;
       const refMdx = `---
 title: "${escapeTitle(ref.title)}"
-sidebar_label: "${escapeTitle(ref.title)}"
----
-
-**Skill:** [${name}](./${dir}/)
-
+slug: "${subSlug}"
+unlisted: true
+generated: true
 ---
 
 ${escapeForMdx(ref.content.trim())}
 `;
+      fs.writeFileSync(path.join(outputDir, `${dir}--ref-${ref.name}.mdx`), refMdx);
+    }
+
+    for (const f of scriptFiles.filter((s) => s.endsWith(".md"))) {
+      const slug = f.replace(/\.md$/, "");
+      const subSlug = `${skillSlugBase}/script-${slug}`;
+      const raw = fs.readFileSync(
+        path.join(skillsDir, dir, "scripts", f),
+        "utf8",
+      );
+      const h1Match = raw.match(/^#\s+(.+)$/m);
+      const title = h1Match ? h1Match[1] : slug;
       fs.writeFileSync(
-        path.join(outputDir, `${dir}--${ref.name}.mdx`),
-        refMdx,
+        path.join(outputDir, `${dir}--script-${slug}.mdx`),
+        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
+      );
+    }
+
+    for (const f of assetFiles.filter((a) => a.endsWith(".md"))) {
+      const slug = f.replace(/\.md$/, "");
+      const subSlug = `${skillSlugBase}/asset-${slug}`;
+      const raw = fs.readFileSync(
+        path.join(skillsDir, dir, "assets", f),
+        "utf8",
+      );
+      const h1Match = raw.match(/^#\s+(.+)$/m);
+      const title = h1Match ? h1Match[1] : slug;
+      fs.writeFileSync(
+        path.join(outputDir, `${dir}--asset-${slug}.mdx`),
+        `---\ntitle: "${escapeTitle(title)}"\nslug: "${subSlug}"\nunlisted: true\ngenerated: true\n---\n\n${escapeForMdx(raw.trim())}\n`,
       );
     }
   }
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const list = items
-    .map((skill) => {
-      const shortDesc =
-        skill.description.length > 100
-          ? skill.description.substring(0, 100) + "..."
-          : skill.description;
-      const refCount =
-        skill.references.length > 0
-          ? ` (${skill.references.length} refs)`
-          : "";
-      return `- [\`${skill.name}\`](./${skill.dir}/)${refCount} — ${shortDesc}`;
-    })
-    .join("\n");
-
-  const index = `---
-title: "Skills"
-description: "Claude Code skills reference."
-sidebar_position: 902
----
-
-Skills reference.
-
-## Available Skills (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  writeCategoryMeta(outputDir, "Skills", 902, "Skill packages");
   return items;
 }
 
@@ -418,6 +486,7 @@ function generateAgentsDocs(config: ClaudeResourcesConfig): AgentItem[] {
 title: "${escapeTitle(name)}"
 description: "${escapeTitle(description)}"
 sidebar_label: "${escapeTitle(name)}"
+generated: true
 ---
 
 ${modelBadge}
@@ -428,26 +497,7 @@ ${escapeForMdx(parsed.content.trim())}
 
   items.sort((a, b) => a.name.localeCompare(b.name));
 
-  const list = items
-    .map((agent) => {
-      const modelInfo = agent.model ? ` (${agent.model})` : "";
-      return `- [\`${agent.name}\`](./${agent.file}/)${modelInfo} — ${agent.description}`;
-    })
-    .join("\n");
-
-  const index = `---
-title: "Agents"
-description: "Claude Code subagents reference."
-sidebar_position: 903
----
-
-Subagents reference.
-
-## Available Agents (${items.length})
-
-${list}
-`;
-  fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
+  writeCategoryMeta(outputDir, "Agents", 903, "Custom subagents");
   return items;
 }
 
@@ -455,38 +505,23 @@ ${list}
 // Main
 // ---------------------------------------------------------------------------
 
-function generateOverviewIndex(
-  config: ClaudeResourcesConfig,
-  counts: { claudemd: number; commands: number; skills: number; agents: number },
-) {
+function generateOverviewIndex(config: ClaudeResourcesConfig) {
   const outputDir = path.join(config.docsDir, "claude");
   cleanDir(outputDir);
   ensureDir(outputDir);
-
-  const sections = [
-    counts.claudemd > 0 &&
-      `- **[CLAUDE.md](../claude-md/)** (${counts.claudemd}) — Project-specific instructions`,
-    counts.commands > 0 &&
-      `- **[Commands](../claude-commands/)** (${counts.commands}) — Custom slash commands`,
-    counts.skills > 0 &&
-      `- **[Skills](../claude-skills/)** (${counts.skills}) — Skill packages`,
-    counts.agents > 0 &&
-      `- **[Agents](../claude-agents/)** (${counts.agents}) — Custom subagents`,
-  ]
-    .filter(Boolean)
-    .join("\n");
 
   const index = `---
 title: "Claude"
 description: "Claude Code configuration reference."
 sidebar_position: 899
+generated: true
 ---
 
 Claude Code configuration reference.
 
-## Contents
+## Resources
 
-${sections}
+<CategoryTreeNav category="claude" />
 `;
   fs.writeFileSync(path.join(outputDir, "index.mdx"), index);
 }
@@ -497,14 +532,12 @@ export function generateClaudeResourcesDocs(config: ClaudeResourcesConfig) {
   const skills = generateSkillsDocs(config);
   const agents = generateAgentsDocs(config);
 
-  const counts = {
+  generateOverviewIndex(config);
+
+  return {
     claudemd: claudemds.length,
     commands: commands.length,
     skills: skills.length,
     agents: agents.length,
   };
-
-  generateOverviewIndex(config, counts);
-
-  return counts;
 }

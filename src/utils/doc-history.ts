@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import type { DocHistoryEntry, DocHistoryData } from "@/types/doc-history";
+import { collectMdFiles } from "./content-files";
 
 /** Shared options to suppress git stderr noise */
 const QUIET: { encoding: "utf-8"; stdio: ["pipe", "pipe", "pipe"] } = {
@@ -170,49 +170,11 @@ export function getDocHistory(
 }
 
 /**
- * Compute a route slug from a relative file path.
- * Strips file extension and trailing /index to match zudo-doc routing.
- */
-function filePathToSlug(relativePath: string): string {
-  return relativePath
-    .replace(/\.mdx?$/, "")
-    .replace(/\/index$/, "");
-}
-
-/**
  * Collect all MDX/md files in a content directory.
- * Returns array of { filePath, slug } pairs.
+ * Delegates to the shared collectMdFiles utility from content-files.ts.
  */
 export function collectContentFiles(
   contentDir: string,
 ): Array<{ filePath: string; slug: string }> {
-  const results: Array<{ filePath: string; slug: string }> = [];
-  walkDir(contentDir, contentDir, results);
-  return results;
-}
-
-function walkDir(
-  baseDir: string,
-  currentDir: string,
-  results: Array<{ filePath: string; slug: string }>,
-): void {
-  let entries: fs.Dirent[];
-  try {
-    entries = fs.readdirSync(currentDir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-
-  for (const entry of entries) {
-    const fullPath = path.join(currentDir, entry.name);
-    if (entry.isDirectory()) {
-      walkDir(baseDir, fullPath, results);
-    } else if (/\.mdx?$/.test(entry.name) && !entry.name.startsWith("_")) {
-      const relativePath = path.relative(baseDir, fullPath);
-      results.push({
-        filePath: fullPath,
-        slug: filePathToSlug(relativePath),
-      });
-    }
-  }
+  return collectMdFiles(contentDir);
 }

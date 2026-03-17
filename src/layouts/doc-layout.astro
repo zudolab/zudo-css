@@ -8,13 +8,23 @@ import { DocHistory } from "@/components/doc-history";
 import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
 import CodeBlockEnhancer from "@/components/code-block-enhancer.astro";
 import TabsInit from "@/components/tabs-init.astro";
+import MermaidInit from "@/components/mermaid-init.astro";
 import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
 import { ClientRouter } from "astro:transitions";
 import { settings } from "@/config/settings";
 import type { Heading } from "@/types/heading";
 import { getNavSectionForSlug } from "@/utils/nav-scope";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
-import { withBase } from "@/utils/base";
+import { withBase, docsUrl } from "@/utils/base";
+import type { VersionConfig } from "@/config/settings-types";
+import VersionSwitcher from "@/components/version-switcher.astro";
+import VersionBanner from "@/components/version-banner.astro";
+import { getVersionAvailability } from "@/utils/version-availability";
+import Footer from "@/components/footer.astro";
+import ColorTweakPanel from "@/components/color-tweak-panel";
+import AiChatModal from "@/components/ai-chat-modal";
+import MockInit from "@/components/mock-init";
+import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
 interface Props {
   title: string;
@@ -23,20 +33,36 @@ interface Props {
   currentSlug?: string;
   headings?: Heading[];
   unlisted?: boolean;
+  currentVersion?: string;
+  versionBanner?: VersionConfig["banner"];
+  hideSidebar?: boolean;
+  hideToc?: boolean;
 }
 
-const { title, description, lang = defaultLocale, currentSlug, headings = [], unlisted = false } = Astro.props;
-const fullTitle = `${title} | ${settings.siteName}`;
+const {
+  title,
+  description,
+  lang = defaultLocale,
+  currentSlug,
+  headings = [],
+  unlisted = false,
+  currentVersion,
+  versionBanner,
+  hideSidebar = false,
+  hideToc = false,
+} = Astro.props;
+const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
+const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
+const fullTitle = title === settings.siteName ? title : `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
 const currentPath = Astro.url.pathname;
 const htmlColorAttrs = settings.colorMode
   ? { "data-theme": settings.colorMode.defaultMode, style: `color-scheme: ${settings.colorMode.defaultMode}` }
   : {};
-
 const contentAnim = {
   old: {
     name: "contentFadeOut",
-    duration: 150,
+    duration: 0,
     easing: "ease-in",
     fillMode: "both",
   },
@@ -64,33 +90,83 @@ const contentTransition = {
     <meta property="og:title" content={fullTitle} />
     {description && <meta property="og:description" content={description} />}
     <ColorSchemeProvider />
+    {settings.colorTweakPanel && (
+      <script is:inline define:vars={{ tweakSemanticDefaults: SEMANTIC_DEFAULTS, tweakSemanticCss: SEMANTIC_CSS_NAMES }}>
+        (function () {
+          function applyTweakState() {
+            var raw = localStorage.getItem("zudo-doc-tweak-state");
+            if (!raw) return;
+            try {
+              var s = JSON.parse(raw);
+              if (!s.palette || s.palette.length !== 16 || s.background === undefined) return;
+              var root = document.documentElement;
+              for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
+              root.style.setProperty("--zd-bg", s.palette[s.background]);
+              root.style.setProperty("--zd-fg", s.palette[s.foreground]);
+              root.style.setProperty("--zd-cursor", s.palette[s.cursor]);
+              root.style.setProperty("--zd-sel-bg", s.palette[s.selectionBg]);
+              root.style.setProperty("--zd-sel-fg", s.palette[s.selectionFg]);
+              for (var key in tweakSemanticCss) {
+                var m = s.semanticMappings && s.semanticMappings[key];
+                if (m === undefined) m = tweakSemanticDefaults[key];
+                var val = m === "bg" ? s.palette[s.background] : m === "fg" ? s.palette[s.foreground] : s.palette[m];
+                root.style.setProperty(tweakSemanticCss[key], val);
+              }
+            } catch (e) { localStorage.removeItem("zudo-doc-tweak-state"); }
+          }
+          applyTweakState();
+          document.addEventListener("astro:after-swap", applyTweakState);
+        })();
+      </script>
+    )}
     {settings.math && (
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" crossorigin="anonymous" />
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" integrity="sha384-/L6i+LN3dyoaK2jYG5ZLh5u13cjdsPDcFOSNJeFBFa/KgVXR5kOfTdiN3ft1uMAq" crossorigin="anonymous" />
+    )}
+    {settings.llmsTxt && (
+      <Fragment>
+        <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms.txt" : `/${lang}/llms.txt`)} title="llms.txt" />
+        <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms-full.txt" : `/${lang}/llms-full.txt`)} title="llms-full.txt" />
+      </Fragment>
     )}
     <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
-    <Header lang={lang} currentPath={currentPath}>
+    <Header lang={lang} currentPath={currentPath} currentVersion={currentVersion} currentSlug={currentSlug} versionAvailability={versionAvailability}>
       <Sidebar slot="sidebar" currentSlug={currentSlug} lang={lang} navSection={navSection} />
     </Header>
 
     <div class="flex min-h-[calc(100vh-3.5rem)]">
-      <!-- Desktop sidebar -->
-      <aside
-        id="desktop-sidebar"
-        transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
-        class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"
-      >
-        <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} />
-      </aside>
+      {/* Desktop sidebar */}
+      {!hideSidebar && (
+        <aside
+          id="desktop-sidebar"
+          transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
+          class="hidden lg:block w-[clamp(14rem,20vw,22rem)] shrink-0 border-r border-muted sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto"
+        >
+          <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} />
+        </aside>
+      )}
 
-      <!-- Content + TOC wrapper -->
+      {/* Content + TOC wrapper */}
       <div class="flex-1 min-w-0 flex justify-center">
-        <div class="flex w-full max-w-[clamp(50rem,75vw,90rem)] gap-[clamp(1.5rem,3vw,4rem)]">
-          <!-- Main content -->
+        <div class:list={[
+          "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
+          hideSidebar ? "max-w-[80rem]" : "max-w-[clamp(50rem,75vw,90rem)]",
+        ]}>
+          {/* Main content */}
           <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
-            <slot name="breadcrumb" />
-            <MobileToc headings={headings} title={t("toc.title", lang)} client:load />
+            {settings.versions && currentSlug ? (
+              <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
+                <slot name="breadcrumb" />
+                <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
+              </div>
+            ) : (
+              <slot name="breadcrumb" />
+            )}
+            {versionBanner && latestUrl && (
+              <VersionBanner type={versionBanner} latestUrl={latestUrl} lang={lang} />
+            )}
+            {!hideToc && <MobileToc headings={headings} title={t("toc.title", lang)} client:load />}
             <article class="zd-content max-w-none">
               <slot />
             </article>
@@ -99,13 +175,18 @@ const contentTransition = {
             )}
           </main>
 
-          <!-- Table of contents -->
-          <Toc headings={headings} client:load />
+          {/* Table of contents */}
+          {!hideToc && <Toc headings={headings} client:load />}
         </div>
       </div>
     </div>
+    {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
+    {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
+    <Footer />
     <CodeBlockEnhancer />
     <TabsInit />
+    {settings.mermaid && <MermaidInit />}
+    {import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="react" />}
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;
