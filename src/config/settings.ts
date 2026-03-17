@@ -2,11 +2,17 @@ export type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
+  FooterConfig,
+  HtmlPreviewConfig,
 } from "./settings-types";
 import type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
+  FooterConfig,
+  HtmlPreviewConfig,
 } from "./settings-types";
 
 export const settings = {
@@ -24,15 +30,22 @@ export const settings = {
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   } satisfies Record<string, LocaleConfig>,
+  trailingSlash: false,
   mermaid: false,
+  math: false,
   noindex: false as boolean,
   editUrl: false as string | false,
   siteUrl: "" as string,
   sitemap: true,
   docMetainfo: true,
   docTags: false,
-  math: false,
   docHistory: true,
+  aiAssistant: false,
+  llmsTxt: false,
+  colorTweakPanel: false,
+  versions: false as VersionConfig[] | false,
+  footer: false as FooterConfig | false,
+  htmlPreview: false as HtmlPreviewConfig | false,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
     { label: "Overview", path: "/docs/overview", categoryMatch: "overview" },

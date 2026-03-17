@@ -54,6 +54,34 @@ export function generateCssCustomProperties(): string {
   return lines.join("\n");
 }
 
+/** Default palette-index mappings for semantic colors (used by color tweak panel) */
+export const SEMANTIC_DEFAULTS: Record<string, number | "bg" | "fg"> = {
+  surface: 0,
+  muted: 8,
+  accent: 6,
+  accentHover: 14,
+  codeBg: "fg",
+  codeFg: "bg",
+  success: 2,
+  danger: 1,
+  warning: 3,
+  info: 4,
+};
+
+/** Maps semantic names to CSS custom property names (used by color tweak panel) */
+export const SEMANTIC_CSS_NAMES: Record<string, string> = {
+  surface: "--zd-surface",
+  muted: "--zd-muted",
+  accent: "--zd-accent",
+  accentHover: "--zd-accent-hover",
+  codeBg: "--zd-code-bg",
+  codeFg: "--zd-code-fg",
+  success: "--zd-success",
+  danger: "--zd-danger",
+  warning: "--zd-warning",
+  info: "--zd-info",
+};
+
 export function generateLightDarkCssProperties(): string {
   if (!settings.colorMode) {
     throw new Error("colorMode is not configured");

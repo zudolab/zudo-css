@@ -1,3 +1,6 @@
+/** A color reference: palette index, special alias, or CSS color string. */
+export type ColorRef = number | string;
+
 export interface ColorScheme {
   background: string;
   foreground: string;

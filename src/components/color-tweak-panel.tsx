@@ -225,7 +225,8 @@ function initFromSchemeData(scheme: ColorScheme): TweakState {
       semanticMappings[key] = schemeVal;
     } else {
       // String value — find in palette or nearest match
-      semanticMappings[key] = colorRefToIndex(schemeVal, scheme.palette, defaultVal);
+      const fb = typeof defaultVal === "number" ? defaultVal : 0;
+      semanticMappings[key] = colorRefToIndex(schemeVal, scheme.palette, fb);
     }
   }
 
