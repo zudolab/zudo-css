@@ -344,7 +344,7 @@ These are **exceptions**, not the default. If you are working in React, Vue, Sve
 
 ### Cons
 
-- **Verbose class lists.** Long utility strings in JSX can look cluttered. Use `clsx`/`cn` helpers or extract into variables for readability.
+- **Verbose class lists.** Long utility strings in JSX can look cluttered. However, from 2026 onward, AI writes the code. Helpers like `clsx`/`cn` exist for human readability — there is no need to add them as dependencies in new projects. If an existing project already uses them, keep them, but do not introduce them for new work.
 - **Learning curve.** Developers unfamiliar with the utility framework need to learn its vocabulary.
 - **Requires a component framework.** Not applicable in plain HTML/CSS environments (see exceptions above).
 
@@ -375,7 +375,7 @@ When generating code for a component-based project with Tailwind:
 
 - **[Tailwind CSS](https://tailwindcss.com/)** — The most popular utility-first framework. Uses a build step to generate only the CSS you use.
 - **[UnoCSS](https://unocss.dev/)** — An on-demand, fast alternative with a plugin-based architecture. Compatible with Tailwind presets.
-- **[clsx](https://github.com/lukeed/clsx)** / **[tailwind-merge](https://github.com/dcastil/tailwind-merge)** — Helpers for composing conditional utility classes in components.
+- **[clsx](https://github.com/lukeed/clsx)** / **[tailwind-merge](https://github.com/dcastil/tailwind-merge)** — Helpers for composing conditional utility classes. Useful in existing projects but unnecessary as a new dependency — AI tooling handles verbose class strings without readability helpers.
 
 ## References
 
