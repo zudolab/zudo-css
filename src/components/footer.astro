@@ -14,18 +14,18 @@ const { links, copyright } = footer;
   >
     {
       links.length > 0 && (
-        <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">
+        <div class="text-center">
           {links.map((column) => (
-            <div>
+            <div class="mb-vsp-md">
               <p class="text-small font-semibold text-fg mb-vsp-xs">
                 {column.title}
               </p>
-              <ul class="list-none p-0">
+              <ul class="list-none p-0 flex flex-wrap justify-center gap-x-hsp-lg gap-y-vsp-2xs lg:grid lg:grid-cols-3 lg:gap-x-hsp-xl">
                 {column.items.map((item) => (
-                  <li class="mb-vsp-2xs">
+                  <li>
                     <a
                       href={resolveHref(item.href)}
-                      class="text-caption text-muted hover:text-accent hover:underline"
+                      class="text-caption text-fg hover:text-accent hover:underline"
                       {...(isExternal(item.href)
                         ? { target: "_blank", rel: "noopener noreferrer" }
                         : {})}
