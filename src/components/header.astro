@@ -1,5 +1,6 @@
 ---
 import SidebarToggle from "@/components/sidebar-toggle";
+import HeaderNav from "@/components/header-nav";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageSwitcher from "@/components/language-switcher.astro";
 import VersionSwitcher from "@/components/version-switcher.astro";
@@ -29,6 +30,17 @@ const pathWithoutBase = stripBase(currentPath);
 const pathForMatch = isNonDefaultLocale
   ? pathWithoutBase.replace(new RegExp(`^/${lang}`), "")
   : pathWithoutBase;
+
+// Prepare nav items for the React overflow-aware component
+const activeNavPath = settings.headerNav
+  .filter((item) => pathForMatch.startsWith(item.path))
+  .sort((a, b) => b.path.length - a.path.length)[0]?.path;
+
+const navItems = settings.headerNav.map((item) => ({
+  label: item.labelKey ? t(item.labelKey, lang) : item.label,
+  href: withBase(isNonDefaultLocale ? `/${lang}${item.path}` : item.path),
+  isActive: item.path === activeNavPath,
+}));
 ---
 
 <header
@@ -56,40 +68,7 @@ const pathForMatch = isNonDefaultLocale
     {settings.siteName}
   </a>
 
-  <nav
-    aria-label="Main"
-    class="ml-hsp-xl hidden items-center gap-x-hsp-2xs whitespace-nowrap lg:flex"
-  >
-    {
-      (() => {
-        // Longest-prefix match: only highlight the most specific nav item
-        const activeNavPath = settings.headerNav
-          .filter((item) => pathForMatch.startsWith(item.path))
-          .sort((a, b) => b.path.length - a.path.length)[0]?.path;
-
-        return settings.headerNav.map((item) => {
-          const isActive = item.path === activeNavPath;
-          const href = withBase(
-            isNonDefaultLocale ? `/${lang}${item.path}` : item.path,
-          );
-          return (
-            <a
-              href={href}
-              aria-current={isActive ? "page" : undefined}
-              class:list={[
-                "px-hsp-md py-vsp-2xs text-small font-medium transition-colors",
-                isActive
-                  ? "bg-fg text-bg"
-                  : "text-muted hover:underline focus:underline",
-              ]}
-            >
-              {item.labelKey ? t(item.labelKey, lang) : item.label}
-            </a>
-          );
-        });
-      })()
-    }
-  </nav>
+  <HeaderNav items={navItems} client:load />
 
   <div class="ml-auto flex items-center gap-x-hsp-md">
     {
