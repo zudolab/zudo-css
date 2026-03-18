@@ -89,7 +89,7 @@ jobs:
           name: dist-out
           path: dist/
       - name: Check links
-        run: pnpm run check:links
+        run: node scripts/check-links.js
 
   # ─── Preview Deploy ───────────────────────────────────────────────────
 
