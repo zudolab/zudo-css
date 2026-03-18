@@ -1,0 +1,54 @@
+---
+title: css-wisdom Skill
+sidebar_position: 3
+---
+
+The `css-wisdom` skill is a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that indexes all CSS best practices articles in this documentation site. It enables AI coding agents to quickly look up relevant CSS patterns and techniques during development.
+
+## What It Does
+
+The skill maintains a topic index that maps CSS concepts to their documentation articles. When invoked, it reads the relevant article and applies the recommended patterns.
+
+The topic index is generated from all MDX articles under `src/content/docs/` (excluding `overview/` and `inbox/` categories), combined with curated descriptions from `.claude/skills/css-wisdom/descriptions.json`.
+
+## Installation
+
+The skill must be symlinked to your global Claude Code skills directory:
+
+```bash
+pnpm run setup:symlink
+```
+
+This runs the topic index generator and creates a symlink at `~/.claude/skills/css-wisdom` pointing to this repo's `.claude/skills/css-wisdom/`.
+
+## Usage
+
+In any Claude Code session, invoke the skill with a topic keyword:
+
+```
+/css-wisdom flexbox
+/css-wisdom dark mode
+/css-wisdom centering
+```
+
+The skill will find the relevant article(s) from the topic index, read them, and apply the CSS patterns when writing code.
+
+## Regenerating the Topic Index
+
+When articles are added or removed, regenerate the topic index:
+
+```bash
+pnpm run generate:css-wisdom
+```
+
+The generator script (`scripts/generate-css-wisdom.js`) reads all MDX files under `src/content/docs/`, looks up their descriptions in `descriptions.json`, and produces the `SKILL.md` topic index.
+
+When adding a new article, also add its description to `.claude/skills/css-wisdom/descriptions.json` before running the generator.
+
+## Skill Structure
+
+```
+.claude/skills/css-wisdom/
+  SKILL.md              # Generated topic index (do not edit manually)
+  descriptions.json     # Curated article descriptions (edit this)
+```

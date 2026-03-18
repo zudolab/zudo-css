@@ -80,6 +80,7 @@ export const settings = {
     { label: "Color", path: "/docs/color", categoryMatch: "color" },
     { label: "Responsive", path: "/docs/responsive", categoryMatch: "responsive" },
     { label: "Interactive", path: "/docs/interactive", categoryMatch: "interactive" },
+    { label: "Overview", path: "/docs/overview", categoryMatch: "overview" },
     { label: "Claude", path: "/docs/claude", categoryMatch: "claude" },
   ] as HeaderNavItem[],
 };
