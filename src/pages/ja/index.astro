@@ -8,7 +8,6 @@ import SiteTreeNav from "@/components/site-tree-nav.tsx";
 
 const ctaNav = settings.headerNav[0] ?? null;
 const overview = ctaNav ? withBase(`/ja${ctaNav.path}`) : null;
-const logoUrl = withBase("/img/logo.svg");
 const categoryOrder = settings.headerNav
   .map((n) => n.categoryMatch)
   .filter((v): v is string => !!v);
@@ -21,21 +20,15 @@ const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 ---
 
 <DocLayout title={settings.siteName} lang="ja" hideSidebar hideToc>
-  <!-- Hero: logo left, title+desc+links right, block centered -->
+  <!-- Hero: centered single column -->
   <div class="flex justify-center mb-vsp-xl">
-    <div class="flex items-center gap-hsp-xl">
-      <div
-        class="w-[80%] aspect-square lg:h-[10.5rem] lg:w-[10.5rem] bg-fg shrink-0"
-        style={`-webkit-mask: url(${logoUrl}) center/contain no-repeat; mask: url(${logoUrl}) center/contain no-repeat;`}
-        aria-hidden="true"
-      >
-      </div>
+    <div class="flex flex-col items-center text-center gap-hsp-md">
       <div>
         <h1 class="text-heading font-futura mb-vsp-2xs">{settings.siteName}</h1>
         <p class="text-muted text-small mb-vsp-sm">
           {settings.siteDescription}
         </p>
-        <div class="flex items-center gap-hsp-md text-small">
+        <div class="flex items-center justify-center gap-hsp-md text-small">
           {
             overview && (
               <>
