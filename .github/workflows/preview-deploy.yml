@@ -60,7 +60,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DEPLOY_BRANCH: ${{ steps.branch.outputs.name }}
         run: |
-          pnpm dlx wrangler@4 pages deploy deploy \
+          npx wrangler@4 pages deploy deploy \
             --project-name=zudo-css \
             --branch="$DEPLOY_BRANCH" \
             --commit-hash="${GITHUB_SHA}" \
