@@ -45,6 +45,7 @@ const shikiConfig = settings.colorMode
 
 export default defineConfig({
   output: "static",
+  trailingSlash: settings.trailingSlash ? "always" : "never",
   base: settings.base,
   integrations: [
     mdx(),
@@ -65,13 +66,22 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        // mermaid is not used in zcss — stub the dynamic import to avoid build failure
+        external: settings.mermaid ? [] : ["mermaid"],
+      },
+    },
   },
   markdown: {
     shikiConfig,
-    remarkPlugins: [remarkDirective, remarkAdmonitions],
+    remarkPlugins: [
+      remarkDirective, // Must run before remarkAdmonitions
+      remarkAdmonitions,
+    ],
     rehypePlugins: [
       rehypeCodeTitle,
-      rehypeHeadingLinks,
+      rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
       rehypeStripMdExtension,
     ],
   },

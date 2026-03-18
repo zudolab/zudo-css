@@ -1,17 +1,19 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
-import { INDENT, BASE_PAD, connectorLeft, ConnectorLines } from "./tree-nav-shared";
+import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
 
-function CategoryLinkIcon({ className }: { className?: string }) {
+function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      viewBox="0 0 103.395 107.049"
+      className={`h-[0.625rem] w-[0.625rem] shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} ${className ?? ""}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
       aria-hidden="true"
-      className={`w-[14px] shrink-0 ${className ?? ""}`}
     >
-      <path d="M5.746 5.74 0 11.49l20.987 20.96C34.126 45.572 41.963 53.45 41.948 53.523c-.012.062-9.456 9.544-20.986 21.07L0 95.55l5.714 5.715c3.142 3.143 5.748 5.715 5.79 5.715s2.63-2.563 5.75-5.696l17.939-18.001c21.867-21.94 29.443-29.599 29.443-29.768 0-.114-.665-.804-5.084-5.275C51.872 40.47 11.71.125 11.565.036 11.525.01 8.906 2.578 5.746 5.74m38.345-.066c-3.132 3.13-5.696 5.71-5.696 5.732-.001.022 2.16 2.185 4.8 4.807 2.641 2.623 8.382 8.338 12.758 12.702 15.38 15.337 23.763 23.641 24.314 24.086.19.153.346.336.346.405 0 .07-1.738 1.847-3.887 3.976a17515 17515 0 0 0-20.35 20.264 19555 19555 0 0 1-17.223 17.158c-.416.409-.757.77-.757.8 0 .083 11.415 11.485 11.457 11.445.235-.22 53.542-53.528 53.542-53.543C103.395 53.472 49.891.02 49.837 0c-.028-.01-2.613 2.543-5.746 5.674" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   );
 }
@@ -108,10 +110,19 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
+  const [filterPlaceholder, setFilterPlaceholder] = useState("Filter...");
+
+  // Detect OS to show appropriate keyboard shortcut in placeholder
+  useEffect(() => {
+    const platform = (navigator as { userAgentData?: { platform: string } }).userAgentData?.platform ?? navigator.platform;
+    const isMac = /mac/i.test(platform);
+    setFilterPlaceholder(isMac ? "Filter... (\u2318 + /)" : "Filter... (Ctrl + /)");
+  }, []);
 
   // Global shortcut: Cmd+/ (Mac) or Ctrl+/ to focus the filter input
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.isComposing) return;
       if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
         const el = filterRef.current;
         if (!el || el.offsetParent === null) return; // skip if hidden
@@ -149,7 +160,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
             href={item.href}
             className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
           >
-            <CategoryLinkIcon />
+            <CategoryLinkIcon className="w-[14px]" />
             {item.label}
           </a>
         ))}
@@ -171,7 +182,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           {backToMenuLabel ?? "Back to main menu"}
         </button>
       )}
-      <div className="px-hsp-sm py-vsp-xs border-b border-muted">
+      <div className="px-hsp-sm py-vsp-xs">
         <div className="flex items-center gap-hsp-xs bg-surface rounded px-hsp-sm py-vsp-2xs">
           <svg className="h-[14px] w-[14px] text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -179,8 +190,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
           <input
             ref={filterRef}
             type="text"
-            placeholder="Filter..."
-            aria-label="Filter sidebar"
+            placeholder={filterPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent text-small outline-none w-full text-fg placeholder:text-muted"
@@ -322,52 +332,44 @@ function CategoryNode({
       )}
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
-        <div
-          className={`flex w-full items-center justify-between text-small font-semibold py-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
-          style={{ paddingLeft }}
-        >
-          {node.href ? (
+        {node.href ? (
+          <div
+            className={`flex w-full items-center text-small font-semibold pt-[0.15rem] ${isActive ? "bg-fg text-bg" : "text-fg"}`}
+          >
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
               className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline ${isActive ? "text-bg" : "text-fg"}`}
+              style={{ paddingLeft }}
             >
-              {depth === 0 && <CategoryLinkIcon className={isActive ? "text-bg" : ""} />}
+              {depth === 0 && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
               {node.label}
             </a>
-          ) : (
             <button
               type="button"
               onClick={toggle}
+              className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
               aria-expanded={isExpanded}
-              className="flex-1 py-vsp-xs text-left hover:underline focus:underline"
+              aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
             >
-              {node.label}
+              <ToggleChevron isExpanded={isExpanded} className={isActive ? "text-bg" : "text-muted"} />
             </button>
-          )}
+          </div>
+        ) : (
           <button
             type="button"
             onClick={toggle}
-            className={`aspect-square flex items-center justify-center w-[1.5rem] border-y border-l hover:underline focus:underline ${isActive ? "border-bg/30" : "border-muted"}`}
+            className={`flex w-full items-center gap-hsp-md text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline`}
+            style={{ paddingLeft }}
             aria-expanded={isExpanded}
             aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-[0.625rem] w-[0.625rem] transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} ${isActive ? "text-bg" : "text-muted"}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
+              <ToggleChevron isExpanded={isExpanded} className="text-muted" />
+            </span>
+            {node.label}
           </button>
-        </div>
+        )}
       </div>
       {isExpanded && (
         <div>
@@ -407,10 +409,10 @@ function LeafNode({
           href={node.href}
           aria-current={isActive ? "page" : undefined}
           className={isRoot
-            ? `block py-[calc(var(--spacing-vsp-xs)+0.15rem)] text-small font-semibold ${
+            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
-            : `block py-vsp-2xs ${isLast ? "pb-vsp-xs" : ""} text-small ${
+            : `block py-vsp-2xs pr-[4px] ${isLast ? "pb-vsp-xs" : ""} text-small ${
                 isActive
                   ? "bg-fg font-medium text-bg"
                   : "text-muted hover:underline focus:underline"
@@ -418,6 +420,7 @@ function LeafNode({
           }
           style={{ paddingLeft }}
         >
+          {isRoot && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
           {node.label}
         </a>
       </div>

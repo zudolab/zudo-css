@@ -1,88 +1,87 @@
 ---
-import "@/styles/global.css";
-import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
-import Header from "@/components/header.astro";
-import Sidebar from "@/components/sidebar.astro";
-import { ClientRouter } from "astro:transitions";
-import PageLoadingOverlay from "@/components/page-loading-overlay.astro";
+import DocLayout from "@/layouts/doc-layout.astro";
 import { settings } from "@/config/settings";
 import { withBase } from "@/utils/base";
-import { buildNavTree } from "@/utils/docs";
+import { buildNavTree, groupSatelliteNodes, isNavVisible } from "@/utils/docs";
 import { loadLocaleDocs } from "@/utils/locale-docs";
 import SiteTreeNav from "@/components/site-tree-nav.tsx";
 
 const ctaNav = settings.headerNav[0] ?? null;
 const overview = ctaNav ? withBase(ctaNav.path) : null;
 const logoUrl = withBase("/img/logo.svg");
-const categoryOrder = settings.headerNav.map((n) => n.categoryMatch).filter((v): v is string => !!v);
+const categoryOrder = settings.headerNav
+  .map((n) => n.categoryMatch)
+  .filter((v): v is string => !!v);
 
 // Build full nav tree for site index
 const { allDocs, categoryMeta } = await loadLocaleDocs("en");
-const navDocs = allDocs.filter((doc) => !doc.data.unlisted);
+const navDocs = allDocs.filter(isNavVisible);
 const tree = buildNavTree(navDocs, "en", categoryMeta);
+const groupedTree = groupSatelliteNodes(tree, categoryOrder);
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{settings.siteName}</title>
-    <meta name="description" content={settings.siteDescription} />
-    {settings.noindex && <meta name="robots" content="noindex, nofollow" />}
-    <meta property="og:title" content={settings.siteName} />
-    <meta property="og:description" content={settings.siteDescription} />
-    <ColorSchemeProvider />
-    <ClientRouter />
-  </head>
-  <body class="min-h-screen antialiased">
-    <Header lang="en">
-      <Sidebar slot="sidebar" />
-    </Header>
-
-    <main class="mx-auto max-w-[80rem] px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl">
-      <!-- Hero: logo left, title+desc+links right, block centered -->
-      <div class="flex justify-center mb-vsp-xl">
-        <div class="flex items-center gap-hsp-xl">
-          <div
-            class="h-[5rem] w-[5rem] lg:h-[7rem] lg:w-[7rem] bg-fg shrink-0"
-            style={`-webkit-mask: url(${logoUrl}) center/contain no-repeat; mask: url(${logoUrl}) center/contain no-repeat;`}
-            role="img"
-            aria-hidden="true"
-          />
-          <div>
-            <h1 class="text-heading font-bold mb-vsp-2xs">{settings.siteName}</h1>
-            <p class="text-muted text-small mb-vsp-sm">{settings.siteDescription}</p>
-            <div class="flex items-center gap-hsp-md text-small">
-              {overview && (
-                <a href={overview} class="text-fg underline hover:text-accent">Overview</a>
-              )}
-              <span class="text-muted">/</span>
-              <a
-                href="https://github.com/zudolab/zudo-css"
-                class="text-fg underline hover:text-accent"
-                target="_blank"
-                rel="noopener noreferrer"
-              >GitHub</a>
-              <span class="text-muted">/</span>
-              <a
-                href="https://x.com/Takazudo"
-                class="text-fg underline hover:text-accent"
-                target="_blank"
-                rel="noopener noreferrer"
-              >@Takazudo</a>
-            </div>
-          </div>
+<DocLayout title={settings.siteName} lang="en" hideSidebar hideToc>
+  <!-- Hero: logo left, title+desc+links right, block centered -->
+  <div class="flex justify-center mb-vsp-xl">
+    <div
+      class="flex flex-col items-center text-center gap-hsp-md lg:flex-row lg:text-left lg:gap-hsp-xl"
+    >
+      <div
+        class="w-[80%] aspect-square lg:h-[10.5rem] lg:w-[10.5rem] bg-fg shrink-0"
+        style={`-webkit-mask: url(${logoUrl}) center/contain no-repeat; mask: url(${logoUrl}) center/contain no-repeat;`}
+        aria-hidden="true"
+      >
+      </div>
+      <div>
+        <h1 class="text-heading font-futura mb-vsp-2xs">{settings.siteName}</h1>
+        <p class="text-muted text-small mb-vsp-sm">
+          {settings.siteDescription}
+        </p>
+        <div
+          class="flex items-center justify-center lg:justify-start gap-hsp-md text-small"
+        >
+          {
+            overview && (
+              <>
+                <a href={overview} class="text-fg underline hover:text-accent">
+                  Overview
+                </a>
+                <span class="text-muted">/</span>
+              </>
+            )
+          }
+          <a
+            href="https://github.com/zudolab/zudo-doc"
+            class="inline-flex items-center gap-[0.3em] text-fg underline hover:text-accent"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><svg
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              class="w-[1em] h-[1em] shrink-0 translate-y-[1px]"
+              ><path
+                fill="currentColor"
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+              ></path></svg
+            >GitHub</a
+          >
+          <span class="text-muted">/</span>
+          <a
+            href="https://x.com/Takazudo"
+            class="text-fg underline hover:text-accent"
+            target="_blank"
+            rel="noopener noreferrer">@Takazudo</a
+          >
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Sitemap grid -->
-      <SiteTreeNav
-        tree={tree}
-        categoryOrder={categoryOrder}
-        categoryIgnore={["inbox", "overview"]}
-        client:idle
-      />
-    </main>
-    <PageLoadingOverlay />
-  </body>
-</html>
+  <!-- Sitemap grid -->
+  <SiteTreeNav
+    tree={groupedTree}
+    categoryOrder={categoryOrder}
+    categoryIgnore={["inbox"]}
+    client:idle
+  />
+</DocLayout>

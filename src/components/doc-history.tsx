@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { diffLines } from "diff";
 import type { DocHistoryData, DocHistoryEntry } from "@/types/doc-history";
 
@@ -488,9 +488,33 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
   const isOpen = view !== "closed";
   const hasDiff = view === "diff" && diffSelection;
 
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  // Sync dialog open/close with React state
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (isOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!isOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [isOpen]);
+
+  // Close React state when dialog is closed natively (Escape key)
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    function onClose() {
+      if (isOpen) handleClose();
+    }
+    dialog.addEventListener("close", onClose);
+    return () => dialog.removeEventListener("close", onClose);
+  }, [isOpen, handleClose]);
+
   return (
     <>
-      {/* History button — placed inline at the end of the article */}
+      {/* History button */}
       {!isOpen && (
         <div className="flex justify-end mt-vsp-xl">
           <button
@@ -505,25 +529,12 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
         </div>
       )}
 
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-bg/30"
-          onClick={handleClose}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Side panel — 80vw wide */}
-      <div
-        role="dialog"
-        aria-modal={isOpen}
+      {/* Full-screen dialog — renders in top layer, above all stacking contexts */}
+      <dialog
+        ref={dialogRef}
         aria-label="Document revision history"
-        className={
-          isOpen
-            ? "doc-history-panel fixed top-0 right-0 z-50 h-full w-[min(95vw,100vw)] bg-bg border-l border-muted transition-transform duration-200 translate-x-0"
-            : "doc-history-panel fixed top-0 right-0 z-50 h-full w-[min(95vw,100vw)] bg-bg border-l border-muted transition-transform duration-200 translate-x-full"
-        }
+        className="doc-history-panel fixed inset-0 m-0 h-full w-full max-h-full max-w-full bg-bg border-none p-0 backdrop:bg-bg/30"
+        style={{ color: "var(--color-fg)" }}
       >
         {/* Panel header */}
         <div className="flex items-center justify-between px-hsp-lg py-vsp-xs border-b border-muted">
@@ -580,7 +591,7 @@ export function DocHistory({ slug, locale, basePath = "/" }: DocHistoryProps) {
             </div>
           )}
         </div>
-      </div>
+      </dialog>
     </>
   );
 }

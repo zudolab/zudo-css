@@ -1,1 +1,1 @@
-export { default } from "../tailwind-preview/tailwind-preview";
+export { default } from "../tailwind-preview";

@@ -1,1 +1,1 @@
-export { default } from "../css-preview/css-preview";
+export { default } from "../css-preview";

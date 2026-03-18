@@ -61,6 +61,15 @@
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+  --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
+  --color-mermaid-text: var(--zd-mermaid-text);
+  --color-mermaid-line: var(--zd-mermaid-line);
+  --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
+  --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
+  --color-chat-user-bg: var(--zd-chat-user-bg);
+  --color-chat-user-text: var(--zd-chat-user-text);
+  --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
+  --color-chat-assistant-text: var(--zd-chat-assistant-text);
 
   /* ========================================
    * Spacing — hsp (horizontal) + vsp (vertical)
@@ -99,7 +108,14 @@
   --text-display: 3.75rem;       /* 60px — hero text */
 
   /* Font families */
-  --font-sans: system-ui, sans-serif;
+  --font-noto:
+    'Noto Sans', 'Noto Sans JP', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic Pro',
+    'Yu Gothic', Meiryo, sans-serif;
+  --font-futura:
+    Futura, Jost, 'Century Gothic', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', 'Noto Sans', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --font-sans: var(--font-noto);
   --font-mono: ui-monospace, monospace;
 
   /* Font weights (4 steps) */
@@ -140,6 +156,7 @@
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
+  font-family: var(--font-noto);
 }
 
 ::selection {
@@ -180,7 +197,7 @@ body {
 
 .zd-content :where(h2) {
   font-size: var(--text-subheading);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-normal);
   line-height: var(--leading-tight);
   margin-top: var(--spacing-vsp-2xl);
   margin-bottom: var(--spacing-vsp-xs);
@@ -191,7 +208,7 @@ body {
 
 .zd-content :where(h3) {
   font-size: var(--text-body);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-normal);
   line-height: var(--leading-snug);
   margin-top: var(--spacing-vsp-xl);
   margin-bottom: var(--spacing-vsp-xs);
@@ -202,7 +219,7 @@ body {
 
 .zd-content :where(h4) {
   font-size: var(--text-body);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-normal);
   line-height: var(--leading-snug);
   margin-top: var(--spacing-vsp-lg);
   margin-bottom: var(--spacing-vsp-xs);
@@ -213,7 +230,7 @@ body {
 
 .zd-content :where(h5, h6) {
   font-size: var(--text-small);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-normal);
   line-height: var(--leading-snug);
   margin-top: var(--spacing-vsp-md);
   margin-bottom: var(--spacing-vsp-2xs);
@@ -257,12 +274,12 @@ body {
 
 /* ── Links ── */
 
-.zd-content :where(a:not(.block)) {
+.zd-content :where(a:not(.block):not([data-site-nav] *)) {
   color: var(--color-accent);
   text-decoration: underline;
 }
 
-.zd-content :where(a:not(.block):hover) {
+.zd-content :where(a:not(.block):not([data-site-nav] *):hover) {
   color: var(--color-accent-hover);
 }
 
@@ -322,7 +339,6 @@ body {
   font-family: var(--font-mono);
   background-color: var(--color-code-bg);
   color: var(--color-code-fg);
-  border: 1px solid var(--color-muted);
   border-radius: var(--radius-DEFAULT);
   padding: 2px var(--spacing-hsp-xs);
 }
@@ -355,16 +371,17 @@ body {
   margin-bottom: var(--spacing-vsp-md);
 }
 
-.zd-content :where(th) {
-  font-weight: var(--font-weight-semibold);
-  text-align: left;
-  padding: var(--spacing-vsp-xs) var(--spacing-hsp-md);
-  border-bottom: 2px solid var(--color-muted);
-}
-
+.zd-content :where(th),
 .zd-content :where(td) {
   padding: var(--spacing-vsp-xs) var(--spacing-hsp-md);
   border-bottom: 1px solid var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.zd-content :where(th) {
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  border-bottom-width: 2px;
 }
 
 /* ── Horizontal rules ── */
@@ -507,6 +524,22 @@ pre.astro-code.word-wrap code {
   );
 }
 
+/* HtmlPreview component — Shiki code blocks
+ * Token colors inherit from the global [data-theme] .shiki rule above.
+ * These rules only adjust layout and background for the preview context. */
+.zd-html-preview-code pre.shiki {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.zd-html-preview-code pre.shiki code {
+  font-family: var(--font-mono);
+  white-space: pre;
+}
+
 /* ========================================
  * Code block line highlighting
  * ======================================== */
@@ -558,6 +591,12 @@ pre.astro-code .line .highlighted-word {
 .zd-content .mermaid svg {
   max-width: 100%;
   height: auto;
+  overflow: visible;
+}
+
+/* Prevent mermaid edge labels from clipping text (foreignObject uses overflow:hidden) */
+.zd-content .mermaid foreignObject {
+  overflow: visible;
 }
 
 /* KaTeX math equations */
@@ -628,9 +667,97 @@ pre.astro-code .line .highlighted-word {
   background-color: color-mix(in oklch, var(--color-muted) 8%, transparent);
 }
 
+/* ── Search highlight ── */
+[data-search-results] mark {
+  background-color: color-mix(in oklch, var(--color-p3) 35%, transparent);
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+
 /* ========================================
  * Page transition animations
  * ======================================== */
+
+/* ========================================
+ * AI Chat markdown (.ai-chat-md)
+ *
+ * Compact typography for chat bubbles.
+ * ======================================== */
+
+.ai-chat-md :where(p) {
+  margin: 0 0 var(--spacing-vsp-2xs);
+}
+
+.ai-chat-md :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+.ai-chat-md :where(strong) {
+  font-weight: var(--font-weight-bold);
+}
+
+.ai-chat-md :where(em) {
+  font-style: italic;
+}
+
+.ai-chat-md :where(a) {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.ai-chat-md :where(a:hover) {
+  color: var(--color-accent-hover);
+}
+
+.ai-chat-md :where(code:not(pre code)) {
+  font-size: 0.9em;
+  background: color-mix(in oklch, var(--color-muted) 20%, transparent);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+.ai-chat-md :where(pre) {
+  font-size: var(--text-caption);
+  line-height: var(--leading-relaxed);
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(pre code) {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+.ai-chat-md :where(ul) {
+  list-style-type: disc;
+  padding-left: var(--spacing-hsp-lg);
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(ol) {
+  list-style-type: decimal;
+  padding-left: var(--spacing-hsp-lg);
+  margin: var(--spacing-vsp-2xs) 0;
+}
+
+.ai-chat-md :where(li) {
+  margin-bottom: 0.15em;
+}
+
+.ai-chat-md :where(li::marker) {
+  color: var(--color-muted);
+}
+
+.ai-chat-md :where(h4, h5, h6) {
+  font-weight: var(--font-weight-bold);
+  margin: var(--spacing-vsp-xs) 0 var(--spacing-vsp-2xs);
+}
 
 @keyframes contentFadeIn {
   from {

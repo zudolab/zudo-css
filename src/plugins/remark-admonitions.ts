@@ -1,4 +1,4 @@
-import type { Root } from "mdast";
+import type { Root, Node as MdastNode } from "mdast";
 import { visit, SKIP } from "unist-util-visit";
 
 /**
@@ -18,6 +18,28 @@ import { visit, SKIP } from "unist-util-visit";
  *   :::
  */
 
+/** A container directive node produced by remark-directive */
+interface ContainerDirective extends MdastNode {
+  type: "containerDirective";
+  name: string;
+  children: DirectiveChild[];
+  data?: Record<string, unknown>;
+  attributes?: MdxJsxAttribute[];
+}
+
+interface DirectiveChild {
+  type: string;
+  value?: string;
+  children?: DirectiveChild[];
+  data?: { directiveLabel?: boolean; [key: string]: unknown };
+}
+
+interface MdxJsxAttribute {
+  type: "mdxJsxAttribute";
+  name: string;
+  value: string;
+}
+
 const ADMONITION_TYPES = new Set(["note", "tip", "info", "warning", "danger"]);
 
 function capitalize(s: string): string {
@@ -25,7 +47,7 @@ function capitalize(s: string): string {
 }
 
 /** Recursively extract plain text from an mdast node tree. */
-function extractText(node: any): string {
+function extractText(node: DirectiveChild): string {
   if (typeof node.value === "string") return node.value;
   if (Array.isArray(node.children)) {
     return node.children.map(extractText).join("");
@@ -35,20 +57,22 @@ function extractText(node: any): string {
 
 export function remarkAdmonitions() {
   return (tree: Root) => {
-    visit(tree, (node: any) => {
+    visit(tree, (node: MdastNode) => {
       if (
         node.type === "containerDirective" &&
-        ADMONITION_TYPES.has(node.name)
+        "name" in node &&
+        ADMONITION_TYPES.has((node as ContainerDirective).name)
       ) {
-        const componentName = capitalize(node.name);
+        const directive = node as ContainerDirective;
+        const componentName = capitalize(directive.name);
 
         // Extract title from the directive label
-        const label = node.children?.[0];
+        const label = directive.children?.[0];
         const isLabel = label?.data?.directiveLabel === true;
         const title = isLabel ? extractText(label) : "";
 
         // Build JSX attributes
-        const attributes: any[] = [];
+        const attributes: MdxJsxAttribute[] = [];
         if (title) {
           attributes.push({
             type: "mdxJsxAttribute",
@@ -58,14 +82,14 @@ export function remarkAdmonitions() {
         }
 
         // Replace the node in-place with an mdxJsxFlowElement
-        node.type = "mdxJsxFlowElement";
-        node.name = componentName;
-        node.attributes = attributes;
-        delete node.data;
+        (directive as unknown as Record<string, unknown>).type = "mdxJsxFlowElement";
+        (directive as unknown as Record<string, unknown>).name = componentName;
+        directive.attributes = attributes;
+        delete directive.data;
 
         // Remove the label paragraph from children if consumed as title
         if (isLabel) {
-          node.children = node.children.slice(1);
+          directive.children = directive.children.slice(1);
         }
 
         return SKIP;

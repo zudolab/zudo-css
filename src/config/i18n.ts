@@ -54,11 +54,6 @@ export function detectLocaleFromPath(path: string): Locale {
 /** UI string translations */
 const translations: Record<string, Record<string, string>> = {
   en: {
-    "nav.gettingStarted": "Getting Started",
-    "nav.guides": "Guides",
-    "nav.reference": "Reference",
-    "nav.api": "API",
-    "nav.claude": "Claude",
     "nav.previous": "Previous",
     "nav.next": "Next",
     "toc.title": "On this page",
@@ -81,11 +76,6 @@ const translations: Record<string, Record<string, string>> = {
       "This page has not been translated yet and is shown in the original language.",
   },
   ja: {
-    "nav.gettingStarted": "はじめに",
-    "nav.guides": "ガイド",
-    "nav.reference": "リファレンス",
-    "nav.api": "API",
-    "nav.claude": "Claude",
     "nav.previous": "前へ",
     "nav.next": "次へ",
     "toc.title": "目次",

@@ -2,19 +2,25 @@ export type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
+  FooterConfig,
+  HtmlPreviewConfig,
 } from "./settings-types";
 import type {
   HeaderNavItem,
   ColorModeConfig,
   LocaleConfig,
+  VersionConfig,
+  FooterConfig,
+  HtmlPreviewConfig,
 } from "./settings-types";
 
 export const settings = {
-  colorScheme: "ZCSS Dark",
+  colorScheme: "Default Dark",
   colorMode: {
     defaultMode: "dark",
-    lightScheme: "ZCSS Light",
-    darkScheme: "ZCSS Dark",
+    lightScheme: "Default Light",
+    darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
   } as ColorModeConfig | false,
   siteName: "zudo-css",
@@ -24,15 +30,34 @@ export const settings = {
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   } satisfies Record<string, LocaleConfig>,
+  trailingSlash: true,
   mermaid: false,
+  math: false,
   noindex: false as boolean,
   editUrl: false as string | false,
   siteUrl: "" as string,
   sitemap: true,
   docMetainfo: true,
   docTags: false,
-  math: false,
   docHistory: true,
+  aiAssistant: false,
+  llmsTxt: false,
+  colorTweakPanel: false,
+  versions: false as VersionConfig[] | false,
+  footer: {
+    links: [
+      {
+        title: "Fundamentals",
+        items: [
+          { label: "Tight Token Strategy", href: "/docs/methodology/tight-token-strategy" },
+          { label: "Component First Strategy", href: "/docs/methodology/component-first-css" },
+          { label: "Three-Tier Color Strategy", href: "/docs/color/three-tier-color-strategy" },
+        ],
+      },
+    ],
+    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://takazudomodular.com/pj/zudo-doc">zudo-doc</a>.`,
+  } satisfies FooterConfig as FooterConfig | false,
+  htmlPreview: false as HtmlPreviewConfig | false,
   claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
     { label: "Overview", path: "/docs/overview", categoryMatch: "overview" },

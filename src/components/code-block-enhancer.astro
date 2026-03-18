@@ -1,6 +1,4 @@
-<!-- Enhances Shiki-rendered code blocks with copy and word-wrap toggle buttons. -->
-<!-- Include once in the layout — it self-initializes via a <script> tag. -->
-
+<!-- Enhances Shiki-rendered code blocks with copy and word-wrap toggle buttons. --><!-- Include once in the layout — it self-initializes via a <script> tag. -->
 <div class="code-block-sr-announce" aria-live="polite"></div>
 
 <script>
@@ -27,7 +25,9 @@
       // Wrap <pre> in a container so buttons stay fixed during horizontal scroll
       const wrapper = document.createElement("div");
       wrapper.className = "code-block-wrapper";
-      pre.parentNode!.insertBefore(wrapper, pre);
+      const parent = pre.parentNode;
+      if (!parent) continue;
+      parent.insertBefore(wrapper, pre);
       wrapper.appendChild(pre);
 
       // Button group (appended to wrapper, not pre)
@@ -77,8 +77,7 @@
         // Fallback for older browsers
         const textarea = document.createElement("textarea");
         textarea.value = code;
-        textarea.style.cssText =
-          "position:fixed;opacity:0;pointer-events:none";
+        textarea.style.cssText = "position:fixed;opacity:0;pointer-events:none";
         document.body.appendChild(textarea);
         textarea.select();
         success = document.execCommand("copy");
@@ -122,10 +121,7 @@
     return btn;
   }
 
-  function updateWrapVisibility(
-    pre: HTMLPreElement,
-    btn: HTMLButtonElement,
-  ) {
+  function updateWrapVisibility(pre: HTMLPreElement, btn: HTMLButtonElement) {
     // Keep visible when active (user needs to toggle back)
     const isActive = btn.classList.contains("active");
     btn.style.display =

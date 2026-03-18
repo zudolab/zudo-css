@@ -1,10 +1,9 @@
 import type { AstroIntegration } from "astro";
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import matter from "gray-matter";
 import { settings } from "../config/settings";
-import { collectContentFiles } from "../utils/doc-history";
+import { stripMarkdown, collectMdFiles, slugToUrl, parseMarkdownFile, isExcluded } from "../utils/content-files";
 
 /** Maximum body text stored per entry (for display excerpts) */
 const MAX_BODY_LENGTH = 300;
@@ -18,41 +17,6 @@ export interface SearchIndexEntry {
   description: string;
 }
 
-/** Strip markdown formatting to produce plain text for indexing */
-function stripMarkdown(md: string): string {
-  return (
-    md
-      // Remove code blocks
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/`[^`]+`/g, "")
-      // Remove HTML tags
-      .replace(/<[^>]+>/g, "")
-      // Remove headings markers
-      .replace(/^#{1,6}\s+/gm, "")
-      // Remove emphasis/bold markers
-      .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
-      .replace(/_{1,3}([^_]+)_{1,3}/g, "$1")
-      // Remove images (must run before link removal)
-      .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
-      // Remove links but keep text
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      // Remove blockquote markers
-      .replace(/^>\s+/gm, "")
-      // Remove horizontal rules
-      .replace(/^[-*_]{3,}\s*$/gm, "")
-      // Remove list markers
-      .replace(/^[\s]*[-*+]\s+/gm, "")
-      .replace(/^[\s]*\d+\.\s+/gm, "")
-      // Remove import statements
-      .replace(/^import\s+.*$/gm, "")
-      // Remove export statements
-      .replace(/^export\s+.*$/gm, "")
-      // Collapse whitespace
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
-  );
-}
-
 /** Truncate text to max length for the search index */
 function truncateBody(text: string): string {
   return text.length > MAX_BODY_LENGTH
@@ -60,42 +24,31 @@ function truncateBody(text: string): string {
     : text;
 }
 
-/** Compute a URL from a slug and locale */
-function slugToUrl(slug: string, locale: string | null): string {
-  const base = settings.base.replace(/\/$/, "");
-  if (locale) {
-    return `${base}/${locale}/docs/${slug}`;
-  }
-  return `${base}/docs/${slug}`;
-}
-
 /** Build search index entries for a content directory */
 function buildEntries(
   contentDir: string,
   locale: string | null,
 ): SearchIndexEntry[] {
-  const files = collectContentFiles(contentDir);
+  const absDir = resolve(contentDir);
+  const files = collectMdFiles(absDir);
   const entries: SearchIndexEntry[] = [];
 
   for (const { filePath, slug } of files) {
-    try {
-      const raw = readFileSync(filePath, "utf-8");
-      const { data, content } = matter(raw);
+    const parsed = parseMarkdownFile(filePath);
+    if (!parsed) continue;
+    const { data, content } = parsed;
 
-      // Skip excluded/draft/unlisted pages
-      if (data.search_exclude || data.draft || data.unlisted) continue;
+    // Skip excluded/draft/unlisted pages
+    if (isExcluded(data)) continue;
 
-      const id = locale ? `${locale}/${slug}` : slug;
-      entries.push({
-        id,
-        title: data.title ?? slug,
-        body: truncateBody(stripMarkdown(content)),
-        url: slugToUrl(slug, locale),
-        description: data.description ?? "",
-      });
-    } catch {
-      // Skip files that can't be parsed
-    }
+    const id = locale ? `${locale}/${slug}` : slug;
+    entries.push({
+      id,
+      title: data.title ?? slug,
+      body: truncateBody(stripMarkdown(content)),
+      url: slugToUrl(slug, locale),
+      description: data.description ?? "",
+    });
   }
 
   return entries;

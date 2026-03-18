@@ -8,6 +8,7 @@
     "// ── Core ─────────────────────────────────────────": "",
     "predev": "lsof -ti :8811 | xargs kill 2>/dev/null; true",
     "dev": "astro dev --port 8811 --host css-bp.localhost",
+    "dev:network": "astro dev --port 8811 --host 0.0.0.0",
     "build": "astro build",
     "preview": "astro preview --port 8811",
     "// ── Quality ──────────────────────────────────────": "",
@@ -41,13 +42,20 @@
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "lefthook": "^1.11.13",
+    "prettier": "^3.5.3",
+    "prettier-plugin-astro": "^0.14.1",
     "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.1",
+    "wrangler": "^4.17.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "sharp"
+      "lefthook",
+      "sharp",
+      "workerd"
     ],
     "patchedDependencies": {
       "astro@6.0.4": "patches/astro@6.0.4.patch"

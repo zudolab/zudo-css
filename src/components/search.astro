@@ -38,7 +38,9 @@ import { withBase } from "@/utils/base";
       class="flex h-full flex-col overflow-hidden bg-surface sm:rounded-lg sm:border sm:border-muted"
     >
       {/* Search input header */}
-      <div class="flex items-center gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm">
+      <div
+        class="flex items-center gap-hsp-sm border-b border-muted px-hsp-lg py-vsp-sm"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -86,11 +88,17 @@ import { withBase } from "@/utils/base";
       </div>
 
       {/* Results area */}
-      <div class="flex-1 overflow-y-auto px-hsp-lg py-vsp-md" data-search-results>
+      <div
+        class="flex-1 overflow-y-auto px-hsp-lg py-vsp-md"
+        data-search-results
+        aria-live="polite"
+      >
         <div class="text-small text-muted" data-search-placeholder>
           <p>Type to search...</p>
           <p class="mt-vsp-md text-caption">
-            <kbd class="rounded border border-muted bg-bg px-hsp-2xs py-[2px] font-mono text-caption" data-kbd-shortcut></kbd> to open search from anywhere
+            <kbd
+              class="rounded border border-muted bg-bg px-hsp-2xs py-[2px] font-mono text-caption"
+              data-kbd-shortcut></kbd> to open search from anywhere
           </p>
         </div>
       </div>
@@ -111,6 +119,75 @@ import { withBase } from "@/utils/base";
 
   const PAGE_SIZE = 10;
 
+  function escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function escapeRegExp(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function parseQueryTerms(query: string): string[] {
+    return query.trim().split(/\s+/).filter(Boolean);
+  }
+
+  function highlightTerms(text: string, query: string): string {
+    const terms = parseQueryTerms(query).map(escapeRegExp);
+    if (terms.length === 0) return escapeHtml(text);
+    // Sort by length descending so longer terms match before their prefixes
+    terms.sort((a, b) => b.length - a.length);
+    const pattern = new RegExp(`(${terms.join("|")})`, "gi");
+    return text
+      .split(pattern)
+      .map((segment, i) =>
+        i % 2 === 1
+          ? `<mark>${escapeHtml(segment)}</mark>`
+          : escapeHtml(segment),
+      )
+      .join("");
+  }
+
+  function truncateExcerpt(
+    text: string,
+    query: string,
+    maxLength = 200,
+  ): string {
+    if (text.length <= maxLength) return text;
+
+    const terms = parseQueryTerms(query);
+    let firstMatchIndex = -1;
+    const lowerText = text.toLowerCase();
+    for (const term of terms) {
+      const idx = lowerText.indexOf(term.toLowerCase());
+      if (idx !== -1 && (firstMatchIndex === -1 || idx < firstMatchIndex)) {
+        firstMatchIndex = idx;
+      }
+    }
+
+    if (firstMatchIndex === -1) {
+      return text.slice(0, maxLength) + "\u2026";
+    }
+
+    const half = Math.floor(maxLength / 2);
+    let start = Math.max(0, firstMatchIndex - half);
+    let end = start + maxLength;
+
+    if (end > text.length) {
+      end = text.length;
+      start = Math.max(0, end - maxLength);
+    }
+
+    let result = text.slice(start, end);
+    if (start > 0) result = "\u2026" + result;
+    if (end < text.length) result = result + "\u2026";
+    return result;
+  }
+
   class SiteSearch extends HTMLElement {
     private dialog!: HTMLDialogElement;
     private openBtn!: HTMLButtonElement;
@@ -124,6 +201,7 @@ import { withBase } from "@/utils/base";
     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
     private allResults: Array<{ id: string; score: number }> = [];
     private shownCount = 0;
+    private currentQuery = "";
     private shortcutLabel = "";
 
     constructor() {
@@ -137,8 +215,12 @@ import { withBase } from "@/utils/base";
 
     connectedCallback() {
       // Set platform-appropriate keyboard shortcut label
-      const nav = navigator as Navigator & { userAgentData?: { platform: string } };
-      const isMac = /Mac|iPhone|iPad|iPod/.test(nav.userAgentData?.platform ?? navigator.userAgent);
+      const nav = navigator as Navigator & {
+        userAgentData?: { platform: string };
+      };
+      const isMac = /Mac|iPhone|iPad|iPod/.test(
+        nav.userAgentData?.platform ?? navigator.userAgent,
+      );
       this.shortcutLabel = isMac ? "\u2318K" : "Ctrl+K";
       const kbdEl = this.querySelector("[data-kbd-shortcut]");
       if (kbdEl) {
@@ -255,6 +337,7 @@ import { withBase } from "@/utils/base";
 
     private handleSearch() {
       const query = this.searchInput.value.trim();
+      this.currentQuery = query;
 
       if (!query) {
         this.allResults = [];
@@ -271,7 +354,10 @@ import { withBase } from "@/utils/base";
       }
 
       const results = this.miniSearch.search(query);
-      this.allResults = results.map((r) => ({ id: r.id as string, score: r.score }));
+      this.allResults = results.map((r) => ({
+        id: r.id as string,
+        score: r.score,
+      }));
       this.shownCount = 0;
 
       if (results.length === 0) {
@@ -323,7 +409,7 @@ import { withBase } from "@/utils/base";
       const link = document.createElement("a");
       link.href = entry.url;
       link.className = "block font-semibold text-fg hover:text-accent";
-      link.textContent = entry.title;
+      link.innerHTML = highlightTerms(entry.title, this.currentQuery);
       article.appendChild(link);
 
       // Description or body excerpt
@@ -332,10 +418,8 @@ import { withBase } from "@/utils/base";
         const excerpt = document.createElement("p");
         excerpt.className =
           "mt-vsp-2xs text-caption text-muted leading-relaxed";
-        // Highlight matching terms would need query context — show plain excerpt
-        const truncated =
-          text.length > 200 ? text.substring(0, 200) + "..." : text;
-        excerpt.textContent = truncated;
+        const truncated = truncateExcerpt(text, this.currentQuery);
+        excerpt.innerHTML = highlightTerms(truncated, this.currentQuery);
         article.appendChild(excerpt);
       }
 

@@ -1,7 +1,7 @@
-import { type ReactNode, useMemo } from 'react';
-import PreviewBase from '../preview-base';
-import { dedent } from '../../utils/dedent';
-import { preflightCss } from './preflight';
+import { type ReactNode, useMemo } from "react";
+import PreviewBase from "../html-preview/preview-base";
+import { dedent } from "@/utils/dedent";
+import { preflightCss } from "../html-preview/preflight";
 
 interface CssPreviewProps {
   html: string;
@@ -43,8 +43,8 @@ export default function CssPreview({
       sandbox="allow-same-origin"
       syncDelay={0}
       codeBlocks={[
-        { language: 'html', title: 'HTML', code: dedent(html) },
-        { language: 'css', title: 'CSS', code: dedent(css) },
+        { language: "html", title: "HTML", code: dedent(html) },
+        { language: "css", title: "CSS", code: dedent(css) },
       ]}
     />
   );

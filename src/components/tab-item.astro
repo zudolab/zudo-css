@@ -6,6 +6,14 @@ interface Props {
 }
 const { label, value, default: isDefault } = Astro.props;
 ---
-<div class="tab-panel" role="tabpanel" data-tab-value={value ?? label} data-tab-label={label} data-tab-default={isDefault ? "" : undefined} hidden>
+
+<div
+  class="tab-panel"
+  role="tabpanel"
+  data-tab-value={value ?? label}
+  data-tab-label={label}
+  data-tab-default={isDefault ? "" : undefined}
+  hidden
+>
   <slot />
 </div>

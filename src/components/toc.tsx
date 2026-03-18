@@ -22,7 +22,7 @@ export function Toc({ headings }: TocProps) {
       className={clsx(
         "hidden xl:block",
         "w-[280px] shrink-0",
-        "sticky top-[3.5rem] self-start",
+        "sticky top-[3.5rem] self-start z-10",
         "pt-vsp-xl lg:pt-vsp-2xl",
         "max-h-[calc(100vh-3.5rem)] overflow-y-auto",
       )}
