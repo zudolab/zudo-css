@@ -25,7 +25,7 @@ const { links, copyright } = footer;
                   <li>
                     <a
                       href={resolveHref(item.href)}
-                      class="text-caption text-fg hover:text-accent hover:underline"
+                      class="text-caption text-accent underline hover:text-accent-hover"
                       {...(isExternal(item.href)
                         ? { target: "_blank", rel: "noopener noreferrer" }
                         : {})}
