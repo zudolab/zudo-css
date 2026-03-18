@@ -65,7 +65,7 @@ src/
 - Format: MDX with YAML frontmatter (`sidebar_position`)
 - Location: `src/content/docs/<category>/`
 - File naming: **kebab-case** (e.g., `centering-techniques.mdx`)
-- Categories: layout, typography, color, visual, responsive, interactive, methodology, inbox, overview
+- Categories: layout, typography, color, visual, responsive, interactive, methodology, inbox, claude (auto-generated)
 
 ### Article Structure
 
@@ -119,8 +119,19 @@ Available in all MDX files without imports:
 This repo manages zcss-specific Claude Code skills in `.claude/skills/`:
 
 - **`css-wisdom`** — Topic index of all CSS articles. Symlinked to `~/.claude/skills/css-wisdom` so it's available globally. **When adding or removing articles, run `pnpm generate:css-wisdom` to regenerate the topic index.** Add descriptions for new articles to `.claude/skills/css-wisdom/descriptions.json`.
+- **`l-writing`** — Writing and formatting rules for MDX articles. **Before writing or editing docs, invoke `/l-writing`.**
 - **`l-handle-deep-article`** — Guide for converting flat articles into deep articles with sub-pages. Local to this repo.
 - **`l-demo-component`** — Guide for CssPreview component usage and `defaultOpen` prop conventions. Local to this repo.
+- **`l-translate`** — Translate English docs to Japanese using the `ja-translator` subagent. Invoke `/l-translate <path-or-category>`.
+- **`b4push`** — Before-push quality checks (type check, build, link check). Invoke `/b4push`.
+
+### Agents
+
+- **`ja-translator`** — Subagent for translating MDX docs from English to Japanese.
+
+### Translation Workflow
+
+After editing or creating an English doc, translate the Japanese counterpart using `/l-translate`. After editing a Japanese doc, update the English counterpart similarly.
 
 ## Safety Rules
 

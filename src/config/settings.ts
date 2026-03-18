@@ -71,9 +71,8 @@ export const settings = {
     copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://takazudomodular.com/pj/zudo-doc">zudo-doc</a>.`,
   } satisfies FooterConfig as FooterConfig | false,
   htmlPreview: false as HtmlPreviewConfig | false,
-  claudeResources: false as { claudeDir: string; projectRoot?: string } | false,
+  claudeResources: { claudeDir: ".claude" } as { claudeDir: string; projectRoot?: string } | false,
   headerNav: [
-    { label: "Overview", path: "/docs/overview", categoryMatch: "overview" },
     { label: "Layout", path: "/docs/layout", categoryMatch: "layout" },
     { label: "Typography", path: "/docs/typography", categoryMatch: "typography" },
     { label: "Visual", path: "/docs/visual", categoryMatch: "visual" },
@@ -81,6 +80,6 @@ export const settings = {
     { label: "Responsive", path: "/docs/responsive", categoryMatch: "responsive" },
     { label: "Interactive", path: "/docs/interactive", categoryMatch: "interactive" },
     { label: "Methodology", path: "/docs/methodology", categoryMatch: "methodology" },
-    { label: "Misc", path: "/docs/misc", categoryMatch: "misc" },
+    { label: "Claude", path: "/docs/claude", categoryMatch: "claude" },
   ] as HeaderNavItem[],
 };

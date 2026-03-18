@@ -42,5 +42,11 @@ doc/
 # Generated skill files (contain machine-specific absolute paths)
 .claude/skills/css-wisdom/SKILL.md
 
+# Generated claude-resources docs (auto-generated at build time)
+src/content/docs/claude/
+src/content/docs/claude-agents/
+src/content/docs/claude-md/
+src/content/docs/claude-skills/
+
 # Worktrees
 worktrees/
