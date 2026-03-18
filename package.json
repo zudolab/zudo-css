@@ -21,7 +21,6 @@
     "@astrojs/mdx": "^5.0.0",
     "@astrojs/react": "^5.0.0",
     "@shikijs/transformers": "^4.0.1",
-    "@takazudo/mdx-formatter": "latest",
     "astro": "^6.0.4",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
@@ -47,15 +46,13 @@
     "prettier-plugin-astro": "^0.14.1",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.1",
-    "wrangler": "^4.17.0"
+    "vitest": "^3.2.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
       "lefthook",
-      "sharp",
-      "workerd"
+      "sharp"
     ],
     "patchedDependencies": {
       "astro@6.0.4": "patches/astro@6.0.4.patch"
