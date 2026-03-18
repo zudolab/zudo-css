@@ -108,7 +108,14 @@
   --text-display: 3.75rem;       /* 60px — hero text */
 
   /* Font families */
-  --font-sans: system-ui, sans-serif;
+  --font-noto:
+    'Noto Sans', 'Noto Sans JP', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic Pro',
+    'Yu Gothic', Meiryo, sans-serif;
+  --font-futura:
+    Futura, Jost, 'Century Gothic', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', 'Noto Sans', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --font-sans: var(--font-noto);
   --font-mono: ui-monospace, monospace;
 
   /* Font weights (4 steps) */
@@ -149,6 +156,7 @@
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
+  font-family: var(--font-noto);
 }
 
 ::selection {
