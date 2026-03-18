@@ -30,7 +30,7 @@ export const settings = {
   locales: {
     ja: { label: "JA", dir: "src/content/docs-ja" },
   } satisfies Record<string, LocaleConfig>,
-  trailingSlash: false,
+  trailingSlash: true,
   mermaid: false,
   math: false,
   noindex: false as boolean,
