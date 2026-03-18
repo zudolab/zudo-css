@@ -8,6 +8,7 @@
     "// ── Core ─────────────────────────────────────────": "",
     "predev": "lsof -ti :8811 | xargs kill 2>/dev/null; true",
     "dev": "astro dev --port 8811 --host css-bp.localhost",
+    "dev:network": "astro dev --port 8811 --host 0.0.0.0",
     "build": "astro build",
     "preview": "astro preview --port 8811",
     "// ── Quality ──────────────────────────────────────": "",
