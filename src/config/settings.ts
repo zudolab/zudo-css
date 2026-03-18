@@ -41,7 +41,7 @@ export const settings = {
   docTags: false,
   docHistory: true,
   aiAssistant: false,
-  llmsTxt: false,
+  llmsTxt: true,
   colorTweakPanel: false,
   versions: false as VersionConfig[] | false,
   footer: {
