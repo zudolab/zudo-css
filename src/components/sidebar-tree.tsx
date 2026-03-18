@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
+import ThemeToggle from "./theme-toggle";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -110,12 +111,14 @@ interface SidebarTreeProps {
   rootMenuItems?: RootMenuItem[];
   backToMenuLabel?: string;
   localeLinks?: LocaleLink[];
+  themeDefaultMode?: "light" | "dark";
 }
 
-function LocaleSwitcher({ links }: { links: LocaleLink[] }) {
+function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
   return (
-    <div className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small">
-      {links.map((link, i) => (
+    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[200px] text-small">
+      {themeDefaultMode && <ThemeToggle defaultMode={themeDefaultMode} />}
+      {links && links.map((link, i) => (
         <span key={link.href} className="flex items-center gap-hsp-xs">
           {i > 0 && <span className="text-muted">/</span>}
           {link.active ? (
@@ -131,7 +134,7 @@ function LocaleSwitcher({ links }: { links: LocaleLink[] }) {
   );
 }
 
-export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks }: SidebarTreeProps) {
+export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToMenuLabel, localeLinks, themeDefaultMode }: SidebarTreeProps) {
   const activeSlug = useActiveSlug(nodes, currentSlug);
   const [query, setQuery] = useState("");
   const [showingRootMenu, setShowingRootMenu] = useState(false);
@@ -181,7 +184,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
             {item.label}
           </a>
         ))}
-        {localeLinks && <LocaleSwitcher links={localeLinks} />}
+        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
       </nav>
     );
   }
@@ -210,7 +213,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
             {item.label}
           </a>
         ))}
-        {localeLinks && <LocaleSwitcher links={localeLinks} />}
+        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
       </nav>
     );
   }
@@ -250,7 +253,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         depth={0}
         forceOpen={!!query}
       />
-      {localeLinks && <LocaleSwitcher links={localeLinks} />}
+      {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
     </nav>
   );
 }

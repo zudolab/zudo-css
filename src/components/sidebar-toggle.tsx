@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 
 interface SidebarToggleProps {
   children: React.ReactNode;
-  bottomContent?: React.ReactNode;
 }
 
-export default function SidebarToggle({ children, bottomContent }: SidebarToggleProps) {
+export default function SidebarToggle({ children }: SidebarToggleProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -95,7 +94,7 @@ export default function SidebarToggle({ children, bottomContent }: SidebarToggle
       {/* Sidebar panel - mobile only (desktop sidebar is in doc-layout) */}
       <aside
         className={`
-          fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
+          fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[20.8rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open ? "translate-x-0" : "-translate-x-full"}
@@ -104,11 +103,6 @@ export default function SidebarToggle({ children, bottomContent }: SidebarToggle
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>
-        {bottomContent && (
-          <div className="border-t border-muted px-hsp-lg py-vsp-md flex items-center gap-x-hsp-md">
-            {bottomContent}
-          </div>
-        )}
       </aside>
     </>
   );

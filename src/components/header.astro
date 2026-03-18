@@ -48,17 +48,6 @@ const navItems = settings.headerNav.map((item) => ({
 >
   <SidebarToggle client:media="(max-width: 1023px)">
     <slot name="sidebar" />
-    <Fragment slot="bottomContent">
-      {
-        settings.colorMode && (
-          <ThemeToggle
-            defaultMode={settings.colorMode.defaultMode}
-            client:load
-          />
-        )
-      }
-      {lang && locales.length > 1 && <LanguageSwitcher lang={lang} />}
-    </Fragment>
   </SidebarToggle>
 
   <a
