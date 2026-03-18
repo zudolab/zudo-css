@@ -1,11 +1,24 @@
 ---
 import { settings } from "@/config/settings";
 import { isExternal, resolveHref } from "@/utils/base";
+import { defaultLocale, type Locale } from "@/config/i18n";
 
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = defaultLocale } = Astro.props;
 const footer = settings.footer;
 if (!footer) return;
 
 const { links, copyright } = footer;
+const isNonDefaultLocale = lang !== defaultLocale;
+
+function localizeHref(href: string): string {
+  if (isExternal(href)) return href;
+  const localized = isNonDefaultLocale ? `/${lang}${href}` : href;
+  return resolveHref(localized);
+}
 ---
 
 <footer class="border-t border-muted bg-surface">
@@ -15,28 +28,34 @@ const { links, copyright } = footer;
     {
       links.length > 0 && (
         <div class="text-center">
-          {links.map((column) => (
-            <div class="mb-vsp-md">
-              <p class="text-small font-semibold text-fg mb-vsp-xs">
-                {column.title}
-              </p>
-              <ul class="list-none p-0 grid grid-cols-1 gap-y-vsp-2xs lg:grid-cols-3 lg:gap-x-hsp-xl">
-                {column.items.map((item) => (
-                  <li>
-                    <a
-                      href={resolveHref(item.href)}
-                      class="text-caption text-accent underline hover:text-accent-hover"
-                      {...(isExternal(item.href)
-                        ? { target: "_blank", rel: "noopener noreferrer" }
-                        : {})}
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {links.map((column) => {
+            const columnTitle = column.locales?.[lang]?.title ?? column.title;
+            return (
+              <div class="mb-vsp-md">
+                <p class="text-small font-semibold text-fg mb-vsp-xs">
+                  {columnTitle}
+                </p>
+                <ul class="list-none p-0 grid grid-cols-1 gap-y-vsp-2xs lg:grid-cols-3 lg:gap-x-hsp-xl">
+                  {column.items.map((item) => {
+                    const itemLabel = item.locales?.[lang]?.label ?? item.label;
+                    return (
+                      <li>
+                        <a
+                          href={localizeHref(item.href)}
+                          class="text-caption text-accent underline hover:text-accent-hover"
+                          {...(isExternal(item.href)
+                            ? { target: "_blank", rel: "noopener noreferrer" }
+                            : {})}
+                        >
+                          {itemLabel}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       )
     }

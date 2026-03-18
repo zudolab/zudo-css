@@ -193,7 +193,7 @@ const contentTransition = {
     </div>
     {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
     {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
-    <Footer />
+    <Footer lang={lang} />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}

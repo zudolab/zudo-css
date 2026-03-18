@@ -48,10 +48,23 @@ export const settings = {
     links: [
       {
         title: "Fundamentals",
+        locales: { ja: { title: "基本戦略" } },
         items: [
-          { label: "Tight Token Strategy", href: "/docs/methodology/tight-token-strategy" },
-          { label: "Component First Strategy", href: "/docs/methodology/component-first-css" },
-          { label: "Three-Tier Color Strategy", href: "/docs/color/three-tier-color-strategy" },
+          {
+            label: "Tight Token Strategy",
+            href: "/docs/methodology/tight-token-strategy",
+            locales: { ja: { label: "タイトトークン戦略" } },
+          },
+          {
+            label: "Component First Strategy",
+            href: "/docs/methodology/component-first-strategy",
+            locales: { ja: { label: "コンポーネントファースト戦略" } },
+          },
+          {
+            label: "Three-Tier Color Strategy",
+            href: "/docs/color/three-tier-color-strategy",
+            locales: { ja: { label: "3層カラー戦略" } },
+          },
         ],
       },
     ],

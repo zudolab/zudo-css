@@ -28,11 +28,15 @@ export interface VersionConfig {
 export interface FooterLinkItem {
   label: string;
   href: string;
+  /** Per-locale overrides for label */
+  locales?: Record<string, { label: string }>;
 }
 
 export interface FooterLinkColumn {
   title: string;
   items: FooterLinkItem[];
+  /** Per-locale overrides for title */
+  locales?: Record<string, { title: string }>;
 }
 
 export interface FooterConfig {
