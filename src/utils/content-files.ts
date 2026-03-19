@@ -73,7 +73,9 @@ export function slugToUrl(slug: string, locale: string | null, absolute = false)
   const base = settings.base.replace(/\/$/, "");
   const path = locale ? `${base}/${locale}/docs/${slug}` : `${base}/docs/${slug}`;
   if (absolute && settings.siteUrl) {
-    return `${settings.siteUrl.replace(/\/$/, "")}${path}`;
+    // siteUrl already includes base, so use relative path without base prefix
+    const relativePath = locale ? `/${locale}/docs/${slug}` : `/docs/${slug}`;
+    return `${settings.siteUrl.replace(/\/$/, "")}${relativePath}`;
   }
   return path;
 }
