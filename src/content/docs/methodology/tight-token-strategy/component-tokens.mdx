@@ -1,5 +1,5 @@
 ---
-title: "Component Tokens & Arbitrary Values"
+title: Component Tokens & Arbitrary Values
 sidebar_position: 4
 ---
 
@@ -48,25 +48,23 @@ When deciding between a token and an arbitrary value, use this decision tree:
 
 | Situation | Action |
 | --- | --- |
-| Value is reused across multiple components | Add a system token |
-| Value is semantically meaningful (e.g., "section gap") | Add a system token |
-| Value is unique to one component | Use arbitrary value |
+| Value represents a design decision (e.g., "section gap", "icon size") | Add a system token |
+| Value is a structural detail of one component (e.g., grid columns, button padding) | Use arbitrary value |
 | Value is mathematically calculated or decorative | Use arbitrary value |
-| Unsure whether it's a system concern | Start with arbitrary, promote to token later if reused |
+
+Whether to create a token is an **architectural and design judgment**, not a usage-count threshold. You don't wait for three components to use a value before tokenizing it — you ask whether the value represents a deliberate design decision. A content column width of 800px is worth tokenizing the moment you decide "our layout is 800px wide," even if only one page template uses it today. This is the same kind of judgment as "should we extract this function into a utility?" — the answer depends on whether the concept deserves a name in the system, not on how many call sites exist.
 
 ### Signs You Should Add a Token
 
-- Multiple components use the same arbitrary value
-- A designer references the value as a named spacing or color step
-- The value represents a semantic concept, not just a pixel number
+- A designer references the value as a named step (a spacing level, an icon size, a layout width)
+- The value represents a design decision — a deliberate choice about how the UI is structured
 - Changing this value should update the entire system, not one component
 
 ### Signs You Should NOT Add a Token
 
-- It's used in exactly one place
-- It's a structural or layout detail specific to one component
+- It's a structural or layout detail specific to one component's internal arrangement
 - Adding it would clutter the token set without adding clarity
-- The value has no meaning outside its component context
+- The value has no meaning outside its component context (e.g., a `calc()` offset for alignment)
 
 ## Demos
 
@@ -620,19 +618,23 @@ If a value exists in the token set, always use the token. Arbitrary values shoul
 ### Mistake 3: Adding Tokens Preemptively
 
 ```html
-<!-- BAD: Adding --spacing-icon-sm: 18px because "we might need it" -->
-<!-- GOOD: Start with w-[18px], promote to token only if reused -->
+<!-- Structural detail: stays arbitrary -->
+<!-- Design decision (e.g., "our icons are 18px"): becomes a token -->
 ```
 
-The "promote later" approach prevents token bloat. If `18px` icon sizing shows up in 5 components, that's a clear signal to add `--spacing-icon-sm: 18px` to the theme. Until then, keep it arbitrary.
+The distinction is not about usage count — it's about whether the value represents a **design decision** or a **structural detail**. If the design says "icons are 18px," that's a token from day one, even if only one component uses it. If 18px is just the padding that makes one specific button look balanced, it stays arbitrary forever.
+
+This is the same judgment as "should we extract this function to a utility?" in application architecture. The answer depends on whether the concept deserves a name in the system, not on how many call sites exist.
 
 ## When to Use
 
 This component-centric approach applies whenever you work with the tight token strategy:
 
-- **Building new components** — Default to system tokens for spacing and colors, use arbitrary for layout-specific details like grid columns, icon sizes, and decorative values
-- **Reviewing component code** — Check that arbitrary values are truly one-off and system tokens are used for shared values
-- **Growing the token set** — When the same arbitrary value appears in 3+ components, promote it to a named token
+- **Building new components** — Default to system tokens for spacing and colors, use arbitrary for layout-specific details like grid columns and decorative values
+- **Reviewing component code** — Check whether arbitrary values represent design decisions that should be tokens, or structural details that should stay local
+- **Defining the token set** — Tokens come from design decisions (icon sizes, layout widths, avatar dimensions), not from counting how many components share a value
 - **Refactoring existing components** — Look for hardcoded values that match existing tokens and replace them
 
-The goal is a token set that stays small and meaningful. Every token should earn its place by being genuinely reusable across the system. Everything else stays at the component level as an arbitrary value.
+The goal is a token set that stays small and meaningful. Every token should earn its place by representing a genuine design decision. Everything else stays at the component level as an arbitrary value.
+
+For a detailed look at how this applies specifically to width/height sizing — where the abstract scale layer is intentionally skipped — see [Two-Tier Size Strategy](../two-tier-size-strategy/).
