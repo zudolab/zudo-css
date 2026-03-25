@@ -23,7 +23,7 @@ import TailwindPreview from '@/components/TailwindPreview';
 |------|------|---------|---------|
 | 1 | **パレット** | 生のカラー値 — 利用可能なすべての色 | `--palette-blue-500` |
 | 2 | **テーマ** | セマンティックな役割 — デザインにおける各色の*意味* | `--theme-fg`, `--theme-accent` |
-| 3 | **コンポーネント** | スコープ付きオーバーライド — 1つのコンポーネント固有の色 | `--button-shadow`, `--card-highlight` |
+| 3 | **コンポーネント** | スコープ付きオーバーライド — 1つのコンポーネント固有の色 | `--_button-shadow`, `--_card-highlight` |
 
 重要なポイントは、**各層はその上の層のみを参照する**ということです。コンポーネントはテーマトークンを使います。テーマトークンはパレットカラーを指します。パレットは実際の値を保持します。
 
@@ -352,6 +352,23 @@ import TailwindPreview from '@/components/TailwindPreview';
 
 コンポーネントによっては、グローバルテーマに収まらない色が必要になることがあります。シャドウ、プロダクトのバリエーションカラー、微妙なグラデーションのストップなどです。これらが**ティア 3** の変数です。スコープが狭く、コンポーネント自体で定義され、テーマトークンまたはパレットトークンを参照します。
 
+<Info title="アンダースコア命名規則">
+コンポーネントスコープのカスタムプロパティには、先頭にアンダースコア（`--_`）を付けてローカルスコープであることを示します。
+
+```css
+.product-card {
+  --_card-variant: var(--palette-blue-500);
+  --_card-shadow: oklch(58% 0.2 250 / 0.25);
+}
+```
+
+`--_` プレフィックスは「この変数はこのコンポーネントにローカルスコープされている」ことを読み手に伝えます。他の言語で `_privateMethod` がプライベートスコープを示すのと同様の規則です。これは CSS のルールではなく、ドキュメント上の命名規則です。
+</Info>
+
+<Info title="Tailwind + コンポーネントファーストの例外">
+Tailwind + コンポーネントファーストのプロジェクト（React、Vue、Astro でユーティリティクラスを使用）では、ティア 3 のコンポーネントスコープ CSS カスタムプロパティが必要になることはほとんどありません。コンポーネントフレームワーク自体がスコープを提供するため、これらの変数を定義する別の CSS ファイルが存在しません。ティア 3 は主に一般的な CSS アプローチ（BEM、CSS Modules、バニラ CSS）で必要になります。
+</Info>
+
 <CssPreview client:load
   title="ティア 3 — コンポーネント: スコープ付きカラーオーバーライド"
   height={340}
@@ -398,41 +415,41 @@ import TailwindPreview from '@/components/TailwindPreview';
     /* Tier 3: Component-scoped colors */
     .product-card {
       /* Default variant colors — referencing palette */
-      --card-variant: var(--palette-blue-500);
-      --card-variant-light: var(--palette-blue-300);
-      --card-variant-dark: var(--palette-blue-700);
+      --_card-variant: var(--palette-blue-500);
+      --_card-variant-light: var(--palette-blue-300);
+      --_card-variant-dark: var(--palette-blue-700);
       /* Shadow uses palette with transparency */
-      --card-shadow: oklch(58% 0.2 250 / 0.25);
+      --_card-shadow: oklch(58% 0.2 250 / 0.25);
 
       background: oklch(100% 0 0);
       border: 1px solid var(--theme-border);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 16px var(--card-shadow);
+      box-shadow: 0 4px 16px var(--_card-shadow);
       width: 160px;
       flex-shrink: 0;
     }
     /* Product color variants — only Tier 3 vars change */
     .product-card--ocean {
-      --card-variant: oklch(58% 0.15 230);
-      --card-variant-light: oklch(80% 0.08 230);
-      --card-variant-dark: oklch(40% 0.12 230);
-      --card-shadow: oklch(58% 0.15 230 / 0.25);
+      --_card-variant: oklch(58% 0.15 230);
+      --_card-variant-light: oklch(80% 0.08 230);
+      --_card-variant-dark: oklch(40% 0.12 230);
+      --_card-shadow: oklch(58% 0.15 230 / 0.25);
     }
     .product-card--sunset {
-      --card-variant: oklch(62% 0.2 50);
-      --card-variant-light: oklch(82% 0.1 50);
-      --card-variant-dark: oklch(42% 0.15 50);
-      --card-shadow: oklch(62% 0.2 50 / 0.25);
+      --_card-variant: oklch(62% 0.2 50);
+      --_card-variant-light: oklch(82% 0.1 50);
+      --_card-variant-dark: oklch(42% 0.15 50);
+      --_card-shadow: oklch(62% 0.2 50 / 0.25);
     }
     .product-card--forest {
-      --card-variant: oklch(55% 0.15 150);
-      --card-variant-light: oklch(78% 0.08 150);
-      --card-variant-dark: oklch(38% 0.12 150);
-      --card-shadow: oklch(55% 0.15 150 / 0.25);
+      --_card-variant: oklch(55% 0.15 150);
+      --_card-variant-light: oklch(78% 0.08 150);
+      --_card-variant-dark: oklch(38% 0.12 150);
+      --_card-shadow: oklch(55% 0.15 150 / 0.25);
     }
     .product-card__badge {
-      background: linear-gradient(135deg, var(--card-variant), var(--card-variant-dark));
+      background: linear-gradient(135deg, var(--_card-variant), var(--_card-variant-dark));
       color: oklch(97% 0.01 0);
       padding: 0.75rem;
       font-size: 0.7rem;
@@ -458,7 +475,7 @@ import TailwindPreview from '@/components/TailwindPreview';
     .product-card__price {
       font-size: 0.9rem;
       font-weight: 700;
-      color: var(--card-variant-dark);
+      color: var(--_card-variant-dark);
     }
     .tier3-demo {
       display: flex;
@@ -496,7 +513,7 @@ import TailwindPreview from '@/components/TailwindPreview';
       <div class="code-block">
         <div class="code-block__label">Tier 3: Component</div>
         <code>.btn { background: var(--theme-accent); }</code>
-        <code>.btn { --btn-shadow: ...; }</code>
+        <code>.btn { --_btn-shadow: ...; }</code>
       </div>
     </div>
     <div class="full-demo__result">
@@ -554,7 +571,7 @@ import TailwindPreview from '@/components/TailwindPreview';
     }
     /* ===== Tier 3: Component ===== */
     .demo-btn--primary {
-      --btn-shadow: oklch(58% 0.2 250 / 0.3);
+      --_btn-shadow: oklch(58% 0.2 250 / 0.3);
     }
     .full-demo {
       display: grid;
@@ -688,7 +705,7 @@ import TailwindPreview from '@/components/TailwindPreview';
     .demo-btn--primary {
       background: var(--theme-accent);
       color: var(--theme-accent-fg);
-      box-shadow: 0 2px 8px var(--btn-shadow);
+      box-shadow: 0 2px 8px var(--_btn-shadow);
     }
     .demo-btn--outline {
       background: transparent;
@@ -866,11 +883,11 @@ import TailwindPreview from '@/components/TailwindPreview';
   /* Component-specific color derived from theme.
      Relative color syntax (oklch(from ...)) — Baseline 2024.
      For wider support, use a hardcoded fallback. */
-  --btn-shadow: oklch(from var(--theme-accent) l c h / 0.3);
+  --_btn-shadow: oklch(from var(--theme-accent) l c h / 0.3);
 
   background: var(--theme-accent);
   color: var(--theme-accent-fg);
-  box-shadow: 0 2px 8px var(--btn-shadow);
+  box-shadow: 0 2px 8px var(--_btn-shadow);
 }
 .btn:hover {
   background: var(--theme-accent-hover);
@@ -879,11 +896,11 @@ import TailwindPreview from '@/components/TailwindPreview';
 /* ===== components/product-card.css — Tier 3 ===== */
 .product-card {
   /* Colors unique to this component, not in theme */
-  --card-variant: var(--palette-blue-500);
-  --card-glow: oklch(from var(--card-variant) l c h / 0.15);
+  --_card-variant: var(--palette-blue-500);
+  --_card-glow: oklch(from var(--_card-variant) l c h / 0.15);
 }
 .product-card--sunset {
-  --card-variant: oklch(62% 0.2 50);
+  --_card-variant: oklch(62% 0.2 50);
 }
 ```
 
