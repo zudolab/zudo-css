@@ -91,10 +91,6 @@ For everything else — one-off component dimensions, calculated layouts, struct
 
 When a value is purely a structural detail of one component (a button's exact padding, a grid's column template), arbitrary values are the right choice. When a value represents a design decision that defines the system, it belongs in Tier 1 — regardless of how many components currently use it.
 
-<Info title="Tailwind + component-first projects">
-In component-first projects (React, Vue, Svelte with Tailwind), these arbitrary values are written directly as bracket syntax in JSX — `w-[28px]`, `grid-cols-[240px_1fr]`. No component-scoped CSS custom properties are needed because the component file itself provides scoping. In general CSS projects (BEM, CSS Modules), these same one-off values can be stored as component-scoped custom properties with an underscore prefix: `--_button-width: 28px`.
-</Info>
-
 ## Demos
 
 ### The Wrong Approach: Re-importing Numeric Sizes

@@ -66,6 +66,53 @@ Whether to create a token is an **architectural and design judgment**, not a usa
 - Adding it would clutter the token set without adding clarity
 - The value has no meaning outside its component context (e.g., a `calc()` offset for alignment)
 
+## Component-First Projects
+
+In projects that combine a component framework (React, Vue, Svelte) with Tailwind CSS, component-tier CSS custom properties are unnecessary. The component architecture itself provides scoping — each component's template contains its styling directly:
+
+```html
+<!-- ProfileCard.tsx — the component file IS the scope -->
+<section class="px-hsp-sm py-vsp-sm">
+  <div class="grid grid-cols-[80px_1fr] gap-x-hsp-sm">
+    <div class="w-[64px] h-[64px] rounded-full" />
+  </div>
+</section>
+```
+
+There is no separate CSS file where `--card-sidebar-width: 80px` or `--card-avatar-size: 64px` would be defined. The arbitrary values live in the JSX as bracket syntax, and the component file boundary provides all the scoping needed.
+
+Component-scoped CSS custom properties become relevant in **general CSS approaches** — BEM, CSS Modules, or any architecture where components have dedicated CSS files separate from their markup. The guidance about component-level variables in this article applies specifically to those contexts.
+
+## Naming Convention for Component-Scoped Variables
+
+When defining component-scoped CSS custom properties in general CSS, use an underscore prefix to signal local scope:
+
+```css
+.accordion {
+  --_accordion-max-height: 200px;
+  --_accordion-speed: 300ms;
+  max-height: var(--_accordion-max-height);
+  transition: max-height var(--_accordion-speed);
+}
+
+.dialog {
+  --_dialog-side-spacing: 24px;
+  padding-inline: var(--_dialog-side-spacing);
+}
+```
+
+The leading underscore (`--_`) tells readers "this variable is locally scoped to this component." It distinguishes component-level variables from global theme tokens like `--color-primary` or `--spacing-sm`.
+
+Both single underscore (`--_`) and double underscore (`--__`) conventions exist. Choose one and apply it consistently across the project. The single underscore (`--_`) is more common.
+
+```css
+/* Single underscore — more common */
+.menu { --_menu-gap: 8px; }
+
+/* Double underscore — also valid */
+.menu { --__menu-gap: 8px; }
+```
+
 ## Demos
 
 ### System Tokens Mixed with Arbitrary Values
@@ -588,10 +635,6 @@ In a real Tailwind project, this component's classes would look like:
 <button class="px-hsp-sm py-vsp-xs bg-primary text-text-inverse">View Profile</button>
 ```
 
-<Info title="Component-scoped CSS custom properties">
-The demos above express arbitrary values as hardcoded CSS or Tailwind bracket syntax. In general CSS projects (BEM, CSS Modules), these component-specific values are often stored in CSS custom properties scoped to the component selector. When doing so, use an underscore prefix to signal local scope — see [Naming Convention for Component-Scoped Variables](#naming-convention-for-component-scoped-variables) below.
-</Info>
-
 ## Common AI Mistakes
 
 ### Mistake 1: Creating Tokens for Every Value
@@ -629,53 +672,6 @@ If a value exists in the token set, always use the token. Arbitrary values shoul
 The distinction is not about usage count — it's about whether the value represents a **design decision** or a **structural detail**. If the design says "icons are 18px," that's a token from day one, even if only one component uses it. If 18px is just the padding that makes one specific button look balanced, it stays arbitrary forever.
 
 This is the same judgment as "should we extract this function to a utility?" in application architecture. The answer depends on whether the concept deserves a name in the system, not on how many call sites exist.
-
-## Component-First Projects
-
-In projects that combine a component framework (React, Vue, Svelte) with Tailwind CSS, component-tier CSS custom properties are unnecessary. The component architecture itself provides scoping — each component's template contains its styling directly:
-
-```html
-<!-- ProfileCard.tsx — the component file IS the scope -->
-<section class="px-hsp-sm py-vsp-sm">
-  <div class="grid grid-cols-[80px_1fr] gap-x-hsp-sm">
-    <div class="w-[64px] h-[64px] rounded-full" />
-  </div>
-</section>
-```
-
-There is no separate CSS file where `--card-sidebar-width: 80px` or `--card-avatar-size: 64px` would be defined. The arbitrary values live in the JSX as bracket syntax, and the component file boundary provides all the scoping needed.
-
-Component-scoped CSS custom properties become relevant in **general CSS approaches** — BEM, CSS Modules, or any architecture where components have dedicated CSS files separate from their markup. The guidance about component-level variables in this article applies specifically to those contexts.
-
-## Naming Convention for Component-Scoped Variables
-
-When defining component-scoped CSS custom properties in general CSS, use an underscore prefix to signal local scope:
-
-```css
-.accordion {
-  --_accordion-max-height: 200px;
-  --_accordion-speed: 300ms;
-  max-height: var(--_accordion-max-height);
-  transition: max-height var(--_accordion-speed);
-}
-
-.dialog {
-  --_dialog-side-spacing: 24px;
-  padding-inline: var(--_dialog-side-spacing);
-}
-```
-
-The leading underscore (`--_`) tells readers "this variable is locally scoped to this component." It distinguishes component-level variables from global theme tokens like `--color-primary` or `--spacing-sm`.
-
-Both single underscore (`--_`) and double underscore (`--__`) conventions exist. Choose one and apply it consistently across the project. The single underscore (`--_`) is more common.
-
-```css
-/* Single underscore — more common */
-.menu { --_menu-gap: 8px; }
-
-/* Double underscore — also valid */
-.menu { --__menu-gap: 8px; }
-```
 
 ## When to Use
 
