@@ -23,7 +23,7 @@ Organize colors into **three tiers**, each with a clear purpose:
 |------|------|---------|---------|
 | 1 | **Palette** | Raw color values — the full set of available colors | `--palette-blue-500` |
 | 2 | **Theme** | Semantic roles — what each color *means* in the design | `--theme-fg`, `--theme-accent` |
-| 3 | **Component** | Scoped overrides — colors specific to one component | `--button-shadow`, `--card-highlight` |
+| 3 | **Component** | Scoped overrides — colors specific to one component | `--_button-shadow`, `--_card-highlight` |
 
 The key insight: **each tier only references the tier above it**. Components use theme tokens. Theme tokens point to palette colors. Palette holds the actual values.
 
@@ -352,6 +352,23 @@ Theme tokens give **semantic meaning** to palette colors. Instead of "blue-500",
 
 Sometimes a component needs colors that don't fit into the global theme — a shadow, a product variant color, or a subtle gradient stop. These are **Tier 3** variables: narrowly scoped, defined on the component itself, and referencing either theme or palette tokens.
 
+<Info title="Underscore naming convention">
+Use a leading underscore (`--_`) for component-scoped custom properties to signal local scope:
+
+```css
+.product-card {
+  --_card-variant: var(--palette-blue-500);
+  --_card-shadow: oklch(58% 0.2 250 / 0.25);
+}
+```
+
+The `--_` prefix tells readers "this variable is locally scoped to this component" — similar to how `_privateMethod` signals private scope in other languages. This is not a CSS rule — it is a project-level naming convention.
+</Info>
+
+<Info title="Tailwind + component-first exception">
+In Tailwind + component-first projects (React, Vue, Astro with utility classes), Tier 3 component-scoped CSS custom properties are rarely needed. The component framework itself provides scoping — there are no separate CSS files where these variables would be defined. Tier 3 is primarily relevant for general CSS approaches (BEM, CSS Modules, vanilla CSS).
+</Info>
+
 <CssPreview client:load
   title="Tier 3 — Component: Scoped Color Overrides"
   height={340}
@@ -398,41 +415,41 @@ Sometimes a component needs colors that don't fit into the global theme — a sh
     /* Tier 3: Component-scoped colors */
     .product-card {
       /* Default variant colors — referencing palette */
-      --card-variant: var(--palette-blue-500);
-      --card-variant-light: var(--palette-blue-300);
-      --card-variant-dark: var(--palette-blue-700);
+      --_card-variant: var(--palette-blue-500);
+      --_card-variant-light: var(--palette-blue-300);
+      --_card-variant-dark: var(--palette-blue-700);
       /* Shadow uses palette with transparency */
-      --card-shadow: oklch(58% 0.2 250 / 0.25);
+      --_card-shadow: oklch(58% 0.2 250 / 0.25);
 
       background: oklch(100% 0 0);
       border: 1px solid var(--theme-border);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 16px var(--card-shadow);
+      box-shadow: 0 4px 16px var(--_card-shadow);
       width: 160px;
       flex-shrink: 0;
     }
     /* Product color variants — only Tier 3 vars change */
     .product-card--ocean {
-      --card-variant: oklch(58% 0.15 230);
-      --card-variant-light: oklch(80% 0.08 230);
-      --card-variant-dark: oklch(40% 0.12 230);
-      --card-shadow: oklch(58% 0.15 230 / 0.25);
+      --_card-variant: oklch(58% 0.15 230);
+      --_card-variant-light: oklch(80% 0.08 230);
+      --_card-variant-dark: oklch(40% 0.12 230);
+      --_card-shadow: oklch(58% 0.15 230 / 0.25);
     }
     .product-card--sunset {
-      --card-variant: oklch(62% 0.2 50);
-      --card-variant-light: oklch(82% 0.1 50);
-      --card-variant-dark: oklch(42% 0.15 50);
-      --card-shadow: oklch(62% 0.2 50 / 0.25);
+      --_card-variant: oklch(62% 0.2 50);
+      --_card-variant-light: oklch(82% 0.1 50);
+      --_card-variant-dark: oklch(42% 0.15 50);
+      --_card-shadow: oklch(62% 0.2 50 / 0.25);
     }
     .product-card--forest {
-      --card-variant: oklch(55% 0.15 150);
-      --card-variant-light: oklch(78% 0.08 150);
-      --card-variant-dark: oklch(38% 0.12 150);
-      --card-shadow: oklch(55% 0.15 150 / 0.25);
+      --_card-variant: oklch(55% 0.15 150);
+      --_card-variant-light: oklch(78% 0.08 150);
+      --_card-variant-dark: oklch(38% 0.12 150);
+      --_card-shadow: oklch(55% 0.15 150 / 0.25);
     }
     .product-card__badge {
-      background: linear-gradient(135deg, var(--card-variant), var(--card-variant-dark));
+      background: linear-gradient(135deg, var(--_card-variant), var(--_card-variant-dark));
       color: oklch(97% 0.01 0);
       padding: 0.75rem;
       font-size: 0.7rem;
@@ -458,7 +475,7 @@ Sometimes a component needs colors that don't fit into the global theme — a sh
     .product-card__price {
       font-size: 0.9rem;
       font-weight: 700;
-      color: var(--card-variant-dark);
+      color: var(--_card-variant-dark);
     }
     .tier3-demo {
       display: flex;
@@ -496,7 +513,7 @@ Here's a complete example showing how the three tiers connect. Notice how easy i
       <div class="code-block">
         <div class="code-block__label">Tier 3: Component</div>
         <code>.btn { background: var(--theme-accent); }</code>
-        <code>.btn { --btn-shadow: ...; }</code>
+        <code>.btn { --_btn-shadow: ...; }</code>
       </div>
     </div>
     <div class="full-demo__result">
@@ -554,7 +571,7 @@ Here's a complete example showing how the three tiers connect. Notice how easy i
     }
     /* ===== Tier 3: Component ===== */
     .demo-btn--primary {
-      --btn-shadow: oklch(58% 0.2 250 / 0.3);
+      --_btn-shadow: oklch(58% 0.2 250 / 0.3);
     }
     .full-demo {
       display: grid;
@@ -688,7 +705,7 @@ Here's a complete example showing how the three tiers connect. Notice how easy i
     .demo-btn--primary {
       background: var(--theme-accent);
       color: var(--theme-accent-fg);
-      box-shadow: 0 2px 8px var(--btn-shadow);
+      box-shadow: 0 2px 8px var(--_btn-shadow);
     }
     .demo-btn--outline {
       background: transparent;
@@ -866,11 +883,11 @@ Here's how a real project would organize the three tiers across files:
   /* Component-specific color derived from theme.
      Relative color syntax (oklch(from ...)) — Baseline 2024.
      For wider support, use a hardcoded fallback. */
-  --btn-shadow: oklch(from var(--theme-accent) l c h / 0.3);
+  --_btn-shadow: oklch(from var(--theme-accent) l c h / 0.3);
 
   background: var(--theme-accent);
   color: var(--theme-accent-fg);
-  box-shadow: 0 2px 8px var(--btn-shadow);
+  box-shadow: 0 2px 8px var(--_btn-shadow);
 }
 .btn:hover {
   background: var(--theme-accent-hover);
@@ -879,11 +896,11 @@ Here's how a real project would organize the three tiers across files:
 /* ===== components/product-card.css — Tier 3 ===== */
 .product-card {
   /* Colors unique to this component, not in theme */
-  --card-variant: var(--palette-blue-500);
-  --card-glow: oklch(from var(--card-variant) l c h / 0.15);
+  --_card-variant: var(--palette-blue-500);
+  --_card-glow: oklch(from var(--_card-variant) l c h / 0.15);
 }
 .product-card--sunset {
-  --card-variant: oklch(62% 0.2 50);
+  --_card-variant: oklch(62% 0.2 50);
 }
 ```
 

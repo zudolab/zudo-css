@@ -709,6 +709,13 @@ Usage: `w-icon-md h-icon-md`, `w-avatar-sm h-avatar-sm`.
 - **When AI agents build components** — they consistently reach for `h-4 w-4` which doesn't exist in tight token projects; this article explains the correct approach
 - **When the team debates adding numeric size tokens** — this article provides the reasoning for why not
 
+### Tailwind + Component-First vs General CSS
+
+The two-tier approach works the same way regardless of CSS methodology, but the mechanism for Tier 2 differs:
+
+- **Tailwind + component-first** — Tier 2 values are Tailwind bracket syntax in JSX: `w-[28px]`, `grid-cols-[240px_1fr]`. The component file provides scoping. No CSS custom properties needed.
+- **General CSS (BEM, CSS Modules)** — Tier 2 values are component-scoped CSS custom properties: `--_button-width: 28px`, `--_grid-sidebar: 240px`. The underscore prefix (`--_`) signals local scope.
+
 ### Contrast with Other Token Strategies
 
 Not every CSS property needs the same number of tiers:

@@ -23,7 +23,7 @@ Organize font sizes into **three tiers**, each with a clear purpose:
 | --- | --- | --- | --- |
 | 1 | **Scale** | Abstract size values — the available steps | `--scale-lg` → `1.25rem` |
 | 2 | **Theme** | Semantic roles — what each size _means_ | `--font-heading` → `var(--scale-xl)` |
-| 3 | **Component** | Scoped overrides — sizes for one component | `--card-title` → `var(--font-subheading)` |
+| 3 | **Component** | Scoped overrides — sizes for one component | `--_card-title` → `var(--font-subheading)` |
 
 The key insight: **each tier only references the tier above it**. Components use theme tokens. Theme tokens point to scale values. Scale holds the actual rem/px values.
 
@@ -357,6 +357,23 @@ In CSS, Tier 2 lives on `:root` (or any shared scope):
 
 Sometimes a component needs font-size decisions that don't fit into the global theme — a compact sidebar with smaller text, a pricing card with an oversized amount, or an admin panel with denser typography. These are **Tier 3** variables: narrowly scoped, defined on the component itself, and referencing theme or scale tokens.
 
+<Info title="Underscore naming convention">
+Use a leading underscore (`--_`) for component-scoped custom properties to signal local scope:
+
+```css
+.pricing-card {
+  --_card-amount: var(--scale-2xl);
+  --_card-period: var(--font-caption);
+}
+```
+
+The `--_` prefix tells readers "this variable is locally scoped to this component" — similar to how `_privateMethod` signals private scope in other languages. This is not a CSS rule — it is a project-level naming convention.
+</Info>
+
+<Info title="Tailwind + component-first exception">
+In Tailwind + component-first projects (React, Vue, Astro with utility classes), Tier 3 component-scoped CSS custom properties are rarely needed. The component framework itself provides scoping — there are no separate CSS files where these variables would be defined. Tier 3 is primarily relevant for general CSS approaches (BEM, CSS Modules, vanilla CSS).
+</Info>
+
 <CssPreview client:load
   title="Tier 3 — Component: Scoped Size Overrides"
   height={300}
@@ -414,10 +431,10 @@ Sometimes a component needs font-size decisions that don't fit into the global t
 
     /* Tier 3: Pricing card — local size variables */
     .pricing-card {
-      --card-amount: var(--scale-2xl);
-      --card-period: var(--font-caption);
-      --card-desc: var(--font-secondary);
-      --card-badge: var(--font-caption);
+      --_card-amount: var(--scale-2xl);
+      --_card-period: var(--font-caption);
+      --_card-desc: var(--font-secondary);
+      --_card-badge: var(--font-caption);
 
       flex: 1;
       background: hsl(0 0% 100%);
@@ -426,11 +443,11 @@ Sometimes a component needs font-size decisions that don't fit into the global t
       overflow: hidden;
     }
     .pricing-card--premium {
-      --card-amount: var(--scale-2xl);
+      --_card-amount: var(--scale-2xl);
       border-color: hsl(221 83% 53%);
     }
     .pricing-card__badge {
-      font-size: var(--card-badge);
+      font-size: var(--_card-badge);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -446,26 +463,26 @@ Sometimes a component needs font-size decisions that don't fit into the global t
       padding: 0.75rem;
     }
     .pricing-card__amount {
-      font-size: var(--card-amount);
+      font-size: var(--_card-amount);
       font-weight: 700;
       line-height: 1.1;
     }
     .pricing-card__period {
-      font-size: var(--card-period);
+      font-size: var(--_card-period);
       color: hsl(215 16% 47%);
       margin-bottom: 0.4rem;
     }
     .pricing-card__desc {
-      font-size: var(--card-desc);
+      font-size: var(--_card-desc);
       color: hsl(215 16% 47%);
       line-height: 1.5;
     }
 
     /* Tier 3: Sidebar nav — compact local sizes */
     .sidebar-nav {
-      --nav-title: var(--font-secondary);
-      --nav-category: var(--font-caption);
-      --nav-link: var(--font-secondary);
+      --_nav-title: var(--font-secondary);
+      --_nav-category: var(--font-caption);
+      --_nav-link: var(--font-secondary);
 
       width: 140px;
       flex-shrink: 0;
@@ -475,12 +492,12 @@ Sometimes a component needs font-size decisions that don't fit into the global t
       padding: 0.6rem;
     }
     .sidebar-nav__title {
-      font-size: var(--nav-title);
+      font-size: var(--_nav-title);
       font-weight: 700;
       margin-bottom: 0.5rem;
     }
     .sidebar-nav__category {
-      font-size: var(--nav-category);
+      font-size: var(--_nav-category);
       font-weight: 600;
       color: hsl(215 16% 47%);
       text-transform: uppercase;
@@ -489,14 +506,14 @@ Sometimes a component needs font-size decisions that don't fit into the global t
     }
     .sidebar-nav__link {
       display: block;
-      font-size: var(--nav-link);
+      font-size: var(--_nav-link);
       color: hsl(221 83% 53%);
       padding: 0.15rem 0;
       text-decoration: none;
       cursor: pointer;
     }`} />
 
-Notice how each component defines its own font-size variables but still references the theme or scale tiers. The pricing card uses `--card-amount: var(--scale-2xl)` (scale) and `--card-desc: var(--font-secondary)` (theme). The sidebar nav references theme tokens for all its sizes. If the global type scale changes, these components update automatically.
+Notice how each component defines its own font-size variables but still references the theme or scale tiers. The pricing card uses `--_card-amount: var(--scale-2xl)` (scale) and `--_card-desc: var(--font-secondary)` (theme). The sidebar nav references theme tokens for all its sizes. If the global type scale changes, these components update automatically.
 
 ### All Three Tiers Working Together
 
@@ -615,8 +632,8 @@ This demo shows a complete page layout with all three tiers visible in the CSS. 
       gap: 0.75rem;
     }
     .stat-card {
-      --stat-value: var(--scale-xl);
-      --stat-label: var(--font-caption);
+      --_stat-value: var(--scale-xl);
+      --_stat-label: var(--font-caption);
 
       background: hsl(210 40% 96%);
       border: 1px solid hsl(214 32% 91%);
@@ -627,13 +644,13 @@ This demo shows a complete page layout with all three tiers visible in the CSS. 
     }
     .stat-card__value {
       display: block;
-      font-size: var(--stat-value);
+      font-size: var(--_stat-value);
       font-weight: 700;
       line-height: 1.2;
     }
     .stat-card__label {
       display: block;
-      font-size: var(--stat-label);
+      font-size: var(--_stat-label);
       color: hsl(215 16% 47%);
     }`} />
 
@@ -828,13 +845,13 @@ Here is how the three tiers fit together in a real project:
 /* ── Tier 3: Component ── */
 /* Scoped overrides — only when a component needs its own size logic */
 .pricing-card {
-  --card-amount: var(--scale-2xl);
-  --card-label: var(--font-caption);
+  --_card-amount: var(--scale-2xl);
+  --_card-label: var(--font-caption);
 }
 
 .sidebar-nav {
-  --nav-link: var(--font-secondary);
-  --nav-category: var(--font-caption);
+  --_nav-link: var(--font-secondary);
+  --_nav-category: var(--font-caption);
 }
 ```
 

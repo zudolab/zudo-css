@@ -66,6 +66,53 @@ import CssPreview from '@/components/CssPreview';
 - 追加してもトークンセットが煩雑になるだけで明確さが増さない
 - その値はコンポーネントのコンテキスト外では意味を持たない（例：位置揃えのための `calc()` オフセット）
 
+## コンポーネントファーストプロジェクト
+
+コンポーネントフレームワーク（React、Vue、Svelte）と Tailwind CSS を組み合わせたプロジェクトでは、コンポーネント層の CSS カスタムプロパティは不要です。コンポーネントアーキテクチャ自体がスコーピングを提供します — 各コンポーネントのテンプレートがスタイリングを直接含んでいるためです：
+
+```html
+<!-- ProfileCard.tsx — コンポーネントファイル自体がスコープ -->
+<section class="px-hsp-sm py-vsp-sm">
+  <div class="grid grid-cols-[80px_1fr] gap-x-hsp-sm">
+    <div class="w-[64px] h-[64px] rounded-full" />
+  </div>
+</section>
+```
+
+`--card-sidebar-width: 80px` や `--card-avatar-size: 64px` を定義する別の CSS ファイルは存在しません。任意の値は JSX 内にブラケット構文として記述され、コンポーネントファイルの境界が必要なスコーピングをすべて提供します。
+
+コンポーネントスコープの CSS カスタムプロパティが関係するのは、**一般的な CSS アプローチ** — BEM、CSS Modules、またはコンポーネントがマークアップとは別の専用 CSS ファイルを持つアーキテクチャです。この記事のコンポーネントレベル変数に関するガイダンスは、それらのコンテキストに特化しています。
+
+## コンポーネントスコープ変数の命名規則
+
+一般的な CSS でコンポーネントスコープの CSS カスタムプロパティを定義する際、ローカルスコープを示すためにアンダースコアプレフィックスを使います：
+
+```css
+.accordion {
+  --_accordion-max-height: 200px;
+  --_accordion-speed: 300ms;
+  max-height: var(--_accordion-max-height);
+  transition: max-height var(--_accordion-speed);
+}
+
+.dialog {
+  --_dialog-side-spacing: 24px;
+  padding-inline: var(--_dialog-side-spacing);
+}
+```
+
+先頭のアンダースコア（`--_`）は「この変数はこのコンポーネントにローカルスコープされている」ことを読者に伝えます。`--color-primary` や `--spacing-sm` のようなグローバルテーマトークンと区別するためです。
+
+シングルアンダースコア（`--_`）とダブルアンダースコア（`--__`）の両方の規則が存在します。1つを選び、プロジェクト全体で一貫して適用してください。シングルアンダースコア（`--_`）がより一般的です。
+
+```css
+/* シングルアンダースコア — より一般的 */
+.menu { --_menu-gap: 8px; }
+
+/* ダブルアンダースコア — これも有効 */
+.menu { --__menu-gap: 8px; }
+```
+
 ## デモ
 
 ### システムトークンと任意の値の混合

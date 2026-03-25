@@ -66,6 +66,53 @@ Whether to create a token is an **architectural and design judgment**, not a usa
 - Adding it would clutter the token set without adding clarity
 - The value has no meaning outside its component context (e.g., a `calc()` offset for alignment)
 
+## Component-First Projects
+
+In projects that combine a component framework (React, Vue, Svelte) with Tailwind CSS, component-tier CSS custom properties are unnecessary. The component architecture itself provides scoping — each component's template contains its styling directly:
+
+```html
+<!-- ProfileCard.tsx — the component file IS the scope -->
+<section class="px-hsp-sm py-vsp-sm">
+  <div class="grid grid-cols-[80px_1fr] gap-x-hsp-sm">
+    <div class="w-[64px] h-[64px] rounded-full" />
+  </div>
+</section>
+```
+
+There is no separate CSS file where `--card-sidebar-width: 80px` or `--card-avatar-size: 64px` would be defined. The arbitrary values live in the JSX as bracket syntax, and the component file boundary provides all the scoping needed.
+
+Component-scoped CSS custom properties become relevant in **general CSS approaches** — BEM, CSS Modules, or any architecture where components have dedicated CSS files separate from their markup. The guidance about component-level variables in this article applies specifically to those contexts.
+
+## Naming Convention for Component-Scoped Variables
+
+When defining component-scoped CSS custom properties in general CSS, use an underscore prefix to signal local scope:
+
+```css
+.accordion {
+  --_accordion-max-height: 200px;
+  --_accordion-speed: 300ms;
+  max-height: var(--_accordion-max-height);
+  transition: max-height var(--_accordion-speed);
+}
+
+.dialog {
+  --_dialog-side-spacing: 24px;
+  padding-inline: var(--_dialog-side-spacing);
+}
+```
+
+The leading underscore (`--_`) tells readers "this variable is locally scoped to this component." It distinguishes component-level variables from global theme tokens like `--color-primary` or `--spacing-sm`.
+
+Both single underscore (`--_`) and double underscore (`--__`) conventions exist. Choose one and apply it consistently across the project. The single underscore (`--_`) is more common.
+
+```css
+/* Single underscore — more common */
+.menu { --_menu-gap: 8px; }
+
+/* Double underscore — also valid */
+.menu { --__menu-gap: 8px; }
+```
+
 ## Demos
 
 ### System Tokens Mixed with Arbitrary Values
