@@ -62,7 +62,7 @@ export const settings = {
           },
           {
             label: "Three-Tier Color Strategy",
-            href: "/docs/color/three-tier-color-strategy",
+            href: "/docs/styling/color/three-tier-color-strategy",
             locales: { ja: { label: "3層カラー戦略" } },
           },
         ],
@@ -77,8 +77,7 @@ export const settings = {
     { label: "Methodology", path: "/docs/methodology", categoryMatch: "methodology" },
     { label: "Layout", path: "/docs/layout", categoryMatch: "layout" },
     { label: "Typography", path: "/docs/typography", categoryMatch: "typography" },
-    { label: "Visual", path: "/docs/visual", categoryMatch: "visual" },
-    { label: "Color", path: "/docs/color", categoryMatch: "color" },
+    { label: "Styling", path: "/docs/styling", categoryMatch: "styling" },
     { label: "Responsive", path: "/docs/responsive", categoryMatch: "responsive" },
     { label: "Interactive", path: "/docs/interactive", categoryMatch: "interactive" },
     { label: "Claude", path: "/docs/claude", categoryMatch: "claude" },

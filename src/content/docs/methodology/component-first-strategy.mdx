@@ -350,7 +350,7 @@ These are **exceptions**, not the default. If you are working in React, Vue, Sve
 
 ## Component-Tier Variables Are Unnecessary
 
-In tiered design token strategies — such as a [three-tier color strategy](/docs/color/three-tier-color-strategy) or a [three-tier font-size strategy](/docs/typography/three-tier-font-size-strategy) — the most concrete level is the **component tier**: CSS custom properties scoped to a specific component. For example, `--_dialog-side-spacing`, `--_card-shadow`, or `--_nav-font-size` (where the `--_` prefix signals local scope). These variables let a component encapsulate its own design decisions in its CSS file.
+In tiered design token strategies — such as a [three-tier color strategy](/docs/styling/color/three-tier-color-strategy) or a [three-tier font-size strategy](/docs/typography/three-tier-font-size-strategy) — the most concrete level is the **component tier**: CSS custom properties scoped to a specific component. For example, `--_dialog-side-spacing`, `--_card-shadow`, or `--_nav-font-size` (where the `--_` prefix signals local scope). These variables let a component encapsulate its own design decisions in its CSS file.
 
 With the component-first approach, this tier is unnecessary. There is no separate CSS file per component where you would define scoped custom properties. Styling is expressed as utility classes directly in the component's markup, and the component framework itself (React, Vue, Svelte, Astro) provides the scoping boundary.
 
