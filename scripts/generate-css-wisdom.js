@@ -26,8 +26,7 @@ const SKIP_CATEGORIES = new Set(["overview", "inbox"]);
 const CATEGORY_ORDER = [
   "layout",
   "typography",
-  "color",
-  "visual",
+  "styling",
   "responsive",
   "interactive",
   "methodology",
@@ -36,8 +35,7 @@ const CATEGORY_ORDER = [
 const CATEGORY_LABELS = {
   layout: "Layout",
   typography: "Typography",
-  color: "Color",
-  visual: "Visual",
+  styling: "Styling",
   responsive: "Responsive",
   interactive: "Interactive",
   methodology: "Methodology",
