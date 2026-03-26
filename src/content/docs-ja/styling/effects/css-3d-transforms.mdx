@@ -1,53 +1,53 @@
 ---
-title: CSS 3D Transforms
-sidebar_position: 9
+title: CSS 3Dトランスフォーム
+sidebar_position: 5
 ---
 
 import CssPreview from '@/components/CssPreview';
 
-## The Problem
+## 問題
 
-Developers attempt 3D effects like card flips, rotating panels, and cubes, then hit mysterious bugs: the backside of the card shows through as a mirror image, the rotation looks flat instead of 3D, or the entire effect collapses into a 2D plane. These bugs are confusing because each individual property (`transform`, `backface-visibility`) seems correct in isolation. The root cause is that CSS 3D transforms require a **system** of four coordinated properties — `perspective`, `transform-style: preserve-3d`, `backface-visibility`, and `perspective-origin` — and omitting or misplacing any one of them breaks the illusion.
+開発者がカードフリップ、回転パネル、キューブなどの3Dエフェクトを試みると、原因不明のバグに遭遇します。カードの裏側が鏡像として透けて見える、回転が3Dではなく平面的に見える、エフェクト全体が2D平面に潰れてしまう、などです。これらのバグは紛らわしいものです。なぜなら、個々のプロパティ（`transform`、`backface-visibility`）は単体では正しく見えるからです。根本原因は、CSS 3Dトランスフォームが4つのプロパティ — `perspective`、`transform-style: preserve-3d`、`backface-visibility`、`perspective-origin` — の**連携したシステム**を必要とし、いずれか1つでも省略や誤配置があると錯覚が壊れるということです。
 
-## The Solution
+## 解決方法
 
-CSS 3D transforms work as a four-property system where each property has a specific role:
+CSS 3Dトランスフォームは、各プロパティに特定の役割がある4つのプロパティのシステムとして機能します。
 
-1. **`perspective`** on the parent container establishes the 3D viewing distance
-2. **`transform-style: preserve-3d`** on the rotating element tells children to render in shared 3D space
-3. **`backface-visibility: hidden`** on the card faces hides the reverse side when rotated away
-4. **`perspective-origin`** on the parent shifts the vanishing point
+1. **`perspective`** を親コンテナに設定し、3Dの視距離を確立する
+2. **`transform-style: preserve-3d`** を回転する要素に設定し、子要素が共有3D空間でレンダリングされるようにする
+3. **`backface-visibility: hidden`** をカードの各面に設定し、回転して裏向きになったときに非表示にする
+4. **`perspective-origin`** を親に設定し、消失点をずらす
 
-All four must be present and placed on the correct elements. `perspective` and `perspective-origin` go on the **parent** (the viewing container). `transform-style` goes on the **element being rotated**. `backface-visibility` goes on the **individual faces** that should hide when facing away.
+4つすべてが存在し、正しい要素に配置されている必要があります。`perspective` と `perspective-origin` は**親**（ビューイングコンテナ）に設定します。`transform-style` は**回転される要素**に設定します。`backface-visibility` は裏向きになったときに隠すべき**個々の面**に設定します。
 
-### Core Principles
+### 基本原則
 
-#### Perspective Creates Depth
+#### perspective が奥行きを作る
 
-Without `perspective`, rotations happen in a flat 2D projection — a `rotateY(45deg)` just compresses the element horizontally like a `scaleX()`. Adding `perspective` on the parent container creates a virtual camera at a set distance, making nearer edges appear larger and further edges smaller, just like real-world foreshortening.
+`perspective` がないと、回転はフラットな2D投影で行われます。`rotateY(45deg)` は `scaleX()` のように要素を水平方向に圧縮するだけです。親コンテナに `perspective` を追加すると、設定された距離に仮想カメラが作成され、近い端が大きく、遠い端が小さく見えるようになります。これは現実世界の遠近法と同じです。
 
-Lower values (200–400px) create dramatic, exaggerated depth. Higher values (800–1200px) produce subtle, natural-looking 3D. A good default for card effects is `perspective: 1000px`.
+小さい値（200〜400px）は劇的で誇張された奥行きを作ります。大きい値（800〜1200px）は繊細で自然な3Dになります。カードエフェクトのデフォルトとしては `perspective: 1000px` が適切です。
 
-#### preserve-3d Keeps Children in 3D Space
+#### preserve-3d が子要素を3D空間に保つ
 
-By default, CSS flattens transformed children back into the parent's 2D plane — this is `transform-style: flat`. When building a card with a front face and a back face, both faces must exist in the same 3D space. Setting `transform-style: preserve-3d` on their shared parent (the card wrapper) prevents this flattening, so a child rotated `180deg` actually sits behind its sibling instead of overlapping on the same plane.
+デフォルトでは、CSSはトランスフォームされた子要素を親の2D平面にフラット化します。これが `transform-style: flat` です。表と裏のあるカードを構築する場合、両面が同じ3D空間に存在する必要があります。共有の親（カードラッパー）に `transform-style: preserve-3d` を設定すると、このフラット化が防止され、`180deg` 回転した子要素が同じ平面で重なるのではなく、実際に兄弟要素の背後に位置するようになります。
 
-#### backface-visibility Hides the Reverse
+#### backface-visibility が裏面を隠す
 
-Every HTML element has a front face and a back face. By default, the back face is visible — it renders as a mirror image of the front. For a card flip, this means both the front and back content show through simultaneously. Setting `backface-visibility: hidden` on each card face makes it invisible when rotated past 90 degrees, so only the face pointing toward the viewer is shown.
+すべてのHTML要素には表面と裏面があります。デフォルトでは裏面が表示されます。表面の鏡像としてレンダリングされます。カードフリップの場合、これは表と裏のコンテンツが同時に透けて見えることを意味します。各カード面に `backface-visibility: hidden` を設定すると、90度を超えて回転したときに非表示になり、視聴者に向いている面だけが表示されます。
 
-#### perspective-origin Shifts the Vanishing Point
+#### perspective-origin が消失点をずらす
 
-`perspective-origin` controls where the viewer's eye is positioned relative to the parent container. The default is `50% 50%` (center). Shifting it to `top left` makes elements in the top-left corner appear closer while bottom-right elements recede further. This is useful for grids of tilted cards where you want an off-center viewing angle.
+`perspective-origin` は、親コンテナに対する視聴者の目の位置を制御します。デフォルトは `50% 50%`（中央）です。`top left` にずらすと、左上の要素が近くに見え、右下の要素がより後退して見えます。傾いたカードのグリッドでオフセンターの視点が必要な場合に便利です。
 
-## Live Previews
+## ライブプレビュー
 
-### Card Flip on Hover
+### ホバーでカードフリップ
 
-The classic card flip uses all four properties together. The parent provides `perspective`, the card wrapper uses `preserve-3d` and rotates on hover, and each face uses `backface-visibility: hidden` to show only when facing forward.
+クラシックなカードフリップは4つのプロパティすべてを使います。親が `perspective` を提供し、カードラッパーが `preserve-3d` を使ってホバー時に回転し、各面が `backface-visibility: hidden` を使って正面を向いているときだけ表示されます。
 
 <CssPreview client:load
-  title="Card Flip on Hover"
+  title="ホバーでカードフリップ"
   height={320}
   html={`
     <div class="card-flip">
@@ -124,12 +124,12 @@ The classic card flip uses all four properties together. The parent provides `pe
     }
     `} />
 
-### Perspective Comparison
+### パースペクティブの比較
 
-Lower perspective values create extreme foreshortening while higher values produce a subtler effect. Both panels below have the same `rotateY(40deg)` transform — only the parent `perspective` value differs.
+小さい perspective 値は極端な遠近感を作り、大きい値はより繊細な効果を生みます。以下の2つのパネルはどちらも同じ `rotateY(40deg)` トランスフォームです。親の `perspective` 値だけが異なります。
 
 <CssPreview client:load
-  title="Perspective: Low (200px) vs High (1000px)"
+  title="パースペクティブ: 低い値 (200px) vs 高い値 (1000px)"
   height={280}
   html={`
     <div class="perspective-demo">
@@ -193,12 +193,12 @@ Lower perspective values create extreme foreshortening while higher values produ
     }
     `} />
 
-### 3D Cube
+### 3Dキューブ
 
-A CSS cube uses six faces positioned with `translateZ` and `rotateX`/`rotateY`. The parent provides `perspective` and the cube wrapper uses `preserve-3d`. Hover to spin the cube.
+CSSキューブは `translateZ` と `rotateX`/`rotateY` で配置された6つの面を使います。親が `perspective` を提供し、キューブラッパーが `preserve-3d` を使います。ホバーでキューブを回転させます。
 
 <CssPreview client:load
-  title="3D Cube with Hover Rotation"
+  title="ホバー回転する3Dキューブ"
   height={350}
   html={`
     <div class="cube-scene">
@@ -279,12 +279,12 @@ A CSS cube uses six faces positioned with `translateZ` and `rotateX`/`rotateY`. 
     }
     `} />
 
-### Perspective Origin
+### パースペクティブオリジン
 
-`perspective-origin` shifts where the viewer's eye sits. Below, the same grid of tilted cards is viewed from three different vantage points. Hover over each group to see how the tilted cards are foreshortened differently.
+`perspective-origin` は視聴者の目の位置をずらします。以下では、同じ傾いたカードのグリッドを3つの異なる視点から見ています。各グループにホバーすると、傾いたカードの遠近感がどのように異なるかを確認できます。
 
 <CssPreview client:load
-  title="Perspective Origin: Top-Left vs Center vs Bottom-Right"
+  title="パースペクティブオリジン: 左上 vs 中央 vs 右下"
   height={340}
   html={`
     <div class="origin-demo">
@@ -381,12 +381,12 @@ A CSS cube uses six faces positioned with `translateZ` and `rotateX`/`rotateY`. 
     }
     `} />
 
-### Flip Card with Reduced Motion
+### モーション軽減対応のフリップカード
 
-A production-ready card flip should respect `prefers-reduced-motion`. When the user prefers reduced motion, the card cross-fades between front and back using opacity instead of rotating in 3D.
+本番用のカードフリップは `prefers-reduced-motion` を尊重すべきです。ユーザーがモーション軽減を好む場合、カードは3D回転の代わりにオパシティによるクロスフェードで表と裏を切り替えます。
 
 <CssPreview client:load
-  title="Accessible Card Flip with Reduced Motion"
+  title="モーション軽減対応のアクセシブルなカードフリップ"
   height={320}
   html={`
     <div class="a11y-flip">
@@ -505,31 +505,31 @@ A production-ready card flip should respect `prefers-reduced-motion`. When the u
     }
     `} />
 
-## Common AI Mistakes
+## AIがよくやるミス
 
-- **Missing `perspective` on the parent** — Applying `perspective` as part of the `transform` shorthand on the element itself instead of as a standalone property on its parent. The `perspective()` function in `transform` only affects that single element, not its children.
-- **Forgetting `transform-style: preserve-3d`** — Without this, child elements are flattened into the parent's 2D plane. A card flip looks correct in structure but both faces render on the same plane, overlapping instead of rotating.
-- **Placing `backface-visibility` on the wrong element** — It must go on the individual faces, not the rotating wrapper. On the wrapper, it hides the entire card when it turns away rather than selectively hiding each face.
-- **Not pre-rotating the back face** — The back face needs `transform: rotateY(180deg)` in its resting state so that it faces away from the viewer initially and comes into view when the wrapper rotates.
-- **Using `overflow: hidden` on a `preserve-3d` container** — `overflow: hidden` forces `transform-style: flat`, silently breaking the 3D effect. If clipping is needed, apply it on an outer wrapper that does not use `preserve-3d`.
-- **Ignoring `prefers-reduced-motion`** — 3D rotations can cause motion sickness. Production card flips should fall back to opacity cross-fades when the user prefers reduced motion.
+- **親に `perspective` がない** — `perspective` を親のスタンドアロンプロパティではなく、要素自体の `transform` ショートハンドの一部として適用してしまう。`transform` 内の `perspective()` 関数はその単一の要素にのみ影響し、子要素には影響しません。
+- **`transform-style: preserve-3d` を忘れる** — これがないと、子要素は親の2D平面にフラット化されます。カードフリップの構造は正しく見えますが、両面が同じ平面にレンダリングされ、回転するのではなく重なります。
+- **`backface-visibility` を間違った要素に配置する** — 回転ラッパーではなく、個々の面に設定する必要があります。ラッパーに設定すると、各面を選択的に隠すのではなく、カード全体が裏返ったときに隠れてしまいます。
+- **裏面を事前に回転していない** — 裏面は初期状態で `transform: rotateY(180deg)` が必要です。これにより、最初は視聴者から離れた方向を向き、ラッパーが回転したときに表示されるようになります。
+- **`preserve-3d` コンテナに `overflow: hidden` を使う** — `overflow: hidden` は `transform-style: flat` を強制し、3Dエフェクトを暗黙的に壊します。クリッピングが必要な場合は、`preserve-3d` を使わない外側のラッパーに適用しましょう。
+- **`prefers-reduced-motion` を無視する** — 3D回転は動揺を引き起こす可能性があります。本番のカードフリップは、ユーザーがモーション軽減を好む場合にオパシティのクロスフェードにフォールバックすべきです。
 
-## When to Use
+## 使い分け
 
-- **Card flips** — Product cards, flashcards, profile cards that reveal extra information on hover or click
-- **3D showcases** — Rotating cubes or prisms for image galleries or feature highlights
-- **Perspective tilts** — Hover effects that tilt cards slightly toward the cursor for a tactile feel
-- **Hero sections** — Dramatic 3D entrance animations on scroll with large perspective values
+- **カードフリップ** — ホバーやクリックで追加情報を表示する商品カード、フラッシュカード、プロフィールカード
+- **3Dショーケース** — 画像ギャラリーやフィーチャーハイライト用の回転キューブやプリズム
+- **パースペクティブティルト** — カーソルに向かって少し傾くホバーエフェクトで触覚的な感触を出す
+- **ヒーローセクション** — 大きな perspective 値を使ったスクロール時のドラマチックな3D登場アニメーション
 
-## Gotchas
+## 注意点
 
-- `perspective` and `perspective-origin` must be on the **parent**, not the rotating element
-- `overflow: hidden` on a `preserve-3d` element silently reverts to `transform-style: flat`
-- `backface-visibility: hidden` has no effect without `transform-style: preserve-3d` on an ancestor
-- Nested `preserve-3d` elements compound perspective, which can produce unexpected distortion
-- Mobile Safari historically had bugs with `preserve-3d` — test on real iOS devices
+- `perspective` と `perspective-origin` は回転要素ではなく**親**に設定する必要があります
+- `preserve-3d` 要素に `overflow: hidden` を設定すると、暗黙的に `transform-style: flat` に戻ります
+- `backface-visibility: hidden` は、祖先に `transform-style: preserve-3d` がないと効果がありません
+- ネストされた `preserve-3d` 要素は perspective を合成し、予期しない歪みを生む可能性があります
+- Mobile Safariには歴史的に `preserve-3d` のバグがあります。実際のiOSデバイスでテストしましょう
 
-## References
+## 参考リンク
 
 - [perspective — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/perspective)
 - [transform-style — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-style)

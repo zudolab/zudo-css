@@ -1,24 +1,24 @@
 ---
-title: Filter Effects
-sidebar_position: 8
+title: フィルターエフェクト
+sidebar_position: 4
 ---
 
 import CssPreview from '@/components/CssPreview';
 import TailwindPreview from '@/components/TailwindPreview';
 
-## The Problem
+## 問題
 
-AI agents underuse CSS filters, often resorting to image editing tools or JavaScript for effects that CSS `filter` handles natively. When filters are used, agents confuse `filter: drop-shadow()` with `box-shadow`, apply `blur()` to elements when they mean `backdrop-filter: blur()`, and forget that multiple filter functions can be chained in a single declaration. The critical difference between `drop-shadow()` and `box-shadow` — shape-awareness — is almost never considered.
+AIエージェントはCSSフィルターを活用できていないことが多く、CSS `filter` でネイティブに処理できるエフェクトに対して画像編集ツールやJavaScriptに頼ってしまいます。フィルターを使う場合でも、`filter: drop-shadow()` と `box-shadow` を混同したり、`backdrop-filter: blur()` のつもりで要素に `blur()` を適用したり、複数のフィルター関数を1つの宣言でチェーンできることを忘れたりします。`drop-shadow()` と `box-shadow` の決定的な違い — シェイプ認識 — はほとんど考慮されません。
 
-## The Solution
+## 解決方法
 
-The CSS `filter` property applies graphical effects to an element and all its contents. It accepts a space-separated list of filter functions applied in order. Key functions include `blur()`, `brightness()`, `contrast()`, `saturate()`, `grayscale()`, `sepia()`, `hue-rotate()`, `invert()`, `opacity()`, and `drop-shadow()`.
+CSS `filter` プロパティは、要素とそのすべてのコンテンツにグラフィカルなエフェクトを適用します。スペース区切りのフィルター関数リストを受け付け、順番に適用されます。主な関数には `blur()`、`brightness()`、`contrast()`、`saturate()`、`grayscale()`、`sepia()`、`hue-rotate()`、`invert()`、`opacity()`、`drop-shadow()` があります。
 
-The most important distinction is between `filter` (affects the element itself) and `backdrop-filter` (affects what is behind the element). Within `filter`, `drop-shadow()` follows the shape of the element's alpha channel while `box-shadow` always renders as a rectangle.
+最も重要な区別は、`filter`（要素自体に影響）と `backdrop-filter`（要素の背後に影響）です。`filter` 内では、`drop-shadow()` が要素のアルファチャンネルの形状に追従するのに対し、`box-shadow` は常に矩形としてレンダリングされます。
 
-## Code Examples
+## コード例
 
-### Individual Filter Functions
+### 個別のフィルター関数
 
 ```css
 /* Blur */
@@ -70,9 +70,9 @@ The most important distinction is between `filter` (affects the element itself) 
 }
 ```
 
-### Chaining Multiple Filters
+### 複数フィルターのチェーン
 
-Filters are applied left to right. Order matters — `brightness` before `contrast` produces different results than `contrast` before `brightness`.
+フィルターは左から右へ適用されます。順序が重要です。`brightness` を `contrast` の前に置く場合と `contrast` を `brightness` の前に置く場合では結果が異なります。
 
 ```css
 /* Vibrant, slightly warm look */
@@ -91,9 +91,9 @@ Filters are applied left to right. Order matters — `brightness` before `contra
 }
 ```
 
-### drop-shadow() vs box-shadow
+### drop-shadow() と box-shadow の違い
 
-`box-shadow` renders a rectangular shadow behind the element's bounding box. `drop-shadow()` follows the actual shape of the element, including transparent areas in PNG/SVG images.
+`box-shadow` は要素のバウンディングボックスの背後に矩形のシャドウをレンダリングします。`drop-shadow()` は透明な部分を含む要素の実際の形状に追従します（PNG/SVG画像のアルファチャンネル）。
 
 ```css
 /* box-shadow — rectangle behind the entire element */
@@ -113,9 +113,9 @@ Filters are applied left to right. Order matters — `brightness` before `contra
 <img class="icon-drop-shadow" src="star-icon.png" alt="Star" />
 ```
 
-The first image has a rectangular shadow. The second has a shadow that hugs the star's outline.
+最初の画像は矩形のシャドウを持ちます。2番目の画像は星のアウトラインに沿ったシャドウを持ちます。
 
-#### drop-shadow Syntax Differences
+#### drop-shadow の構文の違い
 
 ```css
 /* drop-shadow does NOT support: */
@@ -135,7 +135,7 @@ The first image has a rectangular shadow. The second has a shadow that hugs the 
 }
 ```
 
-### Hover Effects with Filters
+### フィルターによるホバーエフェクト
 
 ```css
 .image-hover {
@@ -178,7 +178,7 @@ The first image has a rectangular shadow. The second has a shadow that hugs the 
 }
 ```
 
-### Disabled State with Filters
+### フィルターによる無効化状態
 
 ```css
 .disabled {
@@ -187,9 +187,9 @@ The first image has a rectangular shadow. The second has a shadow that hugs the 
 }
 ```
 
-### drop-shadow on Clipped Elements
+### クリップされた要素の drop-shadow
 
-`drop-shadow()` respects `clip-path`, unlike `box-shadow` which always renders as a rectangle.
+`drop-shadow()` は `clip-path` を尊重しますが、`box-shadow` は常に矩形としてレンダリングされます。
 
 ```css
 .clipped-with-shadow {
@@ -199,7 +199,7 @@ The first image has a rectangular shadow. The second has a shadow that hugs the 
 }
 ```
 
-Note: The `filter` must be on the element itself. If the shadow is cut by the clip-path, wrap the element in a container and apply `filter` to the container instead.
+注意：`filter` は要素自体に設定する必要があります。シャドウが clip-path でカットされる場合は、要素をコンテナでラップし、`filter` をコンテナに適用しましょう。
 
 ```css
 /* Shadow wrapper pattern */
@@ -219,7 +219,7 @@ Note: The `filter` must be on the element itself. If the shadow is cut by the cl
 </div>
 ```
 
-### Dark Mode Filter Shortcut for Images
+### ダークモード用の画像フィルターショートカット
 
 ```css
 /* Quick dark mode adaptation for decorative images */
@@ -230,10 +230,10 @@ Note: The `filter` must be on the element itself. If the shadow is cut by the cl
 }
 ```
 
-## Live Previews
+## ライブプレビュー
 
 <CssPreview client:load
-  title="Filter Effects Gallery"
+  title="フィルターエフェクトギャラリー"
   html={`    <div class="demo"><div class="item"><div class="box original"></div><span>Original</span></div><div class="item"><div class="box blur"></div><span>blur(4px)</span></div><div class="item"><div class="box brightness"></div><span>brightness(1.5)</span></div><div class="item"><div class="box contrast"></div><span>contrast(1.8)</span></div><div class="item"><div class="box saturate"></div><span>saturate(2)</span></div><div class="item"><div class="box hue-rotate"></div><span>hue-rotate(90deg)</span></div></div>`}
   css={`
     .demo {
@@ -274,7 +274,7 @@ Note: The `filter` must be on the element itself. If the shadow is cut by the cl
   height={250} />
 
 <CssPreview client:load
-  title="drop-shadow vs box-shadow on Irregular Shape"
+  title="不規則な形状での drop-shadow vs box-shadow"
   html={`    <div class="demo"><div class="col"><div class="triangle-wrapper box-shadow-demo"><div class="triangle"></div></div><span>box-shadow (rectangular)</span></div><div class="col"><div class="triangle-wrapper drop-shadow-demo"><div class="triangle"></div></div><span>drop-shadow (shape-aware)</span></div></div>`}
   css={`
     .demo {
@@ -321,33 +321,33 @@ Note: The `filter` must be on the element itself. If the shadow is cut by the cl
     `}
   height={250} />
 
-## Common AI Mistakes
+## AIがよくやるミス
 
-- **Using `box-shadow` on transparent images** — The shadow appears as a rectangle, ignoring the image's shape. `filter: drop-shadow()` follows the alpha channel.
-- **Confusing `filter: blur()` with `backdrop-filter: blur()`** — `filter: blur()` blurs the element and all its content (including text). `backdrop-filter: blur()` blurs only what is behind the element.
-- **Adding spread to `drop-shadow()`** — `drop-shadow()` does not support the spread parameter. AI agents copy `box-shadow` syntax directly into `drop-shadow()` and produce invalid CSS.
-- **Applying multiple separate `filter` declarations** — Only the last `filter` declaration wins. Chain functions in a single declaration: `filter: blur(2px) brightness(1.2)`.
-- **Not considering filter order** — `brightness(0.5) contrast(2)` looks different from `contrast(2) brightness(0.5)`. The order of chained functions matters.
-- **Using `filter: opacity()` when `opacity` property suffices** — The `filter: opacity()` function exists for chaining with other filters, but for standalone opacity, the `opacity` property is simpler and equally performant.
-- **Applying `filter: drop-shadow()` directly to a clipped element** — The shadow may get clipped too. Apply the filter to a wrapping container instead.
+- **透明画像に `box-shadow` を使う** — シャドウが矩形として表示され、画像の形状が無視されます。`filter: drop-shadow()` はアルファチャンネルに追従します。
+- **`filter: blur()` と `backdrop-filter: blur()` を混同する** — `filter: blur()` は要素とそのすべてのコンテンツ（テキスト含む）をブラーします。`backdrop-filter: blur()` は要素の背後にあるものだけをブラーします。
+- **`drop-shadow()` にスプレッド値を追加する** — `drop-shadow()` はスプレッドパラメータをサポートしていません。AIエージェントが `box-shadow` の構文をそのまま `drop-shadow()` にコピーして無効なCSSを生成します。
+- **複数の個別の `filter` 宣言を適用する** — 最後の `filter` 宣言だけが有効になります。1つの宣言で関数をチェーンしましょう：`filter: blur(2px) brightness(1.2)`。
+- **フィルターの順序を考慮しない** — `brightness(0.5) contrast(2)` と `contrast(2) brightness(0.5)` は異なる結果になります。チェーンされた関数の順序は重要です。
+- **`opacity` プロパティで十分なのに `filter: opacity()` を使う** — `filter: opacity()` 関数は他のフィルターとのチェーン用に存在しますが、単独のオパシティには `opacity` プロパティの方がシンプルで同等のパフォーマンスです。
+- **クリップされた要素に直接 `filter: drop-shadow()` を適用する** — シャドウもクリップされる可能性があります。代わりにラッピングコンテナにフィルターを適用しましょう。
 
-## When to Use
+## 使い分け
 
-- **Shape-aware shadows** — `drop-shadow()` for transparent PNGs, SVG icons, and `clip-path`-clipped elements
-- **Image treatment** — Grayscale team photos, vintage filters, brightness adjustments without image editing
-- **Hover effects** — Brighten, saturate, or desaturate images on interaction
-- **Disabled states** — `grayscale(1) opacity(0.5)` as a universal disabled appearance
-- **Dark mode adjustments** — Quick brightness/contrast tweaks for images in dark themes
-- **Filter chains** — Combine multiple effects for Instagram-like treatments directly in CSS
+- **シェイプ認識シャドウ** — 透明PNG、SVGアイコン、`clip-path` でクリップされた要素に `drop-shadow()` を使う場合
+- **画像処理** — 画像編集なしでのグレースケールのチーム写真、ヴィンテージフィルター、明るさ調整
+- **ホバーエフェクト** — インタラクション時に画像を明るくしたり、彩度を上げたり下げたりする場合
+- **無効化状態** — `grayscale(1) opacity(0.5)` を汎用的な無効化表現として使う場合
+- **ダークモード調整** — ダークテーマでの画像の明るさ/コントラストの簡易調整
+- **フィルターチェーン** — CSSで直接Instagramのようなエフェクトを組み合わせる場合
 
 ## Tailwind CSS
 
-Tailwind provides utility classes for common CSS filter functions: `blur-*`, `brightness-*`, `contrast-*`, `grayscale`, `sepia`, `hue-rotate-*`, and `invert`. These can be combined on a single element.
+Tailwindは一般的なCSSフィルター関数のユーティリティクラスを提供しています：`blur-*`、`brightness-*`、`contrast-*`、`grayscale`、`sepia`、`hue-rotate-*`、`invert`。これらは1つの要素で組み合わせることができます。
 
-### Filter Effects Gallery
+### フィルターエフェクトギャラリー
 
 <TailwindPreview client:load
-  title="Tailwind: Filter Effects Gallery"
+  title="Tailwind: フィルターエフェクトギャラリー"
   html={`    <div class="flex flex-wrap gap-3 justify-center items-center min-h-[230px] bg-slate-900 p-4">
       <div class="flex flex-col items-center gap-1.5">
         <div class="w-24 h-20 rounded-lg" style="background: linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6);"></div>
@@ -384,10 +384,10 @@ Tailwind provides utility classes for common CSS filter functions: `blur-*`, `br
     </div>`}
   height={270} />
 
-### Hover Filter Effects
+### ホバーフィルターエフェクト
 
 <TailwindPreview client:load
-  title="Tailwind: Hover Filter Effects"
+  title="Tailwind: ホバーフィルターエフェクト"
   html={`    <div class="flex gap-6 justify-center items-center min-h-[200px] bg-slate-100 p-6">
       <div class="flex flex-col items-center gap-2">
         <div class="w-28 h-20 rounded-lg grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);"></div>
@@ -404,7 +404,7 @@ Tailwind provides utility classes for common CSS filter functions: `blur-*`, `br
     </div>`}
   height={220} />
 
-## References
+## 参考リンク
 
 - [filter — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/filter)
 - [drop-shadow() — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/filter-function/drop-shadow)
