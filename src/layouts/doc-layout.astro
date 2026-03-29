@@ -23,6 +23,7 @@ import { getVersionAvailability } from "@/utils/version-availability";
 import Footer from "@/components/footer.astro";
 import ColorTweakPanel from "@/components/color-tweak-panel";
 import AiChatModal from "@/components/ai-chat-modal";
+import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
 import MockInit from "@/components/mock-init";
 import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
 
@@ -161,6 +162,24 @@ const contentTransition = {
         <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms-full.txt" : `/${lang}/llms-full.txt`)} title="llms-full.txt" />
       </Fragment>
     )}
+    {settings.sidebarToggle && (
+      <script is:inline>
+        (function () {
+          function applySidebarState() {
+            if (localStorage.getItem("zudo-css-sidebar-visible") === "false") {
+              document.documentElement.setAttribute("data-sidebar-hidden", "");
+            } else {
+              document.documentElement.removeAttribute("data-sidebar-hidden");
+            }
+          }
+          applySidebarState();
+          if (!window.__zdSidebarApplied) {
+            document.addEventListener("astro:after-swap", applySidebarState);
+            window.__zdSidebarApplied = true;
+          }
+        })();
+      </script>
+    )}
     <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
@@ -180,8 +199,15 @@ const contentTransition = {
       </aside>
     )}
 
+    {!hideSidebar && settings.sidebarToggle && (
+      <DesktopSidebarToggle
+        client:load
+        transition:persist="desktop-sidebar-toggle"
+      />
+    )}
+
     {/* Content margin wrapper - pushes content right of fixed sidebar */}
-    <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w)]"]}>
+    <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w)]", !hideSidebar && settings.sidebarToggle && "zd-sidebar-content-wrapper"]}>
       <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
         <div class:list={[
           "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
