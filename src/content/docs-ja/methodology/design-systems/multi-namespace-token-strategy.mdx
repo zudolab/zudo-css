@@ -1,0 +1,578 @@
+---
+title: マルチネームスペーストークン戦略
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+[タイトトークン戦略](./tight-token-strategy/)では、プロジェクト固有のセマンティックトークンを定義します。例えば、ブログ中心のウェブサイトでは、記事コンテンツに最適化されたスペーシングとフォントサイズのトークンを `myweb-` というネームスペースで定義します：
+
+```css
+@theme {
+  /* myweb namespace — article-focused tokens */
+  --spacing-myweb-content-gap: 32px;
+  --spacing-myweb-section-gap: 48px;
+  --spacing-myweb-reading-padding: 24px;
+  --font-size-myweb-body: 1.125rem;
+  --font-size-myweb-heading: 2rem;
+}
+```
+
+サイトが成長するにつれて、新しい機能が追加されていきます。ログイン画面、管理ダッシュボード、設定パネル — これらの UI は記事コンテンツとは根本的に異なるデザインルールを必要とします。管理画面はよりタイトなスペーシング、小さなフォントサイズ、密度の高いレイアウトを求めます。
+
+1つのネームスペースにすべてを押し込むとどうなるか：
+
+```css
+@theme {
+  /* myweb namespace — growing out of control */
+  --spacing-myweb-content-gap: 32px;
+  --spacing-myweb-content-gap-dense: 16px;    /* admin用に追加 */
+  --spacing-myweb-section-gap: 48px;
+  --spacing-myweb-section-gap-compact: 24px;  /* admin用に追加 */
+  --spacing-myweb-reading-padding: 24px;
+  --spacing-myweb-panel-padding: 12px;        /* admin用に追加 */
+  --font-size-myweb-body: 1.125rem;
+  --font-size-myweb-body-dense: 0.875rem;     /* admin用に追加 */
+  --font-size-myweb-heading: 2rem;
+  --font-size-myweb-heading-compact: 1.25rem; /* admin用に追加 */
+}
+```
+
+トークンが増えるたびに `-dense`、`-compact`、`-small` といった接尾辞が付きます。トークンセットは肥大化し、どのトークンがどのコンテキストに属するのか分からなくなります。タイトトークン戦略の本来の目的 — 「少ない選択肢で明確なルールを作る」— が損なわれます。
+
+## 解決方法
+
+デザインコンテキストごとに**別のネームスペース**を使います：
+
+- `myweb-` — 記事・コンテンツのデザインルール
+- `myadmin-` — 管理画面・ダッシュボードのデザインルール
+
+```css
+@theme {
+  /* ── myweb namespace: article/content ── */
+  --spacing-myweb-content-gap: 32px;
+  --spacing-myweb-section-gap: 48px;
+  --spacing-myweb-reading-padding: 24px;
+  --font-size-myweb-body: 1.125rem;
+  --font-size-myweb-heading: 2rem;
+
+  /* ── myadmin namespace: admin/dashboard ── */
+  --spacing-myadmin-cell-gap: 8px;
+  --spacing-myadmin-section-gap: 16px;
+  --spacing-myadmin-panel-padding: 12px;
+  --font-size-myadmin-body: 0.875rem;
+  --font-size-myadmin-heading: 1.25rem;
+}
+```
+
+各ネームスペースは独立したデザインコンテキストです。`myweb-` のトークンは読みやすさを最適化し、`myadmin-` のトークンは情報密度を最適化します。`-dense` や `-compact` のような接尾辞は不要です — トークン名のネームスペースプレフィックスが、そのトークンの適用先を明確にします。
+
+### ネームスペース分割の判断基準
+
+ネームスペースを分ける必要があるのは、2つのコンテキストが**異なるデザイン原則**を持つ場合です：
+
+| シグナル | 例 |
+| --- | --- |
+| スペーシングの基準が異なる | 記事は余白が広い / 管理画面はタイト |
+| フォントサイズの基準が異なる | 記事は読みやすさ重視 / ダッシュボードは密度重視 |
+| 同じ目的のトークンに異なる値が必要 | 「ボディテキスト」が記事では 18px、管理画面では 14px |
+| `-dense`/`-compact` 接尾辞が増え始めた | 1つのネームスペースに収まらないサイン |
+
+逆に、以下の場合は分割不要です：
+
+| シグナル | 理由 |
+| --- | --- |
+| レスポンシブで値が変わるだけ | メディアクエリやコンテナクエリで対応 |
+| テーマ（ライト/ダーク）の切り替え | カラースキームで対応 |
+| 微妙なバリエーション | 既存トークンのスケール（sm/md/lg）で対応 |
+
+## コード例
+
+### 単一ネームスペース（肥大化した状態）
+
+```css
+@theme {
+  /* すべてが myweb- に押し込まれている */
+  --spacing-myweb-content-gap: 32px;
+  --spacing-myweb-content-gap-dense: 16px;
+  --spacing-myweb-section-gap: 48px;
+  --spacing-myweb-section-gap-compact: 24px;
+  --spacing-myweb-reading-padding: 24px;
+  --spacing-myweb-panel-padding: 12px;
+  --font-size-myweb-body: 1.125rem;
+  --font-size-myweb-body-dense: 0.875rem;
+  --font-size-myweb-heading: 2rem;
+  --font-size-myweb-heading-compact: 1.25rem;
+}
+```
+
+トークンの数が多く、どれが記事用でどれが管理画面用かが名前から推測しにくい。
+
+### マルチネームスペース（分割後）
+
+```css
+@theme {
+  /* ── myweb: 記事コンテンツ ── */
+  --spacing-myweb-content-gap: 32px;
+  --spacing-myweb-section-gap: 48px;
+  --spacing-myweb-reading-padding: 24px;
+  --font-size-myweb-body: 1.125rem;
+  --font-size-myweb-heading: 2rem;
+
+  /* ── myadmin: 管理ダッシュボード ── */
+  --spacing-myadmin-cell-gap: 8px;
+  --spacing-myadmin-section-gap: 16px;
+  --spacing-myadmin-panel-padding: 12px;
+  --font-size-myadmin-body: 0.875rem;
+  --font-size-myadmin-heading: 1.25rem;
+}
+```
+
+各ネームスペースのトークン数は少なく、適用先がプレフィックスから明確です。
+
+### コンポーネントでの使い方
+
+```html
+<!-- 記事ページ — myweb トークンを使用 -->
+<article class="px-myweb-reading-padding">
+  <h1 class="text-myweb-heading pb-myweb-content-gap">Article Title</h1>
+  <p class="text-myweb-body pb-myweb-section-gap">
+    Long-form content with generous reading spacing...
+  </p>
+</article>
+
+<!-- 管理ダッシュボード — myadmin トークンを使用 -->
+<div class="p-myadmin-panel-padding">
+  <h2 class="text-myadmin-heading pb-myadmin-cell-gap">Dashboard</h2>
+  <table class="text-myadmin-body">
+    <tr><td class="p-myadmin-cell-gap">Row 1</td></tr>
+    <tr><td class="p-myadmin-cell-gap">Row 2</td></tr>
+  </table>
+</div>
+```
+
+Tailwind クラスのネームスペースプレフィックスが、各コンポーネントのデザインコンテキストを即座に伝えます。
+
+### デモ：単一ネームスペース vs マルチネームスペース
+
+<CssPreview client:load
+  title="Single namespace vs Multi namespace"
+  height={440}
+  html={`    <div class="demo">
+      <div class="demo__col">
+        <div class="demo__label">Single namespace (bloated)</div>
+        <div class="demo__tokens">
+          <code class="demo__token demo__token--warn">myweb-content-gap</code>
+          <code class="demo__token demo__token--warn">myweb-content-gap-dense</code>
+          <code class="demo__token demo__token--warn">myweb-section-gap</code>
+          <code class="demo__token demo__token--warn">myweb-section-gap-compact</code>
+          <code class="demo__token demo__token--warn">myweb-reading-padding</code>
+          <code class="demo__token demo__token--warn">myweb-panel-padding</code>
+          <code class="demo__token demo__token--warn">myweb-body</code>
+          <code class="demo__token demo__token--warn">myweb-body-dense</code>
+          <code class="demo__token demo__token--warn">myweb-heading</code>
+          <code class="demo__token demo__token--warn">myweb-heading-compact</code>
+        </div>
+        <div class="demo__verdict demo__verdict--bad">10 tokens — mixed contexts, suffix pollution</div>
+      </div>
+      <div class="demo__col">
+        <div class="demo__label">Multi namespace (separated)</div>
+        <div class="demo__group">
+          <div class="demo__group-label">myweb-</div>
+          <div class="demo__tokens">
+            <code class="demo__token demo__token--good">myweb-content-gap</code>
+            <code class="demo__token demo__token--good">myweb-section-gap</code>
+            <code class="demo__token demo__token--good">myweb-reading-padding</code>
+            <code class="demo__token demo__token--good">myweb-body</code>
+            <code class="demo__token demo__token--good">myweb-heading</code>
+          </div>
+        </div>
+        <div class="demo__group">
+          <div class="demo__group-label">myadmin-</div>
+          <div class="demo__tokens">
+            <code class="demo__token demo__token--good">myadmin-cell-gap</code>
+            <code class="demo__token demo__token--good">myadmin-section-gap</code>
+            <code class="demo__token demo__token--good">myadmin-panel-padding</code>
+            <code class="demo__token demo__token--good">myadmin-body</code>
+            <code class="demo__token demo__token--good">myadmin-heading</code>
+          </div>
+        </div>
+        <div class="demo__verdict demo__verdict--ok">5 + 5 tokens — clear ownership, no suffixes</div>
+      </div>
+    </div>`}
+  css={`.demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      color: hsl(222 47% 11%);
+    }
+    .demo__col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .demo__label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(215 16% 47%);
+    }
+    .demo__tokens {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .demo__token {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+    .demo__token--warn {
+      background: hsl(40 90% 93%);
+      color: hsl(30 70% 35%);
+      border: 1px solid hsl(40 60% 80%);
+    }
+    .demo__token--good {
+      background: hsl(142 50% 93%);
+      color: hsl(142 50% 30%);
+      border: 1px solid hsl(142 40% 78%);
+    }
+    .demo__group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .demo__group-label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: hsl(142 50% 30%);
+      padding-left: 4px;
+    }
+    .demo__verdict {
+      font-size: 0.65rem;
+      padding: 6px 8px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    .demo__verdict--bad {
+      background: hsl(40 90% 93%);
+      color: hsl(30 70% 35%);
+      border-left: 3px solid hsl(30 70% 50%);
+    }
+    .demo__verdict--ok {
+      background: hsl(142 50% 93%);
+      color: hsl(142 50% 30%);
+      border-left: 3px solid hsl(142 50% 40%);
+    }`} />
+
+左側は単一ネームスペースにすべてを押し込んだ状態です。`-dense`、`-compact` といった接尾辞でトークンが増殖し、どのトークンがどのコンテキスト向けか判別しにくくなっています。右側はネームスペースで分割した状態です。各ネームスペースのトークン数は半分になり、プレフィックスが適用先を明示しています。
+
+### デモ：記事コンテンツ vs 管理ダッシュボード
+
+以下のデモは、同じウェブサイト内の2つの異なるデザインコンテキストを示しています。左の記事 UI は広いスペーシングと大きなフォントを使い、右の管理 UI はタイトなスペーシングと小さなフォントを使っています。
+
+<CssPreview client:load
+  title="Article content (myweb-) vs Admin dashboard (myadmin-)"
+  height={380}
+  html={`    <div class="ctx-demo">
+      <div class="ctx-demo__col">
+        <div class="ctx-demo__label">myweb- (article context)</div>
+        <div class="ctx-demo__article">
+          <div class="ctx-demo__article-heading">Understanding CSS Grid</div>
+          <div class="ctx-demo__article-body">
+            CSS Grid provides a two-dimensional layout system.
+            It handles both columns and rows, making complex
+            layouts straightforward.
+          </div>
+          <div class="ctx-demo__article-meta">
+            <span class="ctx-demo__article-tag">CSS</span>
+            <span class="ctx-demo__article-tag">Layout</span>
+          </div>
+        </div>
+        <div class="ctx-demo__spacing-note">
+          <span>content-gap: 32px</span>
+          <span>body: 1.125rem</span>
+        </div>
+      </div>
+      <div class="ctx-demo__col">
+        <div class="ctx-demo__label">myadmin- (admin context)</div>
+        <div class="ctx-demo__admin">
+          <div class="ctx-demo__admin-heading">User Management</div>
+          <table class="ctx-demo__table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Alice</td><td>Admin</td><td class="ctx-demo__status--active">Active</td></tr>
+              <tr><td>Bob</td><td>Editor</td><td class="ctx-demo__status--active">Active</td></tr>
+              <tr><td>Carol</td><td>Viewer</td><td class="ctx-demo__status--inactive">Inactive</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ctx-demo__spacing-note">
+          <span>cell-gap: 8px</span>
+          <span>body: 0.875rem</span>
+        </div>
+      </div>
+    </div>`}
+  css={`.ctx-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .ctx-demo__col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ctx-demo__label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(215 16% 47%);
+    }
+
+    /* ── Article context (myweb-) ── */
+    .ctx-demo__article {
+      background: hsl(0 0% 100%);
+      border: 1px solid hsl(214 32% 91%);
+      border-radius: 8px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .ctx-demo__article-heading {
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .ctx-demo__article-body {
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: hsl(215 25% 35%);
+    }
+    .ctx-demo__article-meta {
+      display: flex;
+      gap: 8px;
+    }
+    .ctx-demo__article-tag {
+      font-size: 0.75rem;
+      background: hsl(210 40% 96%);
+      color: hsl(221 83% 53%);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* ── Admin context (myadmin-) ── */
+    .ctx-demo__admin {
+      background: hsl(0 0% 100%);
+      border: 1px solid hsl(214 32% 91%);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ctx-demo__admin-heading {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+    .ctx-demo__table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+    .ctx-demo__table th {
+      text-align: left;
+      padding: 4px 8px;
+      border-bottom: 2px solid hsl(214 32% 91%);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(215 16% 47%);
+    }
+    .ctx-demo__table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid hsl(214 32% 95%);
+    }
+    .ctx-demo__status--active {
+      color: hsl(142 50% 35%);
+    }
+    .ctx-demo__status--inactive {
+      color: hsl(0 50% 50%);
+    }
+
+    /* ── Spacing notes ── */
+    .ctx-demo__spacing-note {
+      display: flex;
+      gap: 12px;
+      font-size: 0.6rem;
+      color: hsl(215 16% 47%);
+      font-style: italic;
+    }`} />
+
+記事コンテキストでは `myweb-content-gap`（32px）の広い垂直ギャップと `myweb-body`（1.125rem）の大きなフォントで読みやすさを重視しています。管理コンテキストでは `myadmin-cell-gap`（8px）のタイトなスペーシングと `myadmin-body`（0.875rem）の小さなフォントで情報密度を最大化しています。
+
+### デモ：3つのネームスペースを持つ大規模サイト
+
+サイトの規模が大きくなると、3つ以上のネームスペースが必要になることもあります。以下は記事、管理画面、マーケティングページの3コンテキストの例です。
+
+<CssPreview client:load
+  title="Three namespaces: myweb- / myadmin- / mymarketing-"
+  height={320}
+  html={`    <div class="ns-demo">
+      <div class="ns-demo__ns">
+        <div class="ns-demo__header ns-demo__header--web">myweb-</div>
+        <div class="ns-demo__desc">Article / content</div>
+        <div class="ns-demo__tokens">
+          <div class="ns-demo__row"><span class="ns-demo__key">body</span><span class="ns-demo__val">1.125rem</span></div>
+          <div class="ns-demo__row"><span class="ns-demo__key">section-gap</span><span class="ns-demo__val">48px</span></div>
+          <div class="ns-demo__row"><span class="ns-demo__key">reading-padding</span><span class="ns-demo__val">24px</span></div>
+        </div>
+        <div class="ns-demo__char">Optimized for readability</div>
+      </div>
+      <div class="ns-demo__ns">
+        <div class="ns-demo__header ns-demo__header--admin">myadmin-</div>
+        <div class="ns-demo__desc">Admin / dashboard</div>
+        <div class="ns-demo__tokens">
+          <div class="ns-demo__row"><span class="ns-demo__key">body</span><span class="ns-demo__val">0.875rem</span></div>
+          <div class="ns-demo__row"><span class="ns-demo__key">section-gap</span><span class="ns-demo__val">16px</span></div>
+          <div class="ns-demo__row"><span class="ns-demo__key">panel-padding</span><span class="ns-demo__val">12px</span></div>
+        </div>
+        <div class="ns-demo__char">Optimized for density</div>
+      </div>
+      <div class="ns-demo__ns">
+        <div class="ns-demo__header ns-demo__header--mkt">mymarketing-</div>
+        <div class="ns-demo__desc">Landing / marketing</div>
+        <div class="ns-demo__tokens">
+          <div class="ns-demo__row"><span class="ns-demo__key">body</span><span class="ns-demo__val">1.25rem</span></div>
+          <div class="ns-demo__row"><span class="ns-demo__key">section-gap</span><span class="ns-demo__val">80px</span></div>
+          <div class="ns-demo__row"><span class="ns-demo__key">hero-padding</span><span class="ns-demo__val">64px</span></div>
+        </div>
+        <div class="ns-demo__char">Optimized for impact</div>
+      </div>
+    </div>`}
+  css={`.ns-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+      font-family: system-ui, sans-serif;
+      color: hsl(222 47% 11%);
+    }
+    .ns-demo__ns {
+      background: hsl(0 0% 100%);
+      border: 1px solid hsl(214 32% 91%);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .ns-demo__header {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: hsl(0 0% 100%);
+    }
+    .ns-demo__header--web { background: hsl(221 83% 53%); }
+    .ns-demo__header--admin { background: hsl(262 60% 50%); }
+    .ns-demo__header--mkt { background: hsl(340 65% 50%); }
+    .ns-demo__desc {
+      font-size: 0.65rem;
+      color: hsl(215 16% 47%);
+      padding: 8px 12px 0;
+    }
+    .ns-demo__tokens {
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .ns-demo__row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+    }
+    .ns-demo__key {
+      color: hsl(215 16% 47%);
+    }
+    .ns-demo__val {
+      font-weight: 600;
+      font-family: monospace;
+      font-size: 0.6rem;
+    }
+    .ns-demo__char {
+      font-size: 0.6rem;
+      color: hsl(215 16% 47%);
+      font-style: italic;
+      padding: 8px 12px;
+      border-top: 1px solid hsl(214 32% 95%);
+      background: hsl(210 40% 98%);
+    }`} />
+
+各ネームスペースが独立したデザイン原則を持っています。`myweb-` は読みやすさ、`myadmin-` は情報密度、`mymarketing-` はインパクトに最適化されています。同じプロパティ名（`body`、`section-gap`）がネームスペースごとに異なる値を持つことで、コンテキストに応じた最適なデザインが実現されます。
+
+## クイックリファレンス
+
+| シナリオ | アプローチ |
+| --- | --- |
+| サイト全体が同じデザインルール | 単一ネームスペースで十分 |
+| 記事コンテンツ + 管理画面 | 2つのネームスペースに分割 |
+| `-dense`/`-compact` 接尾辞が増殖 | ネームスペース分割のサイン |
+| レスポンシブで値が変わるだけ | メディアクエリで対応（分割不要） |
+| ライト/ダークテーマの切り替え | カラースキームで対応（分割不要） |
+| 3つ以上の明確に異なるデザインコンテキスト | 3つ以上のネームスペースも可 |
+
+## AI がよくやるミス
+
+- **すべてのコンテキストを1つのネームスペースに押し込む** — `-dense`、`-compact`、`-small` 接尾辞でトークンを区別しようとする。ネームスペースプレフィックスで分離すべき
+- **ネームスペースを細かく分けすぎる** — ページごとにネームスペースを作るのは過剰。デザイン原則が根本的に異なるコンテキスト間でのみ分割する
+- **共有トークンを各ネームスペースに複製する** — ブランドカラーやボーダー半径など、すべてのコンテキストで共通のトークンはプレフィックスなしの共有トークンとして定義する
+- **レスポンシブバリエーションをネームスペースで分ける** — モバイル用/デスクトップ用でネームスペースを分けるのは誤り。レスポンシブはメディアクエリやコンテナクエリで対応する
+- **ネームスペースプレフィックスを省略する** — `content-gap` と `cell-gap` では、どのコンテキスト用か分からない。必ず `myweb-content-gap`、`myadmin-cell-gap` のようにプレフィックスを付ける
+
+## いつ使うか
+
+### 適しているケース
+
+- **サイトが複数の明確に異なるデザインコンテキストを持つ** — 記事サイト + 管理画面、ECサイト + 管理ダッシュボードなど
+- **1つのトークンセットに `-dense`/`-compact` 接尾辞が増え始めた** — ネームスペース分割のタイミング
+- **異なるチームが異なる画面を担当している** — 各チームが自分のネームスペースを管理できる
+
+### 不要なケース
+
+- **サイト全体が同じデザインルールで統一されている** — 単一ネームスペースのタイトトークン戦略で十分
+- **管理画面が別のアプリケーション** — 別プロジェクトなら別の `@theme` を持てばよい
+- **小規模サイト** — トークン数が少なければ分割の必要はない
+
+### 他のトークン戦略との関係
+
+マルチネームスペーストークン戦略はタイトトークン戦略の拡張です。まずタイトトークン戦略でデフォルトをリセットし、その上で複数のネームスペースを定義します：
+
+| 戦略 | 役割 |
+| --- | --- |
+| [タイトトークン戦略](./tight-token-strategy/) | デフォルトをリセットし、セマンティックトークンのみ定義 |
+| **マルチネームスペーストークン戦略** | デザインコンテキストごとにトークンを分離 |
+| [2層サイズ戦略](../two-tier-size-strategy/) | 幅・高さのサイジングルール |
+
+## 参考リンク
+
+- [Tailwind CSS v4 Theme Configuration](https://tailwindcss.com/docs/theme)
+- [Tailwind CSS v4 @theme Directive](https://tailwindcss.com/docs/functions-and-directives#theme-directive)
