@@ -166,11 +166,13 @@ const contentTransition = {
       <script is:inline>
         (function () {
           function applySidebarState() {
-            if (localStorage.getItem("zudo-css-sidebar-visible") === "false") {
-              document.documentElement.setAttribute("data-sidebar-hidden", "");
-            } else {
-              document.documentElement.removeAttribute("data-sidebar-hidden");
-            }
+            try {
+              if (localStorage.getItem("zudo-css-sidebar-visible") === "false") {
+                document.documentElement.setAttribute("data-sidebar-hidden", "");
+              } else {
+                document.documentElement.removeAttribute("data-sidebar-hidden");
+              }
+            } catch (e) {}
           }
           applySidebarState();
           if (!window.__zdSidebarApplied) {
