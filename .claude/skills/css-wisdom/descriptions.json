@@ -73,5 +73,6 @@
   "methodology/design-systems/tight-token-strategy/token-preview.mdx": "Visual reference of all available tokens",
   "methodology/design-systems/tight-token-strategy/component-tokens.mdx": "System tokens vs arbitrary values decision framework",
   "methodology/design-systems/two-tier-size-strategy.mdx": "Two-tier sizing: base + scale for consistent spacing/typography",
-  "typography/font-sizing/three-tier-font-size-strategy.mdx": "Three-tier font-size architecture: base, scale, component"
+  "typography/font-sizing/three-tier-font-size-strategy.mdx": "Three-tier font-size architecture: base, scale, component",
+  "typography/text-effects/text-outline-and-stroke.mdx": "Text outline/stroke (縁取り): -webkit-text-stroke, text-shadow hack, SVG stroke, feMorphology, paint-order"
 }
