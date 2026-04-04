@@ -92,6 +92,7 @@ Key details:
 - Use descriptive BEM-ish class names (e.g., `.card-demo__header`)
 - Use `font-family: system-ui, sans-serif` for body text
 - Minimum font size: 0.75rem / 12px for labels
+- **Template literal indentation**: Always indent `css={}` and `html={}` content by at least 2 spaces. The `dedent()` utility strips common leading whitespace before displaying code in the panel. Content at column 0 produces unindented code display.
 
 ## Design Token System
 
