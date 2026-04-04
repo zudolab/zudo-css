@@ -52,57 +52,57 @@ MDX compounds this because component wrappers and admonitions can interrupt the 
 </div>
   `}
   css={`
-.prose-demo {
-  display: flex;
-  gap: 32px;
-  padding: 24px;
-  font-family: system-ui, sans-serif;
-}
-.prose-col {
-  flex: 1;
-  min-width: 0;
-}
-.demo-label {
-  font-size: 0.75rem;
-  color: hsl(260, 60%, 55%);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
-.prose-normal h2,
-.prose-broken h2 {
-  font-size: 1.3rem;
-  line-height: 1.3;
-  margin: 2.5rem 0 0.75rem;
-  color: hsl(220, 25%, 15%);
-}
-.prose-normal h2:first-child,
-.prose-broken h2:first-child {
-  margin-top: 0;
-}
-.prose-normal h3,
-.prose-broken h3 {
-  font-size: 1.1rem;
-  line-height: 1.3;
-  margin: 2rem 0 0.5rem;
-  color: hsl(220, 20%, 25%);
-}
-.prose-normal h4,
-.prose-broken h4 {
-  font-size: 0.95rem;
-  line-height: 1.3;
-  margin: 1.5rem 0 0.5rem;
-  color: hsl(220, 15%, 35%);
-}
-.prose-normal p,
-.prose-broken p {
-  font-size: 0.9rem;
-  line-height: 1.6;
-  margin: 0 0 1rem;
-  color: hsl(220, 10%, 35%);
-}
-  `}
+    .prose-demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .prose-col {
+      flex: 1;
+      min-width: 0;
+    }
+    .demo-label {
+      font-size: 0.75rem;
+      color: hsl(260, 60%, 55%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
+    .prose-normal h2,
+    .prose-broken h2 {
+      font-size: 1.3rem;
+      line-height: 1.3;
+      margin: 2.5rem 0 0.75rem;
+      color: hsl(220, 25%, 15%);
+    }
+    .prose-normal h2:first-child,
+    .prose-broken h2:first-child {
+      margin-top: 0;
+    }
+    .prose-normal h3,
+    .prose-broken h3 {
+      font-size: 1.1rem;
+      line-height: 1.3;
+      margin: 2rem 0 0.5rem;
+      color: hsl(220, 20%, 25%);
+    }
+    .prose-normal h4,
+    .prose-broken h4 {
+      font-size: 0.95rem;
+      line-height: 1.3;
+      margin: 1.5rem 0 0.5rem;
+      color: hsl(220, 15%, 35%);
+    }
+    .prose-normal p,
+    .prose-broken p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin: 0 0 1rem;
+      color: hsl(220, 10%, 35%);
+    }
+`}
   height={380}
 />
 
@@ -173,61 +173,61 @@ This is the most robust approach. Spacing is owned by one margin direction only 
 </div>
   `}
   css={`
-.flow-demo {
-  display: flex;
-  gap: 32px;
-  padding: 24px;
-  font-family: system-ui, sans-serif;
-}
-.flow-col { flex: 1; min-width: 0; }
-.demo-label {
-  font-size: 0.75rem;
-  color: hsl(260, 60%, 55%);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
+    .flow-demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .flow-col { flex: 1; min-width: 0; }
+    .demo-label {
+      font-size: 0.75rem;
+      color: hsl(260, 60%, 55%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
 
-/* --- No fix version --- */
-.flow-no-fix > * + * {
-  margin-block-start: var(--flow-space, 1em);
-}
-.flow-no-fix :where(h2) { --flow-space: 2.5em; }
-.flow-no-fix :where(h3) { --flow-space: 2em; }
-.flow-no-fix :where(h4) { --flow-space: 1.5em; }
-.flow-no-fix > :first-child { margin-block-start: 0; }
+    /* --- No fix version --- */
+    .flow-no-fix > * + * {
+      margin-block-start: var(--flow-space, 1em);
+    }
+    .flow-no-fix :where(h2) { --flow-space: 2.5em; }
+    .flow-no-fix :where(h3) { --flow-space: 2em; }
+    .flow-no-fix :where(h4) { --flow-space: 1.5em; }
+    .flow-no-fix > :first-child { margin-block-start: 0; }
 
-/* --- Fixed version --- */
-.flow-fixed > * + * {
-  margin-block-start: var(--flow-space, 1em);
-}
-.flow-fixed :where(h2) { --flow-space: 2.5em; }
-.flow-fixed :where(h3) { --flow-space: 2em; }
-.flow-fixed :where(h4) { --flow-space: 1.5em; }
-.flow-fixed :where(h2, h3, h4, h5) + :where(h2, h3, h4, h5, h6) {
-  --flow-space: 0.5em;
-}
-.flow-fixed > :first-child { margin-block-start: 0; }
+    /* --- Fixed version --- */
+    .flow-fixed > * + * {
+      margin-block-start: var(--flow-space, 1em);
+    }
+    .flow-fixed :where(h2) { --flow-space: 2.5em; }
+    .flow-fixed :where(h3) { --flow-space: 2em; }
+    .flow-fixed :where(h4) { --flow-space: 1.5em; }
+    .flow-fixed :where(h2, h3, h4, h5) + :where(h2, h3, h4, h5, h6) {
+      --flow-space: 0.5em;
+    }
+    .flow-fixed > :first-child { margin-block-start: 0; }
 
-/* Shared heading/paragraph styles */
-.flow-no-fix h2, .flow-fixed h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  color: hsl(220, 25%, 15%); margin: 0;
-}
-.flow-no-fix h3, .flow-fixed h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  color: hsl(220, 20%, 25%); margin: 0;
-}
-.flow-no-fix h4, .flow-fixed h4 {
-  font-size: 0.95rem; line-height: 1.3;
-  color: hsl(220, 15%, 35%); margin: 0;
-}
-.flow-no-fix p, .flow-fixed p {
-  font-size: 0.9rem; line-height: 1.6;
-  color: hsl(220, 10%, 35%); margin: 0;
-}
-  `}
+    /* Shared heading/paragraph styles */
+    .flow-no-fix h2, .flow-fixed h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      color: hsl(220, 25%, 15%); margin: 0;
+    }
+    .flow-no-fix h3, .flow-fixed h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      color: hsl(220, 20%, 25%); margin: 0;
+    }
+    .flow-no-fix h4, .flow-fixed h4 {
+      font-size: 0.95rem; line-height: 1.3;
+      color: hsl(220, 15%, 35%); margin: 0;
+    }
+    .flow-no-fix p, .flow-fixed p {
+      font-size: 0.9rem; line-height: 1.6;
+      color: hsl(220, 10%, 35%); margin: 0;
+    }
+`}
   height={380}
 />
 
@@ -289,63 +289,63 @@ The trade-off: this zeros the top margin of **any** element after a heading, not
 </div>
   `}
   css={`
-.tw-demo {
-  display: flex;
-  gap: 32px;
-  padding: 24px;
-  font-family: system-ui, sans-serif;
-}
-.tw-col { flex: 1; min-width: 0; }
-.demo-label {
-  font-size: 0.75rem;
-  color: hsl(260, 60%, 55%);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
+    .tw-demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .tw-col { flex: 1; min-width: 0; }
+    .demo-label {
+      font-size: 0.75rem;
+      color: hsl(260, 60%, 55%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
 
-/* --- No fix --- */
-.tw-no-fix h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  margin: 2em 0 1em; color: hsl(220, 25%, 15%);
-}
-.tw-no-fix h2:first-child { margin-top: 0; }
-.tw-no-fix h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
-}
-.tw-no-fix h4 {
-  font-size: 0.95rem; line-height: 1.3;
-  margin: 1.5em 0 0.5em; color: hsl(220, 15%, 35%);
-}
-.tw-no-fix p {
-  font-size: 0.9rem; line-height: 1.6;
-  margin: 0 0 1em; color: hsl(220, 10%, 35%);
-}
+    /* --- No fix --- */
+    .tw-no-fix h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      margin: 2em 0 1em; color: hsl(220, 25%, 15%);
+    }
+    .tw-no-fix h2:first-child { margin-top: 0; }
+    .tw-no-fix h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
+    }
+    .tw-no-fix h4 {
+      font-size: 0.95rem; line-height: 1.3;
+      margin: 1.5em 0 0.5em; color: hsl(220, 15%, 35%);
+    }
+    .tw-no-fix p {
+      font-size: 0.9rem; line-height: 1.6;
+      margin: 0 0 1em; color: hsl(220, 10%, 35%);
+    }
 
-/* --- Fixed --- */
-.tw-fixed h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  margin: 2em 0 1em; color: hsl(220, 25%, 15%);
-}
-.tw-fixed h2:first-child { margin-top: 0; }
-.tw-fixed h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
-}
-.tw-fixed h4 {
-  font-size: 0.95rem; line-height: 1.3;
-  margin: 1.5em 0 0.5em; color: hsl(220, 15%, 35%);
-}
-.tw-fixed p {
-  font-size: 0.9rem; line-height: 1.6;
-  margin: 0 0 1em; color: hsl(220, 10%, 35%);
-}
-.tw-fixed :is(h2, h3, h4) + * {
-  margin-block-start: 0;
-}
-  `}
+    /* --- Fixed --- */
+    .tw-fixed h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      margin: 2em 0 1em; color: hsl(220, 25%, 15%);
+    }
+    .tw-fixed h2:first-child { margin-top: 0; }
+    .tw-fixed h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
+    }
+    .tw-fixed h4 {
+      font-size: 0.95rem; line-height: 1.3;
+      margin: 1.5em 0 0.5em; color: hsl(220, 15%, 35%);
+    }
+    .tw-fixed p {
+      font-size: 0.9rem; line-height: 1.6;
+      margin: 0 0 1em; color: hsl(220, 10%, 35%);
+    }
+    .tw-fixed :is(h2, h3, h4) + * {
+      margin-block-start: 0;
+    }
+`}
   height={380}
 />
 
@@ -396,46 +396,46 @@ The trade-off: this strategy still depends on both headings having their own mar
 </div>
   `}
   css={`
-.has-demo {
-  display: flex;
-  gap: 32px;
-  padding: 24px;
-  font-family: system-ui, sans-serif;
-}
-.has-col { flex: 1; min-width: 0; }
-.demo-label {
-  font-size: 0.75rem;
-  color: hsl(260, 60%, 55%);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
+    .has-demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .has-col { flex: 1; min-width: 0; }
+    .demo-label {
+      font-size: 0.75rem;
+      color: hsl(260, 60%, 55%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
 
-/* Shared base styles */
-.has-no-fix h2, .has-fixed h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  margin: 2em 0 1em; color: hsl(220, 25%, 15%);
-}
-.has-no-fix h2:first-child, .has-fixed h2:first-child { margin-top: 0; }
-.has-no-fix h3, .has-fixed h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
-}
-.has-no-fix h4, .has-fixed h4 {
-  font-size: 0.95rem; line-height: 1.3;
-  margin: 1.5em 0 0.5em; color: hsl(220, 15%, 35%);
-}
-.has-no-fix p, .has-fixed p {
-  font-size: 0.9rem; line-height: 1.6;
-  margin: 0 0 1em; color: hsl(220, 10%, 35%);
-}
+    /* Shared base styles */
+    .has-no-fix h2, .has-fixed h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      margin: 2em 0 1em; color: hsl(220, 25%, 15%);
+    }
+    .has-no-fix h2:first-child, .has-fixed h2:first-child { margin-top: 0; }
+    .has-no-fix h3, .has-fixed h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
+    }
+    .has-no-fix h4, .has-fixed h4 {
+      font-size: 0.95rem; line-height: 1.3;
+      margin: 1.5em 0 0.5em; color: hsl(220, 15%, 35%);
+    }
+    .has-no-fix p, .has-fixed p {
+      font-size: 0.9rem; line-height: 1.6;
+      margin: 0 0 1em; color: hsl(220, 10%, 35%);
+    }
 
-/* :has() fix */
-.has-fixed :is(h2, h3, h4):has(+ :is(h2, h3, h4, h5, h6)) {
-  margin-block-end: 0.25em;
-}
-  `}
+    /* :has() fix */
+    .has-fixed :is(h2, h3, h4):has(+ :is(h2, h3, h4, h5, h6)) {
+      margin-block-end: 0.25em;
+    }
+`}
   height={380}
 />
 
@@ -483,59 +483,59 @@ This matters because markdown content containers are increasingly rendered insid
 </div>
   `}
   css={`
-.collapse-demo {
-  display: flex;
-  gap: 32px;
-  padding: 24px;
-  font-family: system-ui, sans-serif;
-}
-.collapse-col { flex: 1; min-width: 0; }
-.demo-label {
-  font-size: 0.75rem;
-  color: hsl(260, 60%, 55%);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
+    .collapse-demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .collapse-col { flex: 1; min-width: 0; }
+    .demo-label {
+      font-size: 0.75rem;
+      color: hsl(260, 60%, 55%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
 
-/* Block flow — margins collapse */
-.collapse-block {
-  display: block;
-}
-.collapse-block h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  margin: 2em 0 1em; color: hsl(220, 25%, 15%);
-}
-.collapse-block h2:first-child { margin-top: 0; }
-.collapse-block h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
-}
-.collapse-block p {
-  font-size: 0.9rem; line-height: 1.6;
-  margin: 0 0 1em; color: hsl(220, 10%, 35%);
-}
+    /* Block flow — margins collapse */
+    .collapse-block {
+      display: block;
+    }
+    .collapse-block h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      margin: 2em 0 1em; color: hsl(220, 25%, 15%);
+    }
+    .collapse-block h2:first-child { margin-top: 0; }
+    .collapse-block h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
+    }
+    .collapse-block p {
+      font-size: 0.9rem; line-height: 1.6;
+      margin: 0 0 1em; color: hsl(220, 10%, 35%);
+    }
 
-/* Flex container — no margin collapse */
-.collapse-flex {
-  display: flex;
-  flex-direction: column;
-}
-.collapse-flex h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  margin: 2em 0 1em; color: hsl(220, 25%, 15%);
-}
-.collapse-flex h2:first-child { margin-top: 0; }
-.collapse-flex h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
-}
-.collapse-flex p {
-  font-size: 0.9rem; line-height: 1.6;
-  margin: 0 0 1em; color: hsl(220, 10%, 35%);
-}
-  `}
+    /* Flex container — no margin collapse */
+    .collapse-flex {
+      display: flex;
+      flex-direction: column;
+    }
+    .collapse-flex h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      margin: 2em 0 1em; color: hsl(220, 25%, 15%);
+    }
+    .collapse-flex h2:first-child { margin-top: 0; }
+    .collapse-flex h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      margin: 1.6em 0 0.6em; color: hsl(220, 20%, 25%);
+    }
+    .collapse-flex p {
+      font-size: 0.9rem; line-height: 1.6;
+      margin: 0 0 1em; color: hsl(220, 10%, 35%);
+    }
+`}
   height={350}
 />
 
@@ -622,68 +622,68 @@ The `:where()` wrapper keeps specificity flat, so declaration order controls whi
 </div>
   `}
   css={`
-.pair-demo {
-  display: flex;
-  gap: 32px;
-  padding: 24px;
-  font-family: system-ui, sans-serif;
-}
-.pair-col { flex: 1; min-width: 0; }
-.demo-label {
-  font-size: 0.75rem;
-  color: hsl(260, 60%, 55%);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
+    .pair-demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .pair-col { flex: 1; min-width: 0; }
+    .demo-label {
+      font-size: 0.75rem;
+      color: hsl(260, 60%, 55%);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
 
-/* --- Uniform --- */
-.pair-uniform > * + * {
-  margin-block-start: var(--flow-space, 1em);
-}
-.pair-uniform :where(h2) { --flow-space: 2.5em; }
-.pair-uniform :where(h3) { --flow-space: 2em; }
-.pair-uniform :where(h4) { --flow-space: 1.5em; }
-.pair-uniform :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
-  --flow-space: 0.5em;
-}
-.pair-uniform > :first-child { margin-block-start: 0; }
-.pair-uniform h2, .pair-tuned h2 {
-  font-size: 1.3rem; line-height: 1.3;
-  color: hsl(220, 25%, 15%); margin: 0;
-}
-.pair-uniform h3, .pair-tuned h3 {
-  font-size: 1.1rem; line-height: 1.3;
-  color: hsl(220, 20%, 25%); margin: 0;
-}
-.pair-uniform h4, .pair-tuned h4 {
-  font-size: 0.95rem; line-height: 1.3;
-  color: hsl(220, 15%, 35%); margin: 0;
-}
-.pair-uniform p, .pair-tuned p {
-  font-size: 0.9rem; line-height: 1.6;
-  color: hsl(220, 10%, 35%); margin: 0;
-}
+    /* --- Uniform --- */
+    .pair-uniform > * + * {
+      margin-block-start: var(--flow-space, 1em);
+    }
+    .pair-uniform :where(h2) { --flow-space: 2.5em; }
+    .pair-uniform :where(h3) { --flow-space: 2em; }
+    .pair-uniform :where(h4) { --flow-space: 1.5em; }
+    .pair-uniform :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
+      --flow-space: 0.5em;
+    }
+    .pair-uniform > :first-child { margin-block-start: 0; }
+    .pair-uniform h2, .pair-tuned h2 {
+      font-size: 1.3rem; line-height: 1.3;
+      color: hsl(220, 25%, 15%); margin: 0;
+    }
+    .pair-uniform h3, .pair-tuned h3 {
+      font-size: 1.1rem; line-height: 1.3;
+      color: hsl(220, 20%, 25%); margin: 0;
+    }
+    .pair-uniform h4, .pair-tuned h4 {
+      font-size: 0.95rem; line-height: 1.3;
+      color: hsl(220, 15%, 35%); margin: 0;
+    }
+    .pair-uniform p, .pair-tuned p {
+      font-size: 0.9rem; line-height: 1.6;
+      color: hsl(220, 10%, 35%); margin: 0;
+    }
 
-/* --- Tuned --- */
-.pair-tuned > * + * {
-  margin-block-start: var(--flow-space, 1em);
-}
-.pair-tuned :where(h2) { --flow-space: 2.5em; }
-.pair-tuned :where(h3) { --flow-space: 2em; }
-.pair-tuned :where(h4) { --flow-space: 1.5em; }
-.pair-tuned :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
-  --flow-space: 0.5em;
-}
-.pair-tuned :where(h2) + :where(h3) {
-  --flow-space: 0.75em;
-}
-.pair-tuned :where(h3) + :where(h4) {
-  --flow-space: 0.4em;
-}
-.pair-tuned > :first-child { margin-block-start: 0; }
-  `}
+    /* --- Tuned --- */
+    .pair-tuned > * + * {
+      margin-block-start: var(--flow-space, 1em);
+    }
+    .pair-tuned :where(h2) { --flow-space: 2.5em; }
+    .pair-tuned :where(h3) { --flow-space: 2em; }
+    .pair-tuned :where(h4) { --flow-space: 1.5em; }
+    .pair-tuned :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
+      --flow-space: 0.5em;
+    }
+    .pair-tuned :where(h2) + :where(h3) {
+      --flow-space: 0.75em;
+    }
+    .pair-tuned :where(h3) + :where(h4) {
+      --flow-space: 0.4em;
+    }
+    .pair-tuned > :first-child { margin-block-start: 0; }
+`}
   height={340}
 />
 
