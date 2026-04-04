@@ -4,6 +4,7 @@ sidebar_position: 4
 ---
 
 import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
 
 ## The Problem
 
@@ -726,6 +727,99 @@ Use as a targeted fix on top of existing heading margins in block flow container
 ### Explicit Pair Rules
 
 Use only when the content structure is strictly controlled (e.g., a CMS that limits heading nesting) and the number of heading combinations is small. Does not scale to arbitrary markdown content.
+
+## Tailwind CSS
+
+The complex adjacent sibling selectors (`:where(h2,h3,h4,h5,h6) + :where(h2,h3,h4,h5,h6)`) cannot be expressed with Tailwind utility classes alone. Three approaches exist:
+
+### Use `@tailwindcss/typography`
+
+The `@tailwindcss/typography` plugin already handles consecutive headings. Apply the `prose` class and heading spacing is managed automatically — including the `h2 + *`, `h3 + *`, `h4 + *` reset pattern described in Strategy 2.
+
+```html
+<article class="prose">
+  <h2>Getting Started</h2>
+  <h3>Prerequisites</h3>
+  <p>Typography plugin handles the spacing.</p>
+</article>
+```
+
+### Write Custom CSS in Tailwind v4
+
+Tailwind v4's CSS-first configuration allows writing selectors directly in your stylesheet. Add heading spacing rules in a `@layer`:
+
+```css
+@layer components {
+  .prose > * + * {
+    margin-block-start: var(--flow-space, 1em);
+  }
+
+  .prose :where(h2) { --flow-space: 2.5em; }
+  .prose :where(h3) { --flow-space: 2em; }
+  .prose :where(h4) { --flow-space: 1.5em; }
+
+  .prose :where(h2, h3, h4, h5, h6) + :where(h2, h3, h4, h5, h6) {
+    --flow-space: 0.5em;
+  }
+
+  .prose > :first-child { margin-block-start: 0; }
+}
+```
+
+This is the recommended approach when not using `@tailwindcss/typography` — full selector control with Tailwind's layer system.
+
+### Tailwind Utilities for Simple Cases
+
+For simple prose layouts where only one level of heading override is needed, Tailwind's arbitrary variant syntax works:
+
+```html
+<article class="[&>*+*]:mt-4 [&>h2]:mt-10 [&>h3]:mt-8">
+  <h2>Section</h2>
+  <h3>Subsection</h3>
+  <p>Content</p>
+</article>
+```
+
+This does not handle the consecutive heading problem. For that, the arbitrary variant would be:
+
+```html
+<article class="[&>:is(h2,h3,h4)+:is(h2,h3,h4,h5,h6)]:mt-2">
+  ...
+</article>
+```
+
+This works but is difficult to read and maintain. Prefer the CSS `@layer` approach or `@tailwindcss/typography` over long arbitrary variants.
+
+<TailwindPreview client:load
+  title="Tailwind: @tailwindcss/typography Handles Consecutive Headings"
+  html={`
+<div class="grid grid-cols-2 gap-8 p-6">
+  <div>
+    <h4 class="text-xs uppercase tracking-wider font-semibold text-violet-500 mb-3">Without prose class</h4>
+    <article>
+      <h2 class="text-xl font-bold text-gray-900 mt-10 mb-4">Getting Started</h2>
+      <h3 class="text-lg font-semibold text-gray-800 mt-8 mb-3">Prerequisites</h3>
+      <h4 class="text-base font-semibold text-gray-700 mt-6 mb-2">Node.js Version</h4>
+      <p class="text-sm text-gray-600 mb-4">Large gaps between consecutive headings — each heading adds its own top margin.</p>
+      <h2 class="text-xl font-bold text-gray-900 mt-10 mb-4">Installation</h2>
+      <p class="text-sm text-gray-600 mb-4">Normal spacing after a single heading.</p>
+    </article>
+  </div>
+  <div>
+    <h4 class="text-xs uppercase tracking-wider font-semibold text-violet-500 mb-3">With prose class</h4>
+    <article class="prose prose-sm max-w-none">
+      <h2>Getting Started</h2>
+      <h3>Prerequisites</h3>
+      <h4>Node.js Version</h4>
+      <p>Typography plugin tightens consecutive headings automatically.</p>
+      <h2>Installation</h2>
+      <p>Normal spacing after a single heading.</p>
+    </article>
+  </div>
+</div>
+  `}
+  height={400}
+/>
 
 ## References
 
