@@ -104,7 +104,7 @@ description: >-
   flexbox vs grid, gap vs margin), (3) Implementing visual effects, responsive layouts, or modern
   CSS features, (4) User asks about CSS best practices or patterns.
 user-invocable: true
-argument-hint: "[topic keyword, e.g., 'flexbox', 'dark mode', 'centering']"
+argument-hint: "[-u|--update] [topic keyword, e.g., 'flexbox', 'dark mode', 'centering']"
 ---
 
 # CSS Best Practices Reference
@@ -112,12 +112,52 @@ argument-hint: "[topic keyword, e.g., 'flexbox', 'dark mode', 'centering']"
 Look up CSS best practices from the documentation articles.
 Base path: \`${join(REPO_ROOT, "src/content/docs")}\`
 
-## How to Use
+## Mode Detection
+
+Parse the argument string for flags:
+
+- If args start with \`-u\` or \`--update\`: enter **Update mode** (see below)
+- Otherwise: enter **Lookup mode** (default)
+
+Strip the flag from the remaining argument to get the topic keyword.
+
+## Lookup Mode (default)
 
 1. Find the relevant article(s) from the topic index below based on the CSS task at hand
 2. Read ONLY the specific article(s) you need — do NOT load all articles at once
 3. Apply the patterns and recommendations from the article when writing CSS
 4. Mention the source article path so the user can find it for further reading
+
+## Update Mode (\`-u\` / \`--update\`)
+
+The user has new information about CSS and wants to add or update
+documentation in this repo.
+
+### Workflow
+
+1. **Understand the new info**: Ask the user what they learned or want to
+   document. The topic keyword (if provided) hints at the subject area.
+2. **Find existing docs**: Search the \`docs/\` directory for articles related to
+   the topic. Read them to understand what is already covered.
+3. **Decide create vs update**: If an existing article covers the topic, update
+   it. Otherwise, create a new \`.mdx\` file in the appropriate subdirectory.
+4. **Write the content**: Follow the doc-authoring rules in the root CLAUDE.md:
+   - Required frontmatter: \`title\` (string). Always set \`sidebar_position\`.
+     Optional: \`description\`, \`sidebar_label\`, \`tags\`, etc.
+   - Do NOT use \`# h1\` in content — the frontmatter \`title\` renders as h1.
+     Start with \`## h2\` headings.
+   - Use available MDX components (\`<Note>\`, \`<Tip>\`, \`<Info>\`, \`<Warning>\`,
+     \`<Danger>\`, \`<CssPreview>\`) where appropriate.
+   - For live demos, use \`<CssPreview>\` with \`css\`/\`html\` props.
+   - Link to other docs using relative paths with \`.mdx\` extension.
+5. **Update Japanese docs**: Create or update the corresponding file under
+   \`docs-ja/\` mirroring the English directory structure. Keep code blocks
+   and \`<CssPreview>\` blocks identical — only translate surrounding prose.
+6. **Update skill index**: Run \`pnpm generate:css-wisdom\` to regenerate the
+   topic index. Add descriptions for new articles to
+   \`.claude/skills/css-wisdom/descriptions.json\`.
+7. **Format**: Run \`pnpm format:md\` to format the new/changed MDX files.
+8. **Verify**: Run \`pnpm build\` to confirm the site builds correctly.
 
 ## Topic Index
 
