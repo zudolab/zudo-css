@@ -29,7 +29,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Run type checking
@@ -52,7 +51,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build site
@@ -80,7 +78,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download build artifact
