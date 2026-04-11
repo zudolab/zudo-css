@@ -5,6 +5,9 @@
 #   2. Deploys to Cloudflare Pages (production)
 #   3. Sends IFTTT notification with deploy status
 #
+# Build and deploy run in a single job so the build output stays on the
+# runner filesystem -- no artifacts, no cache transfers, no storage usage.
+#
 # Concurrency: only one production deploy runs at a time.
 # We do NOT cancel in-progress runs -- the earlier deploy should finish.
 
@@ -23,12 +26,12 @@ permissions:
   contents: read
 
 jobs:
-  # ─── Build ────────────────────────────────────────────────────────────
+  # ─── Build and Deploy ─────────────────────────────────────────────────
 
-  build:
-    name: Build
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -44,30 +47,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build site
         run: pnpm build
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: dist-out
-          path: dist/
-          retention-days: 1
-
-  # ─── Deploy ───────────────────────────────────────────────────────────
-
-  deploy:
-    name: Deploy to Cloudflare Pages
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: dist-out
-          path: dist-out/
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zcss
-          cp -r dist-out/. deploy/pj/zcss/
+          cp -r dist/. deploy/pj/zcss/
           echo '/ /pj/zcss/ 302' > deploy/_redirects
       - name: Deploy to Cloudflare Pages (production)
         run: |
@@ -84,7 +67,7 @@ jobs:
 
   notify:
     name: Deploy Notification
-    needs: [build, deploy]
+    needs: build-and-deploy
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -94,8 +77,7 @@ jobs:
         env:
           IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
           RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
-          BUILD_RESULT: ${{ needs.build.result }}
-          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          DEPLOY_RESULT: ${{ needs.build-and-deploy.result }}
           GITHUB_SHA_VAL: ${{ github.sha }}
           SERVER_URL: ${{ github.server_url }}
           REPO: ${{ github.repository }}
@@ -103,10 +85,8 @@ jobs:
         run: |
           if [ "$DEPLOY_RESULT" = "success" ]; then
             STATUS="zudo-css deploy succeeded!"
-          elif [ "$BUILD_RESULT" = "failure" ]; then
-            STATUS="zudo-css deploy failed (build)"
           elif [ "$DEPLOY_RESULT" = "failure" ]; then
-            STATUS="zudo-css deploy failed (deploy)"
+            STATUS="zudo-css deploy failed"
           else
             STATUS="zudo-css deploy cancelled"
           fi

@@ -34,12 +34,17 @@ jobs:
       - name: Run type checking
         run: pnpm check
 
-  # ─── Build ────────────────────────────────────────────────────────────
+  # ─── Build + Link Check + Preview Deploy ──────────────────────────────
+  #
+  # Build, link check, and preview deploy run in a single job so the build
+  # output stays on the runner filesystem -- no artifacts, no cache transfers,
+  # no storage usage. Link check runs before preview deploy so broken links
+  # prevent a preview from being published.
 
-  build:
-    name: Build
+  build-preview:
+    name: Build, Link Check, and Preview Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -55,56 +60,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build site
         run: pnpm build
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: dist-out
-          path: dist/
-          retention-days: 1
-
-  # ─── Link Check ──────────────────────────────────────────────────────
-
-  link-check:
-    name: Link Check
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Download build artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: dist-out
-          path: dist/
       - name: Check links
         run: node scripts/check-links.js
-
-  # ─── Preview Deploy ───────────────────────────────────────────────────
-
-  preview:
-    name: Preview Deploy
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: dist-out
-          path: dist-out/
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/pj/zcss
-          cp -r dist-out/. deploy/pj/zcss/
+          cp -r dist/. deploy/pj/zcss/
           echo '/ /pj/zcss/ 302' > deploy/_redirects
       - name: Deploy preview to Cloudflare Pages
         id: cf-deploy
