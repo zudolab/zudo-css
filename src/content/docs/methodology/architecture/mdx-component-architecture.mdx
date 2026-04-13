@@ -1,5 +1,6 @@
 ---
 title: Markdown to HTML Conversion Architecture
+description: Resolving cascade conflicts between container-scoped CSS and utility-first CSS with MDX component overrides
 sidebar_position: 5
 ---
 
@@ -56,7 +57,7 @@ function SectionHeading({ children }) {
 }
 ```
 
-The component's `<h3>` elements inherit the container's heading styles — border-top gradients, larger font size, extra padding — even though they are form labels, not document headings. The component's utility classes (`text-sm`, `font-semibold`) should override the container styles, but they can't.
+The component's `<h3>` elements match the container's heading selectors — picking up border-top gradients, larger font size, extra padding — even though they are form labels, not document headings. The component's utility classes (`text-sm`, `font-semibold`) should override the container styles, but they can't.
 
 ### Why Utility Classes Lose
 
@@ -229,7 +230,7 @@ No. In modern SSR frameworks, components without client-side interactivity direc
 
 The components exist only at build time. The browser receives plain `<h2>`, `<h3>`, `<p>` elements with classes and inline styles — indistinguishable from what a CSS-only approach would produce.
 
-## When to Use Each Approach
+## When to Use
 
 | Scenario | Recommended approach |
 |---|---|
