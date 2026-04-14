@@ -43,6 +43,7 @@ doc/
 .claude/skills/css-wisdom/SKILL.md
 .claude/skills/css-wisdom/docs
 .claude/skills/css-wisdom/docs-ja
+.claude/skills/zcss-wisdom/
 
 # Generated claude-resources docs (auto-generated at build time)
 src/content/docs/claude/
