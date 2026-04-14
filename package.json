@@ -17,7 +17,7 @@
     "b4push": "bash scripts/run-b4push.sh",
     "// ── Tools ──────────────────────────────────────": "",
     "generate:css-wisdom": "node scripts/generate-css-wisdom.js",
-    "setup:symlink": "node scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked'"
+    "setup:doc-skill": "node scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked'"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.0",

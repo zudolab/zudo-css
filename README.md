@@ -62,7 +62,7 @@ This repo includes a `css-wisdom` skill that indexes all CSS articles for AI-ass
 このリポジトリには、AI開発支援のためにすべてのCSS記事をインデックスする `css-wisdom` スキルが含まれています。
 
 ```bash
-pnpm run setup:symlink        # Install skill globally / スキルをグローバルにインストール
+pnpm run setup:doc-skill      # Install skill globally / スキルをグローバルにインストール
 pnpm run generate:css-wisdom  # Regenerate topic index / トピックインデックスを再生成
 ```
 
