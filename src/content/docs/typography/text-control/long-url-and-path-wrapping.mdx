@@ -29,7 +29,7 @@ Each of these properties has a use, but none of them is a general-purpose soluti
 | `word-break: break-all` | Breaks between any two characters, anywhere | Shreds prose mid-word; ignores delimiters; makes the rest of the page unreadable |
 | `overflow-wrap: anywhere` | Same effect, but only kicks in when the word would otherwise overflow | Still delimiter-blind; a long word breaks at an arbitrary character rather than at `/` or `?` |
 | `hyphens: auto` | Inserts soft hyphens at dictionary-derived points | Does nothing for URLs or paths — they are not dictionary words |
-| `word-break: break-word` | Legacy alias for `overflow-wrap: break-word` | Non-standard spelling; same behavior as `overflow-wrap: break-word`; prefer the standard form |
+| `word-break: break-word` | Legacy non-standard Chrome value; breaks more aggressively — roughly equivalent to `word-break: normal` plus `overflow-wrap: anywhere` | Not a synonym for `overflow-wrap: break-word`; its emergency breaking is as aggressive as `anywhere` and just as delimiter-blind; avoid — use one of the standard properties above |
 
 The correct answer for a URL like `https://example.com/docs/a/b/c` is almost always "break after `/`." The correct answer for a path like `C:\Users\Example` is "break after `\`." None of the properties above know this.
 

@@ -29,7 +29,7 @@ C:\Users\Example\AppData\Local\Temp\build-artifact-2026-04-24.log
 | `word-break: break-all` | 任意の2文字間、どこででも折り返す | 本文を単語の途中で粉々にし、区切り文字を無視し、ページの残りの部分を読めなくする |
 | `overflow-wrap: anywhere` | 同じ効果だが、単語があふれる場合にのみ発動する | 依然として区切り文字を無視する。長い単語は `/` や `?` ではなく任意の文字位置で折り返される |
 | `hyphens: auto` | 辞書由来の位置にソフトハイフンを挿入する | URLやパスには何もしない — 辞書の単語ではないため |
-| `word-break: break-word` | `overflow-wrap: break-word` のレガシーエイリアス | 非標準の表記。動作は `overflow-wrap: break-word` と同じなので、標準の形式を使うべき |
+| `word-break: break-word` | Chromeレガシーの非標準値。より積極的に折り返し、おおむね `word-break: normal` と `overflow-wrap: anywhere` の組み合わせに相当する | `overflow-wrap: break-word` の同義ではない。緊急時の折り返しの積極度は `anywhere` と同等で、同じく区切り文字を無視する。使わず、上記の標準プロパティを選ぶこと |
 
 `https://example.com/docs/a/b/c` のようなURLに対する正しい答えは、ほぼ常に「`/` の後で折り返す」です。`C:\Users\Example` のようなパスに対する正しい答えは「`\` の後で折り返す」です。上記のプロパティのどれもこのことを知りません。
 
