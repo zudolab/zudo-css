@@ -1,3 +1,27 @@
+# --- Project-root artefacts (zcss-specific) ---
+
+# Local staging / worktree scratch
+__inbox/
+worktrees/
+
+# zcss-specific unversioned data dirs
+src/data/
+doc/
+
+# Generated Claude skill files (contain machine-specific absolute paths)
+.claude/skills/css-wisdom/SKILL.md
+.claude/skills/css-wisdom/docs
+.claude/skills/css-wisdom/docs-ja
+.claude/skills/zcss-wisdom/
+
+# Auto-generated claude-resources docs (regenerated at build time)
+src/content/docs/claude/
+src/content/docs/claude-agents/
+src/content/docs/claude-md/
+src/content/docs/claude-skills/
+
+# --- Scaffold-internal artefacts (zudo-doc defaults) ---
+
 node_modules
 dist
 .astro

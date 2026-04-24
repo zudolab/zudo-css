@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="fade" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="black" stop-opacity="1"/>
+      <stop offset="40%" stop-color="black" stop-opacity="1"/>
+      <stop offset="90%" stop-color="black" stop-opacity="0"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="m">
+      <rect width="1000" height="500" fill="white"/>
+      <circle cx="500" cy="250" r="551" fill="url(#fade)"/>
+    </mask>
+  </defs>
+  <g mask="url(#m)" fill="currentColor">
+    <!-- Top edge rays -->
+    <polygon points="500,250 440,-20 460,-20"/>
+    <polygon points="500,250 380,-20 410,-20"/>
+    <polygon points="500,250 310,-20 350,-20"/>
+    <polygon points="500,250 240,-20 280,-20"/>
+    <polygon points="500,250 160,-20 210,-20"/>
+    <polygon points="500,250 80,-20 130,-20"/>
+    <polygon points="500,250 -10,-20 50,-20"/>
+    <polygon points="500,250 540,-20 560,-20"/>
+    <polygon points="500,250 590,-20 620,-20"/>
+    <polygon points="500,250 660,-20 700,-20"/>
+    <polygon points="500,250 730,-20 770,-20"/>
+    <polygon points="500,250 800,-20 840,-20"/>
+    <polygon points="500,250 870,-20 920,-20"/>
+    <polygon points="500,250 950,-20 1010,-20"/>
+    <!-- thin accent top -->
+    <polygon points="500,250 420,-20 425,-20"/>
+    <polygon points="500,250 490,-20 495,-20"/>
+    <polygon points="500,250 510,-20 515,-20"/>
+    <polygon points="500,250 575,-20 580,-20"/>
+    <polygon points="500,250 200,-20 205,-20"/>
+    <polygon points="500,250 770,-20 775,-20"/>
+
+    <!-- Bottom edge rays -->
+    <polygon points="500,250 440,520 460,520"/>
+    <polygon points="500,250 380,520 410,520"/>
+    <polygon points="500,250 310,520 350,520"/>
+    <polygon points="500,250 240,520 280,520"/>
+    <polygon points="500,250 160,520 210,520"/>
+    <polygon points="500,250 80,520 130,520"/>
+    <polygon points="500,250 -10,520 50,520"/>
+    <polygon points="500,250 540,520 560,520"/>
+    <polygon points="500,250 590,520 620,520"/>
+    <polygon points="500,250 660,520 700,520"/>
+    <polygon points="500,250 730,520 770,520"/>
+    <polygon points="500,250 800,520 840,520"/>
+    <polygon points="500,250 870,520 920,520"/>
+    <polygon points="500,250 950,520 1010,520"/>
+    <!-- thin accent bottom -->
+    <polygon points="500,250 420,520 425,520"/>
+    <polygon points="500,250 490,520 495,520"/>
+    <polygon points="500,250 510,520 515,520"/>
+    <polygon points="500,250 575,520 580,520"/>
+    <polygon points="500,250 200,520 205,520"/>
+    <polygon points="500,250 770,520 775,520"/>
+
+    <!-- Left edge rays -->
+    <polygon points="500,250 -30,30 -30,70"/>
+    <polygon points="500,250 -30,100 -30,140"/>
+    <polygon points="500,250 -30,170 -30,210"/>
+    <polygon points="500,250 -30,230 -30,270"/>
+    <polygon points="500,250 -30,290 -30,330"/>
+    <polygon points="500,250 -30,360 -30,400"/>
+    <polygon points="500,250 -30,420 -30,470"/>
+    <polygon points="500,250 -30,-10 -30,20"/>
+    <polygon points="500,250 -30,480 -30,520"/>
+    <!-- thin accent left -->
+    <polygon points="500,250 -30,80 -30,85"/>
+    <polygon points="500,250 -30,155 -30,160"/>
+    <polygon points="500,250 -30,320 -30,325"/>
+    <polygon points="500,250 -30,440 -30,445"/>
+
+    <!-- Right edge rays -->
+    <polygon points="500,250 1030,30 1030,70"/>
+    <polygon points="500,250 1030,100 1030,140"/>
+    <polygon points="500,250 1030,170 1030,210"/>
+    <polygon points="500,250 1030,230 1030,270"/>
+    <polygon points="500,250 1030,290 1030,330"/>
+    <polygon points="500,250 1030,360 1030,400"/>
+    <polygon points="500,250 1030,420 1030,470"/>
+    <polygon points="500,250 1030,-10 1030,20"/>
+    <polygon points="500,250 1030,480 1030,520"/>
+    <!-- thin accent right -->
+    <polygon points="500,250 1030,80 1030,85"/>
+    <polygon points="500,250 1030,155 1030,160"/>
+    <polygon points="500,250 1030,320 1030,325"/>
+    <polygon points="500,250 1030,440 1030,445"/>
+
+    <!-- Corner diagonal rays -->
+    <polygon points="500,250 -30,-20 20,-20"/>
+    <polygon points="500,250 1010,-20 1040,-20"/>
+    <polygon points="500,250 -30,520 20,520"/>
+    <polygon points="500,250 1010,520 1040,520"/>
+    <polygon points="500,250 -30,-10 -30,-20"/>
+    <polygon points="500,250 1030,-10 1030,-20"/>
+    <polygon points="500,250 -30,510 -30,520"/>
+    <polygon points="500,250 1030,510 1030,520"/>
+  </g>
+</svg>
