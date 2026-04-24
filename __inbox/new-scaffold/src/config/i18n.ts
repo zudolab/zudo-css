@@ -2,7 +2,7 @@ import type { CollectionKey } from "astro:content";
 import { settings } from "./settings";
 
 /** Default locale code (always "en", served from docsDir). */
-export const defaultLocale = "ja" as const;
+export const defaultLocale = "en" as const;
 
 /** All supported locale codes, derived from settings. */
 export const locales = [
@@ -37,7 +37,7 @@ export function getCollectionName(locale: Locale | string): CollectionKey {
 
 /** Get the display label for a locale. */
 export function getLocaleLabel(locale: Locale | string): string {
-  if (locale === defaultLocale) return "JA";
+  if (locale === defaultLocale) return "EN";
   return getLocaleConfig(locale)?.label ?? locale.toUpperCase();
 }
 

@@ -280,6 +280,21 @@ docsDir: "src/content/docs",              // EN root
 locales: { ja: { label: "JA", dir: "src/content/docs-ja" } },
 ```
 
+And `src/config/i18n.ts` was flipped to keep the runtime helpers
+consistent with the URL shape:
+
+```ts
+export const defaultLocale = "en" as const;  // was "ja"
+// getLocaleLabel default-locale branch returns "EN" (was "JA")
+```
+
+Without this, `getContentDir`, `getCollectionName`, and `getLocaleLabel`
+would all compute the wrong answers after the astro.config.ts flip.
+The scaffolder's template comment on this line already read `always "en"`
+(stale from a pre-preset state) — the `"ja"` value was a preset-driven
+injection that contradicts the comment; flipping it here restores the
+intended documented behaviour.
+
 And `astro.config.ts` was flipped to:
 
 ```ts
