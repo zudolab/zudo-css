@@ -1,5 +1,11 @@
 ---
-import { buildNavTree, findNode, loadCategoryMeta } from "@/utils/docs";
+import {
+  buildNavTree,
+  findNode,
+  flattenTree,
+  loadCategoryMeta,
+  type NavNode,
+} from "@/utils/docs";
 import { stripBase } from "@/utils/base";
 import {
   getCollectionName,
@@ -26,15 +32,25 @@ const categoryMeta = loadCategoryMeta(contentDir);
 const tree = buildNavTree(allDocs, lang, categoryMeta);
 
 const categoryNode = findNode(tree, category);
-const children = categoryNode?.children.filter((c) => c.hasPage) ?? [];
+const children =
+  categoryNode?.children.filter((c) => c.hasPage || c.children.length > 0) ?? [];
+
+function resolveHref(child: NavNode): string | undefined {
+  if (child.href) return child.href;
+  const firstLeaf = flattenTree(child.children)[0];
+  return firstLeaf?.href;
+}
 ---
 
 {
   children.length > 0 && (
     <nav class="mt-vsp-lg mb-vsp-md grid grid-cols-1 gap-x-hsp-lg gap-y-vsp-md sm:grid-cols-2">
-      {children.map((child) => (
+      {children.map((child) => {
+        const href = resolveHref(child);
+        if (!href) return null;
+        return (
         <a
-          href={child.href}
+          href={href}
           class="group block rounded border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
         >
           <span class="flex items-center gap-hsp-xs font-medium text-accent underline group-hover:underline">
@@ -55,7 +71,8 @@ const children = categoryNode?.children.filter((c) => c.hasPage) ?? [];
             </span>
           )}
         </a>
-      ))}
+        );
+      })}
     </nav>
   )
 }
