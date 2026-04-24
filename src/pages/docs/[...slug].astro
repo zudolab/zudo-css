@@ -155,7 +155,7 @@ const slug = autoIndex
   {
     autoIndex ? (
       <Fragment>
-        <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
+        <h1 class="text-heading font-futura font-normal mb-vsp-xs">{autoIndex.label}</h1>
         {autoIndex.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {autoIndex.description}
@@ -183,7 +183,7 @@ const slug = autoIndex
       </Fragment>
     ) : (
       <Fragment>
-        <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
+        <h1 class="text-heading font-futura font-normal mb-vsp-xs">{entry.data.title}</h1>
         {settings.docMetainfo && (
           <DocMetainfo
             filePath={`${settings.docsDir}/${entry.id}`}

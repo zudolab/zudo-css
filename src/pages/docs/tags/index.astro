@@ -27,7 +27,7 @@ const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
       { label: t("doc.allTags") },
     ]}
   />
-  <h1 class="text-heading font-bold mb-vsp-lg">{t("doc.allTags")}</h1>
+  <h1 class="text-heading font-futura font-normal mb-vsp-lg">{t("doc.allTags")}</h1>
   {
     tagMap.size === 0 ? (
       <p class="text-muted">{t("doc.noTags")}</p>
