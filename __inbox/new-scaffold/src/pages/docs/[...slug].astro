@@ -13,6 +13,8 @@ import Tabs from "@/components/tabs.astro";
 import TabItem from "@/components/tab-item.astro";
 import Details from "@/components/details.astro";
 import HtmlPreview from "@/components/html-preview-wrapper.astro";
+import CssPreview from "@/components/css-preview-wrapper.astro";
+import TailwindPreview from "@/components/tailwind-preview-wrapper.astro";
 import { htmlOverrides } from "@/components/content/component-map";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
@@ -120,6 +122,8 @@ const components = {
   TabItem,
   Details,
   HtmlPreview,
+  CssPreview,
+  TailwindPreview,
 };
 
 let Content: any;
