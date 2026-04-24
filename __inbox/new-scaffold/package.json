@@ -1,0 +1,41 @@
+{
+  "name": "new-scaffold",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "setup:doc-skill": "bash scripts/setup-doc-skill.sh",
+    "dev:tauri": "cargo tauri dev",
+    "build:tauri": "pnpm build && cargo tauri build"
+  },
+  "dependencies": {
+    "astro": "^5.18.0",
+    "@astrojs/mdx": "^4.3.0",
+    "@astrojs/preact": "^4.1.0",
+    "preact": "^10.26.0",
+    "@shikijs/transformers": "^4.0.0",
+    "clsx": "^2.1.0",
+    "gray-matter": "^4.0.0",
+    "github-slugger": "^2.0.0",
+    "remark-cjk-friendly": "^2.0.1",
+    "remark-directive": "^3.0.0",
+    "unist-util-visit": "^5.1.0",
+    "minisearch": "^7.2.0",
+    "diff": "^8.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.0",
+    "tailwindcss": "^4.2.0",
+    "typescript": "^5.9.0",
+    "@astrojs/check": "^0.9.0",
+    "@types/hast": "^3.0.4",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "pagefind": "^1.4.0"
+  }
+}

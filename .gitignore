@@ -35,7 +35,18 @@ pnpm-debug.log*
 .playwright-cli/
 
 # Misc
-__inbox/
+!__inbox/
+__inbox/*
+!__inbox/new-scaffold/
+!__inbox/zcss-preset.json
+!__inbox/MIGRATION_NOTES.md
+__inbox/new-scaffold/node_modules
+__inbox/new-scaffold/dist
+__inbox/new-scaffold/.astro
+__inbox/new-scaffold/.output
+__inbox/new-scaffold/.wrangler
+__inbox/new-scaffold/.playwright-cli
+__inbox/new-scaffold/.DS_Store
 src/data/
 doc/
 
