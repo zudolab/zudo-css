@@ -1,5 +1,6 @@
 {
   "label": "テキスト制御",
   "position": 2,
-  "noPage": true
+  "noPage": true,
+  "description": "テキストオーバーフローとラインクランプ、バーティカルリズム、text-wrapのbalance/pretty、見出し間隔、長いURLの折り返しを解説します。"
 }
