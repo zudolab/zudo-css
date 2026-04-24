@@ -1,0 +1,261 @@
+---
+title: fit-content, max-content, min-content
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+CSSのブロックレベル要素はデフォルトで `width: auto` となり、コンテナいっぱいに広がります。要素をコンテンツに合わせて縮小したい場合（タグ、ツールチップ、ブロックスタイルのCTAボタンなど）、AIエージェントは通常 `width: auto`（デフォルトなので何もしない）や `width: 100%`（必要なことの逆）を使いがちです。内在サイジングキーワード（intrinsic sizing keywords）の `fit-content`、`max-content`、`min-content` はこの問題を直接解決しますが、AIエージェントはこれらをほとんど使いません。
+
+## 解決方法
+
+CSSは、要素がコンテンツに基づいてサイズを決定するための3つの内在サイジングキーワードを提供しています：
+
+- **`fit-content`** — 要素はコンテンツに合わせて縮小しますが、コンテナ幅を超えることはありません。最もよく必要とされる動作です。
+- **`max-content`** — 要素はすべてのコンテンツを1行に収めるように拡張します。コンテナからはみ出すことがあります。
+- **`min-content`** — 要素は最小の分割不可能なコンテンツ（最も長い単語など）がオーバーフローしない最も狭い幅に縮小します。
+
+## コード例
+
+### ブロック要素をコンテンツに合わせて縮小する
+
+```css
+/* The element is as wide as its content, up to the container width */
+.tag {
+  width: fit-content;
+  padding: 0.25rem 0.75rem;
+  background: #e0e7ff;
+  border-radius: 9999px;
+}
+```
+
+```html
+<div class="tag">New Feature</div>
+<div class="tag">A longer tag label that still shrinks to fit</div>
+```
+
+`width: fit-content` がなければ、各 `.tag` は親要素いっぱいに広がります。これを付けることで、各タグはテキストとパディング分の幅だけになります。
+
+### 縮小フィット要素のセンタリング
+
+コンテンツと同じ幅でブロック要素をセンタリングする一般的なパターン：
+
+```css
+.centered-tag {
+  width: fit-content;
+  margin-inline: auto;
+}
+```
+
+`display: inline-block` に切り替えて `text-align: center` の親で囲むよりもクリーンです。
+
+### 3つのキーワードの比較
+
+```css
+.min {
+  width: min-content;
+  /* Shrinks to the longest word. Text wraps aggressively. */
+}
+
+.max {
+  width: max-content;
+  /* Expands to fit all content on one line. May overflow container. */
+}
+
+.fit {
+  width: fit-content;
+  /* Like max-content, but capped at the container width. */
+}
+```
+
+```html
+<div class="container" style="width: 300px; border: 1px solid #ccc;">
+  <div class="min">This text wraps at every opportunity</div>
+  <div class="max">This text stays on one line even if it overflows the container</div>
+  <div class="fit">This text stays on one line if it fits, otherwise wraps at 300px</div>
+</div>
+```
+
+### 固定幅カラムでの min-content の使用
+
+`min-content` はグリッドレイアウトで、カラムを最も狭いコンテンツに合わせたい場合に便利です：
+
+```css
+.table-layout {
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+  gap: 1rem;
+}
+```
+
+```html
+<div class="table-layout">
+  <span>Status</span>
+  <span>Description of the item that can be long</span>
+  <span>Actions</span>
+</div>
+```
+
+最初と最後のカラムはコンテンツに合わせて縮小し、中央のカラムが残りのスペースを取ります。
+
+### グリッドでの fit-content() 関数
+
+`fit-content()` 関数（括弧付き）はグリッドトラックサイジング専用です。最大長さの引数を受け取ります：
+
+```css
+.sidebar-layout {
+  display: grid;
+  grid-template-columns: fit-content(300px) 1fr;
+  gap: 2rem;
+}
+```
+
+サイドバーカラムはコンテンツに合わせて縮小しますが、300px を超えることはありません。これは `minmax(auto, 300px)` とは異なり、`fit-content()` はスペースが余っていてもコンテンツ幅を超えて拡張しません。
+
+### 実用例：通知バッジ
+
+```css
+.badge {
+  display: block;
+  width: fit-content;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  background: #ef4444;
+  color: white;
+  border-radius: 9999px;
+}
+```
+
+```html
+<span class="badge">3</span>
+<span class="badge">99+</span>
+```
+
+各バッジはコンテンツにぴったりの幅になります。固定幅もオーバーフローもありません。
+
+## ライブプレビュー
+
+<CssPreview client:load
+  title="width: fit-content と width: 100% の比較"
+  html={`
+    <div class="demo">
+      <div class="section">
+        <h4>width: 100% (default block)</h4>
+        <div class="tag full">New Feature</div>
+        <div class="tag full">Badge</div>
+      </div>
+      <div class="section">
+        <h4>width: fit-content</h4>
+        <div class="tag fit">New Feature</div>
+        <div class="tag fit">Badge</div>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      gap: 32px;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+    }
+    .section {
+      flex: 1;
+    }
+    .section h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #334155;
+    }
+    .tag {
+      padding: 6px 16px;
+      background: #e0e7ff;
+      border-radius: 9999px;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .full {
+      width: 100%;
+    }
+    .fit {
+      width: fit-content;
+    }
+    `} />
+
+## AIがよくやるミス
+
+- **`width: fit-content` が必要な場面で `width: auto` を使っている。** ブロック要素の `width: auto` は「コンテナいっぱいに広がる」という意味で、コンテンツへの縮小フィットとは逆です。AIエージェントは `auto` が「自動サイジング」を意味すると思いがちです。
+- **縮小フィットのワークアラウンドとして `display: inline-block` を使っている。** `inline-block` は確かに縮小フィット動作を引き起こしますが、要素のフォーマットコンテキストを変更し、配置の問題を引き起こす可能性があります。`width: fit-content` は display タイプを変更せずに同じサイジングを実現します。
+- **`fit-content`（キーワード）と `fit-content()`（関数）を混同している。** キーワードは `width`、`height`、`min-width` などが値を受け取る場所ならどこでも使えます。関数はグリッドトラックサイジング（`grid-template-columns`、`grid-template-rows`）でのみ有効です。
+- **`fit-content` が必要な場面で `max-content` を使っている。** `max-content` はコンテナ幅を無視するためオーバーフローを引き起こす可能性があります。`fit-content` がほぼ常に安全な選択です。
+- **縮小すべき要素に `width: 100%` を設定している。** AIエージェントはボタン、タグ、バッジに `width: 100%` を頻繁に適用し、コンテンツに合わせてサイズを決めるべきところでコンテナいっぱいに広がらせてしまいます。
+- **`min-content` がテキストを積極的に折り返すことを忘れている。** すべてのソフトラップの機会で改行されるため、非常に狭く読みにくい要素になる可能性があります。主にグリッドトラックサイジングに便利で、一般的な要素幅には向いていません。
+
+## 使い分け
+
+### fit-content
+
+- コンテンツに合わせて縮小すべきブロック要素：タグ、バッジ、ツールチップ、キャプション
+- `margin-inline: auto` でコンテンツ幅の要素をセンタリング
+- 「コンテンツと同じ幅で、コンテナより広くならない」ことが必要なすべてのシナリオ
+
+### max-content
+
+- コンテンツの自然な1行幅を知る必要がある、または強制する必要がある場合
+- アニメーションや測定のための内在サイズの計算
+- オーバーフローする可能性があるため、最終レイアウトにはほとんど使われない
+
+### min-content
+
+- できるだけ狭くしたいグリッドカラム（アイコンカラム、ステータスラベル）
+- 要素がオーバーフローする前に必要な最小スペースの把握
+- テキストを積極的に折り返すため、単独の `width` 値としてはほとんど使われない
+
+### fit-content() 関数
+
+- カラムをコンテンツに合わせて縮小しつつ最大幅に制限したいグリッドトラックサイジング
+- サイドバーレイアウト：`grid-template-columns: fit-content(250px) 1fr`
+
+## Tailwind CSS
+
+Tailwind は内在サイジングのための `w-fit`、`w-min`、`w-max` ユーティリティを提供しています。
+
+### w-fit とデフォルト幅の比較
+
+<TailwindPreview client:load
+  title="Tailwind: w-fit コンテンツ縮小フィット"
+  html={`    <div class="flex gap-8 p-6">
+      <div class="flex-1">
+        <h4 class="text-sm font-semibold text-slate-600 mb-3">Default (stretches)</h4>
+        <div class="bg-indigo-100 px-4 py-1.5 rounded-full text-sm mb-2">New Feature</div>
+        <div class="bg-indigo-100 px-4 py-1.5 rounded-full text-sm">Badge</div>
+      </div>
+      <div class="flex-1">
+        <h4 class="text-sm font-semibold text-slate-600 mb-3">w-fit (shrinks)</h4>
+        <div class="w-fit bg-indigo-100 px-4 py-1.5 rounded-full text-sm mb-2">New Feature</div>
+        <div class="w-fit bg-indigo-100 px-4 py-1.5 rounded-full text-sm">Badge</div>
+      </div>
+    </div>`}
+  height={140} />
+
+### センタリングされた fit-content 要素
+
+<TailwindPreview client:load
+  title="Tailwind: mx-auto + w-fit センタリング"
+  html={`    <div class="p-6 bg-slate-50">
+      <div class="mx-auto w-fit bg-red-500 text-white px-5 py-1 rounded-full text-sm font-semibold">
+        Centered Badge
+      </div>
+    </div>`}
+  height={80} />
+
+## 参考リンク
+
+- [fit-content - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/fit-content)
+- [max-content - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/max-content)
+- [min-content - MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/CSS/min-content)
+- [fit-content() - CSS-Tricks](https://css-tricks.com/almanac/functions/f/fit-content/)
+- [Understanding min-content, max-content, and fit-content in CSS - LogRocket Blog](https://blog.logrocket.com/understanding-min-content-max-content-fit-content-css/)

@@ -1,0 +1,352 @@
+---
+title: ホバー・フォーカス・アクティブ状態
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+インタラクティブな要素には、ホバー、フォーカス、アクティブ状態の視覚的フィードバックが必要です。AIエージェントは、タッチデバイスでスティッキーなホバー状態を引き起こす `:hover` スタイルを追加したり、`:focus` や `:focus-visible` のスタイリングを省略してキーボードアクセシビリティを壊したり、本来は区別すべき3つの状態すべてに同一のスタイルを適用したりします。その結果、マウスでは動作するものの、タッチユーザーやキーボードナビゲーターにはストレスの多いインターフェースになります。
+
+## 解決方法
+
+各インタラクション状態を目的に応じてスタイリングし、`@media (hover: hover)` でホバーエフェクトを対応デバイスに限定し、キーボード専用のフォーカスインジケーターには `:focus` ではなく `:focus-visible` を使用しましょう。
+
+### 3つの状態
+
+- **`:hover`** — ポインティングデバイス（マウス、トラックパッド）が要素の上にある状態です。タッチデバイスでは確実に動作しません。
+- **`:focus`** — マウスクリック、キーボードのタブ、プログラム的なフォーカスなど、何らかの方法で要素がフォーカスされた状態です。
+- **`:focus-visible`** — 要素がフォーカスされ、**かつ**ブラウザが視覚的インジケーターが適切と判断した状態（通常はキーボードナビゲーション）です。ボタンのマウスクリックでは `:focus-visible` はトリガーされません。
+- **`:active`** — 要素がアクティベートされている状態（マウスボタン押下中、タッチで指を押している状態）です。
+
+<CssPreview client:load
+  title="ボタンの状態 — ホバーとTabで状態を確認"
+  html={`
+    <div class="demo">
+      <button class="btn btn-primary">Primary Button</button>
+      <button class="btn btn-outline">Outline Button</button>
+      <a href="#" class="btn btn-link">Link Style</a>
+      <p class="hint">Hover over buttons to see hover state. Press Tab to see focus-visible ring. Click and hold to see active state.</p>
+    </div>
+    `}
+  css={`
+    .demo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      padding: 1.5rem;
+    }
+    
+    .hint {
+      width: 100%;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin: 0.5rem 0 0;
+      font-style: italic;
+    }
+    
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid transparent;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    }
+    
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+    
+    .btn-primary:focus-visible {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
+    }
+    
+    .btn-primary:active {
+      transform: scale(0.96);
+      background-color: #1d4ed8;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      color: #3b82f6;
+      border-color: #3b82f6;
+    }
+    
+    .btn-outline:hover {
+      background: #eff6ff;
+    }
+    
+    .btn-outline:focus-visible {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
+    }
+    
+    .btn-outline:active {
+      transform: scale(0.96);
+      background: #dbeafe;
+    }
+    
+    .btn-link {
+      background: none;
+      color: #3b82f6;
+      padding: 0.625rem 0.25rem;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+    
+    .btn-link:hover {
+      color: #1d4ed8;
+      text-decoration-thickness: 2px;
+    }
+    
+    .btn-link:focus-visible {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+    
+    .btn-link:active {
+      color: #1e40af;
+    }
+    `} />
+
+## コード例
+
+### 基本的なボタンの状態
+
+```css
+.button {
+  background-color: var(--color-primary, #2563eb);
+  color: white;
+  border: 2px solid transparent;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+/* Hover: only on devices that support it */
+@media (hover: hover) {
+  .button:hover {
+    background-color: var(--color-primary-dark, #1d4ed8);
+  }
+}
+
+/* Focus-visible: keyboard focus indicator */
+.button:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Active: pressed state */
+.button:active {
+  transform: scale(0.97);
+}
+```
+
+### リンクの状態（LVHAの順序）
+
+リンクの擬似クラスは、詳細度の競合を避けるためにLVHAの順序に従うべきです：
+
+```css
+a:link {
+  color: var(--color-link, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+a:visited {
+  color: var(--color-link-visited, #7c3aed);
+}
+
+@media (hover: hover) {
+  a:hover {
+    color: var(--color-link-hover, #1d4ed8);
+    text-decoration-thickness: 2px;
+  }
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-link, #2563eb);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+a:active {
+  color: var(--color-link-active, #1e40af);
+}
+```
+
+### カードのホバーエフェクト（タッチセーフ）
+
+```css
+.card {
+  background: var(--color-surface, #ffffff);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Only apply hover elevation on hover-capable devices */
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+/* Keyboard focus */
+.card:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+```
+
+### Focus-Visible と Focus の違い
+
+```css
+/* Remove default focus ring for mouse users */
+.interactive:focus {
+  outline: none;
+}
+
+/* Show focus ring only for keyboard users */
+.interactive:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+```
+
+`:focus` スタイルを完全に削除しない、より安全なアプローチもあります：
+
+```css
+/* Visible focus ring for keyboard navigation */
+.interactive:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Subtle focus style for mouse clicks (if desired) */
+.interactive:focus:not(:focus-visible) {
+  outline: none;
+}
+```
+
+### タッチ入力とマウス入力の検出
+
+```css
+/* Base interactive styles */
+.nav-link {
+  padding: 0.5rem 1rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+/* Hover effects only for precise pointers */
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    background-color: var(--color-surface-hover, #f3f4f6);
+  }
+}
+
+/* Larger touch targets for coarse pointers */
+@media (pointer: coarse) {
+  .nav-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+  }
+}
+```
+
+### フォーム入力のフォーカス状態
+
+```css
+.input {
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* All focus (mouse and keyboard) gets a border change */
+.input:focus {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.15);
+  outline: none;
+}
+```
+
+フォーム入力には `:focus-visible` ではなく `:focus` を使うのが通常正しい選択です。ユーザーはフォーカスの方法に関係なく、どの入力フィールドに入力しているかを確認する必要があるためです。
+
+## AIがよくやるミス
+
+- **`@media (hover: hover)` なしで `:hover` を追加する**：ホバーエフェクトがタッチデバイスでタップ後に「スティッキー」な状態で残り、ユーザーを混乱させます。
+- **代替なしで `:focus` のアウトラインを削除する**：`:focus` に `outline: none` を書きながら視覚的フォーカスインジケーターを一切提供せず、キーボードユーザーにとってページがアクセス不能になります。
+- **`:focus-visible` ではなく `:focus` を使用する**：キーボードフォーカスのみ視覚的インジケーターが必要な場面で、マウスクリックのたびにフォーカスリングを表示してしまいます。
+- **すべての状態に同一スタイルを適用する**：`:hover`、`:focus`、`:active` を同じ見た目にしてしまい、インタラクションの種類に関する意味のある視覚的フィードバックが失われます。
+- **LVHAの順序を忘れる**：`:visited` の前に `:hover` を書いてしまい、リンクスタイリングで詳細度の競合が発生します。
+- **タッチデバイスでテストしない**：ホバーがどこでも機能すると思い込み、モバイルでのインタラクションを一切検証しません。
+- **あらゆる要素に `cursor: pointer` を使用する**：div のような非インタラクティブ要素に `cursor: pointer` を追加し、ユーザーを誤解させます。
+
+## 使い分け
+
+- **`:hover` と `@media (hover: hover)`**：マウスやトラックパッドでのみ意味のある視覚的エンハンスメント（色の変化、シャドウ、エレベーション）に使います。
+- **`:focus-visible`**：ボタン、リンク、カスタムインタラクティブ要素のキーボードフォーカスインジケーターに使います。
+- **`:focus`**：すべてのフォーカスタイプで視覚的インジケーターが必要なフォーム入力に使います。
+- **`:active`**：ボタンやインタラクティブ要素の押下・タップフィードバック（スケール、色の変化）に使います。
+- **`@media (pointer: coarse)`**：タッチデバイス向けにタッチターゲットサイズとパディングを増やす場合に使います。
+
+## Tailwind CSS
+
+Tailwind は CSS擬似クラスに直接対応する `hover:`、`focus:`、`focus-visible:`、`active:` のバリアントプレフィックスを提供しています。
+
+<TailwindPreview client:load
+  title="Tailwind: インタラクティブ状態バリアント"
+  html={`    <div class="flex flex-wrap gap-4 items-center p-6">
+      <button class="px-5 py-2.5 rounded-md text-sm font-semibold bg-blue-500 text-white
+      hover:bg-blue-600
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+      active:scale-95
+      transition">
+      Primary Button
+    </button>
+    <button class="px-5 py-2.5 rounded-md text-sm font-semibold border-2 border-blue-500 text-blue-500 bg-transparent
+    hover:bg-blue-50
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+    active:scale-95
+    transition">
+    Outline Button
+    </button>
+    <a href="#" class="text-sm font-semibold text-blue-500 underline underline-offset-2
+    hover:text-blue-800 hover:decoration-2
+    focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2
+    active:text-blue-900">
+    Link Style
+    </a>
+    <p class="w-full text-xs text-slate-400 italic mt-2">Hover over buttons, tab to see focus ring, click and hold for active state.</p>
+    </div>`}
+  height={130} />
+
+## 参考リンク
+
+- [:focus-visible — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible)
+- [Solving Sticky Hover States with @media (hover: hover) — CSS-Tricks](https://css-tricks.com/solving-sticky-hover-states-with-media-hover-hover/)
+- [Style hover, focus, and active states differently — Zell Liew](https://zellwk.com/blog/style-hover-focus-active-states/)
+- [Focus or Focus-Visible? A Guide to Accessible Focus States — Maya Shavin](https://mayashavin.com/articles/focus-vs-focus-visible-for-accessibility)

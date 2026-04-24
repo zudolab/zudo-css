@@ -1,0 +1,275 @@
+---
+title: currentColor パターン
+sidebar_position: 3
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+AIエージェントはすべてのプロパティに色値をハードコードしがちです。`color`、`border-color`、`box-shadow`、`outline`、SVGの `fill` に個別の hex 値を設定し、これらすべてが要素のテキストカラーと一致すべき場合でもそうします。これはメンテナンスの問題を生みます：コンポーネントの色を変更する場合、複数の宣言を更新する必要があります。さらに悪いことに、親コンポーネントがテキストカラーを変更した場合（ホバー状態やテーマ切り替えなど）、ボーダー、アイコン、シャドウは特定の hex 値に固定されているため追従しません。
+
+## 解決方法
+
+`currentColor` は、要素の計算された `color` 値に解決されるCSSキーワードです。ボーダー、シャドウ、アウトライン、SVGのフィル、その他のカラープロパティがテキストカラーに自動的に追従するようになります。これはCSSで最も活用されていないパターンの1つで、CSS3から対応しておりすべてのブラウザで動作します。
+
+### 主な動作
+
+- `currentColor` はカスケードを通じて継承されます — 要素が独自の `color` を設定していない場合、親から継承します
+- `border-color` はデフォルトで暗黙的に `currentColor` ですが、他のプロパティでは明示的に指定する必要があります
+- CSSカスタムプロパティや `color-mix()` と組み合わせて使えます
+
+## コード例
+
+### テキストカラーに追従するボーダー
+
+```css
+/* VERBOSE: separate color declarations */
+.card {
+  color: #1a365d;
+  border: 1px solid #1a365d;
+}
+
+.card:hover {
+  color: #2b6cb0;
+  border-color: #2b6cb0; /* Must update separately */
+}
+
+/* BETTER: currentColor keeps them in sync */
+.card {
+  color: #1a365d;
+  border: 1px solid currentColor;
+}
+
+.card:hover {
+  color: #2b6cb0;
+  /* Border color updates automatically */
+}
+```
+
+<CssPreview client:load
+  title="currentColor — 親の色を変えるとすべてが更新される"
+  html={`    <div class="cc-demo">
+      <div class="card" style="color: #4f46e5;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <h4>Indigo Component</h4>
+        <p>Border, icon, and shadow all use currentColor — they match the text automatically.</p>
+      </div>
+      <div class="card" style="color: #0d9488;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <h4>Teal Component</h4>
+        <p>Same CSS — only the parent color changed. Everything else followed via currentColor.</p>
+      </div>
+      <div class="card" style="color: #dc2626;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <h4>Red Component</h4>
+        <p>One color declaration controls text, border, icon stroke, and box shadow together.</p>
+      </div>
+    </div>`}
+  css={`.cc-demo {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      border: 2px solid currentColor;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px color-mix(in srgb, currentColor 20%, transparent);
+      background: white;
+    }
+    .card svg {
+      margin-bottom: 0.5rem;
+    }
+    .card h4 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+    }
+    .card p {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      opacity: 0.8;
+    }`}
+  height={260} />
+
+### テキストカラーに一致するSVGアイコン
+
+`currentColor` が最も価値を発揮する場面です。`fill="currentColor"` を持つインラインSVGは、親のテキストカラーを自動的に採用します：
+
+```html
+<button class="btn-primary">
+  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <path fill="currentColor" d="M8 0l2.5 5.3L16 6.2l-4 3.8L13 16 8 13.2 3 16l1-6L0 6.2l5.5-.9z" />
+  </svg>
+  Add to favorites
+</button>
+```
+
+```css
+.btn-primary {
+  color: white;
+  background: oklch(50% 0.22 264);
+}
+
+.btn-primary:hover {
+  color: oklch(90% 0.05 264);
+  /* SVG fill automatically updates to the new color */
+}
+```
+
+### ボックスシャドウ
+
+```css
+.tag {
+  color: oklch(45% 0.2 264);
+  border: 1px solid currentColor;
+  box-shadow: 0 1px 3px currentColor;
+}
+
+/* Semi-transparent shadow using color-mix with currentColor */
+.card {
+  color: oklch(30% 0.05 264);
+  box-shadow: 0 4px 12px color-mix(in oklch, currentColor 25%, transparent);
+}
+```
+
+### アウトラインとフォーカスリング
+
+```css
+/* Focus ring that matches the element's text color */
+.input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Link focus ring that matches the link color */
+a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+```
+
+### テキストデコレーション
+
+```css
+/* Underline color automatically matches text */
+a {
+  color: oklch(50% 0.2 264);
+  text-decoration-color: currentColor;
+}
+
+/* Subtle underline using semi-transparent currentColor */
+a {
+  color: oklch(50% 0.2 264);
+  text-decoration-color: color-mix(in oklch, currentColor 40%, transparent);
+}
+
+a:hover {
+  text-decoration-color: currentColor; /* Full opacity on hover */
+}
+```
+
+### マルチカラーコンポーネントバリアント
+
+```css
+.badge {
+  color: var(--badge-color, oklch(45% 0.15 264));
+  border: 1px solid currentColor;
+  background: color-mix(in oklch, currentColor 10%, transparent);
+}
+
+/* All color properties follow from one custom property */
+.badge--success {
+  --badge-color: oklch(45% 0.15 145);
+}
+
+.badge--warning {
+  --badge-color: oklch(55% 0.18 85);
+}
+
+.badge--danger {
+  --badge-color: oklch(50% 0.2 25);
+}
+```
+
+```html
+<span class="badge badge--success">Active</span>
+<span class="badge badge--warning">Pending</span>
+<span class="badge badge--danger">Failed</span>
+```
+
+### ディバイダーとセパレーター
+
+```css
+.divider {
+  border: none;
+  border-block-start: 1px solid currentColor;
+  opacity: 0.2;
+}
+
+/* The divider inherits the section's text color */
+.dark-section {
+  color: white;
+}
+
+.light-section {
+  color: #333;
+}
+```
+
+### CSSカスタムプロパティとの組み合わせ
+
+```css
+:root {
+  --link-color: oklch(50% 0.2 264);
+}
+
+a {
+  color: var(--link-color);
+  text-decoration-color: color-mix(in oklch, currentColor 50%, transparent);
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: oklch(40% 0.25 264);
+  /* text-decoration-color updates through currentColor */
+}
+
+a svg {
+  fill: currentColor; /* Icon follows link color */
+}
+```
+
+## AIがよくやるミス
+
+- `currentColor` で同期を保つ代わりに、`color`、`border-color`、`box-shadow`、SVGの `fill` に同じ色値をハードコードしている
+- インラインSVGアイコンに `fill="currentColor"` を設定せず、状態変更時にSVGの色を変更するためにJavaScriptを書いている
+- `currentColor` を使えば1つの `color` 更新で変更が伝播するのに、ボーダー、シャドウ、アイコンの色を個別に更新する `:hover` ルールを書いている
+- 要素の `color` が遠い祖先から継承されており予期せず変わる可能性がある場面で `currentColor` を使っている — どの要素が `color` を設定するか意図的に考えましょう
+- `border-color` がすでにデフォルトで `currentColor` であることを忘れている — `border-color: currentColor` の明示的な設定は有効ですが冗長です
+- `color-mix()` と `currentColor` を組み合わせた半透明バリアント（例：`color-mix(in oklch, currentColor 25%, transparent)` のさりげないシャドウ）を活用していない
+- `background-color` に `currentColor` を使い、テキストを自身の背景に対して見えなくしている — `currentColor` はアクセントカラー用であり、背景用ではありません
+
+## 使い分け
+
+- **ボタンやリンク内のSVGアイコン**: すべての状態（デフォルト、ホバー、アクティブ、無効、フォーカス）でアイコンの色がテキストカラーに自動的に追従する
+- **コンポーネントのボーダー**: 1つの `color` 変更でテキストとボーダーが一緒に更新される
+- **フォーカスインジケーター**: `outline: 2px solid currentColor` で要素のコンテキストに常に合うフォーカスリングが作られる
+- **色調整されたコンポーネント**: バッジ、タグ、アラートで、ボーダー、背景ティント、テキストが1つの色から導出されるべき場面
+- **テキストデコレーション**: テキストカラーに一致する、または部分的に一致するさりげないアンダーライン
+
+### 使わない方がよい場面
+
+- **背景**: `background: currentColor` はテキストが見えなくなります（子要素に別の `color` を設定しない限り）
+- **テキストと一緒に変わるべきでない色**: ロゴ、ブランドマーク、コンテキストに関係なく固定色が必要なアイコン
+- **複雑なマルチカラーコンポーネント**: ボーダー、アイコン、テキストが意図的に異なる色を使う場合
+
+## 参考リンク
+
+- [MDN: currentColor](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/currentcolor)
+- [CSS-Tricks: currentColor](https://css-tricks.com/currentcolor/)
+- [currentColor and SVGs — Go Make Things](https://gomakethings.com/currentcolor-and-svgs/)
+- [Using the currentColor CSS Property with SVG — Echobind](https://echobind.com/post/currentcolor-css-property-with-svg)

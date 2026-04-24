@@ -1,0 +1,721 @@
+---
+title: コンテナクエリ
+sidebar_position: 1
+---
+
+import CssPreview from '@/components/CssPreview';
+
+## 問題
+
+メディアクエリ（media query）はビューポートの幅に応じて反応しますが、コンポーネントのコンテナの幅には対応しません。コンポーネントがサイドバー、モーダル、あるいは制約のあるレイアウトに配置された場合、ビューポートベースのメディアクエリではコンポーネントのレイアウトを実際の利用可能スペースに適応させることができません。AIエージェントはコンポーネントレベルのレスポンシブ対応にほぼ常に `@media` クエリを使い、コンテナクエリ（container query）を完全に無視してしまいます。
+
+## 解決方法
+
+CSSコンテナクエリ（`@container`）を使うと、コンポーネントをビューポートではなく親コンテナのサイズに応じて変化させることができます。これにより、コンポーネントが異なるレイアウトコンテキストで真に再利用可能になります。コンテナクエリは Baseline 2023 であり、すべてのモダンブラウザでサポートされています。
+
+### コンテナの設定
+
+親要素を `container-type` を使ってコンテインメントコンテキスト（containment context）として宣言する必要があります。最も一般的な値は `inline-size` で、コンテナのインライン方向（水平方向）のサイズに基づくクエリを有効にします。
+
+```css
+.card-wrapper {
+  container-type: inline-size;
+}
+```
+
+### コンテナへのクエリ
+
+```css
+@container (min-width: 400px) {
+  .card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+  }
+}
+```
+
+### 基本的なコンテナクエリ
+
+このデモでは iframe がコンテナの境界として機能します。ビューポートボタンを使って、カードレイアウトがコンテナの幅に応じて変化する様子を確認しましょう。
+
+<CssPreview client:load
+  title="基本的なコンテナクエリ — カードレイアウトがコンテナ幅に応じて変化"
+  html={`
+    <div class="card-wrapper">
+      <article class="card">
+        <div class="card__image"></div>
+        <div class="card__body">
+          <h3 class="card__title">Responsive Card</h3>
+          <p class="card__text">This card uses container queries to adapt its layout. At narrow widths it stacks vertically; at wider widths it switches to a horizontal layout.</p>
+        </div>
+      </article>
+    </div>
+    `}
+  css={`
+    .card-wrapper {
+      container-type: inline-size;
+      padding: 1rem;
+    }
+    
+    .card {
+      display: flex;
+      flex-direction: column;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .card__image {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    }
+    
+    .card__body {
+      padding: 1rem;
+    }
+    
+    .card__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: #1e293b;
+    }
+    
+    .card__text {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    @container (min-width: 500px) {
+    .card {
+      flex-direction: row;
+    }
+    .card__image {
+      width: 200px;
+      height: auto;
+      min-height: 150px;
+    }
+    }
+    
+    @container (min-width: 700px) {
+    .card {
+    gap: 1rem;
+    }
+    .card__image {
+    width: 280px;
+    }
+    .card__title {
+    font-size: 1.375rem;
+    }
+    }
+    `} />
+
+## 名前付きコンテナ
+
+コンテナがネストされている場合、`@container` クエリは `container-type` が設定されている最も近い祖先要素にマッチします。特定のコンテナをターゲットにするには、`container-name` を使い、クエリ内でその名前を参照します。
+
+```css
+.sidebar {
+  container-type: inline-size;
+  container-name: sidebar;
+}
+
+.main-content {
+  container-type: inline-size;
+  container-name: main;
+}
+
+/* Only responds to the sidebar container */
+@container sidebar (max-width: 300px) {
+  .nav-list {
+    flex-direction: column;
+  }
+}
+```
+
+`container` ショートハンドプロパティで両方を組み合わせることができます：
+
+```css
+.sidebar {
+  container: sidebar / inline-size;
+}
+```
+
+<CssPreview client:load
+  title="名前付きコンテナ — 同じコンポーネントがサイドバーとメインで異なる表示に"
+  html={`
+    <div class="page-layout">
+      <aside class="sidebar">
+        <h4 class="section-label">Sidebar (narrow container)</h4>
+        <div class="info-card">
+          <div class="info-card__icon">&#9733;</div>
+          <div class="info-card__content">
+            <strong class="info-card__title">Featured</strong>
+            <span class="info-card__text">This card adapts to its sidebar container</span>
+          </div>
+        </div>
+      </aside>
+      <main class="main-content">
+        <h4 class="section-label">Main Content (wide container)</h4>
+        <div class="info-card">
+          <div class="info-card__icon">&#9733;</div>
+          <div class="info-card__content">
+            <strong class="info-card__title">Featured</strong>
+            <span class="info-card__text">Same card component adapts to the wider main container, showing a horizontal layout with more space</span>
+          </div>
+        </div>
+      </main>
+    </div>
+    `}
+  css={`
+    .page-layout {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .sidebar {
+      container: sidebar / inline-size;
+    }
+    
+    .main-content {
+      container: main / inline-size;
+    }
+    
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin: 0 0 0.5rem;
+    }
+    
+    .info-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+    }
+    
+    .info-card__icon {
+      font-size: 1.5rem;
+      color: #f59e0b;
+      line-height: 1;
+    }
+    
+    .info-card__content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .info-card__title {
+      font-size: 0.875rem;
+      color: #1e293b;
+    }
+    
+    .info-card__text {
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    
+    @container main (min-width: 300px) {
+    .info-card {
+      flex-direction: row;
+      text-align: left;
+      align-items: flex-start;
+    }
+    }
+    `}
+  height={220} />
+
+## コンテナクエリの単位
+
+コンテナクエリ単位（container query unit）は、クエリコンテナの寸法に対する相対値です。コンポーネント内でのフルイドサイジングに便利です。
+
+- `cqw` — コンテナの幅の1%
+- `cqh` — コンテナの高さの1%
+- `cqi` — コンテナのインラインサイズの1%
+- `cqb` — コンテナのブロックサイズの1%
+- `cqmin` — `cqi` と `cqb` の小さい方
+- `cqmax` — `cqi` と `cqb` の大きい方
+
+```css
+.card-container {
+  container-type: inline-size;
+}
+
+.card__title {
+  /* 5% of the container's inline size, clamped */
+  font-size: clamp(1rem, 5cqi, 2rem);
+}
+
+.card__body {
+  /* Padding relative to container width */
+  padding: 2cqi;
+}
+```
+
+<CssPreview client:load
+  title="コンテナクエリ単位 — テキストと余白がコンテナに応じてスケール"
+  html={`
+    <div class="cqu-demo">
+      <div class="cqu-card">
+        <h3 class="cqu-card__title">Fluid Title</h3>
+        <p class="cqu-card__text">This text and padding scale with the container width using cqi units. Resize using the viewport buttons to see everything scale proportionally.</p>
+        <div class="cqu-card__badge">cqi sized</div>
+      </div>
+    </div>
+    `}
+  css={`
+    .cqu-demo {
+      container-type: inline-size;
+      padding: 1rem;
+    }
+    
+    .cqu-card {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: white;
+      padding: clamp(0.75rem, 4cqi, 2.5rem);
+      border-radius: clamp(0.375rem, 1.5cqi, 1rem);
+    }
+    
+    .cqu-card__title {
+      font-size: clamp(1rem, 5cqi, 2.25rem);
+      font-weight: 700;
+      margin: 0 0 clamp(0.25rem, 1.5cqi, 0.75rem);
+      line-height: 1.2;
+    }
+    
+    .cqu-card__text {
+      font-size: clamp(0.75rem, 2.5cqi, 1.125rem);
+      color: #cbd5e1;
+      margin: 0 0 clamp(0.5rem, 2cqi, 1rem);
+      line-height: 1.5;
+    }
+    
+    .cqu-card__badge {
+      display: inline-block;
+      background: #3b82f6;
+      color: white;
+      font-size: clamp(0.625rem, 2cqi, 0.875rem);
+      font-weight: 600;
+      padding: clamp(0.125rem, 0.5cqi, 0.375rem) clamp(0.375rem, 1.5cqi, 0.75rem);
+      border-radius: 9999px;
+    }
+    `} />
+
+## コンテナ幅に適応するカードコンポーネント
+
+よくある実用的なユースケースとして、狭いサイドバー、中幅のグリッドカラム、全幅のメインエリアなど、どのレイアウトコンテキストでも機能するカードコンポーネントがあります。
+
+<CssPreview client:load
+  title="アダプティブカードグリッド — カードがビューポートではなくコンテナに応じて変化"
+  html={`
+    <div class="card-grid">
+      <div class="card-cell">
+        <article class="adaptive-card">
+          <div class="adaptive-card__media"></div>
+          <div class="adaptive-card__body">
+            <h3 class="adaptive-card__title">Mountain Retreat</h3>
+            <p class="adaptive-card__desc">A peaceful getaway nestled in the mountains with stunning views and fresh mountain air.</p>
+            <span class="adaptive-card__price">$120 / night</span>
+          </div>
+        </article>
+      </div>
+      <div class="card-cell">
+        <article class="adaptive-card">
+          <div class="adaptive-card__media" style="background: linear-gradient(135deg, #22c55e, #15803d);"></div>
+          <div class="adaptive-card__body">
+            <h3 class="adaptive-card__title">Forest Cabin</h3>
+            <p class="adaptive-card__desc">A cozy cabin surrounded by towering trees and natural beauty.</p>
+            <span class="adaptive-card__price">$95 / night</span>
+          </div>
+        </article>
+      </div>
+      <div class="card-cell">
+        <article class="adaptive-card">
+          <div class="adaptive-card__media" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+          <div class="adaptive-card__body">
+            <h3 class="adaptive-card__title">Beach House</h3>
+            <p class="adaptive-card__desc">Oceanfront living with direct beach access and sunset views from every room.</p>
+            <span class="adaptive-card__price">$200 / night</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    `}
+  css={`
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .card-cell {
+      container-type: inline-size;
+    }
+    
+    .adaptive-card {
+      display: flex;
+      flex-direction: column;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      height: 100%;
+    }
+    
+    .adaptive-card__media {
+      width: 100%;
+      height: 100px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+    }
+    
+    .adaptive-card__body {
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    
+    .adaptive-card__title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.375rem;
+      color: #1e293b;
+    }
+    
+    .adaptive-card__desc {
+      font-size: 0.8125rem;
+      color: #64748b;
+      margin: 0 0 0.75rem;
+      line-height: 1.4;
+      flex: 1;
+    }
+    
+    .adaptive-card__price {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #059669;
+    }
+    
+    @container (min-width: 350px) {
+    .adaptive-card {
+      flex-direction: row;
+    }
+    .adaptive-card__media {
+      width: 140px;
+      height: auto;
+      min-height: 120px;
+    }
+    .adaptive-card__body {
+      padding: 1rem;
+    }
+    }
+    `}
+  height={400} />
+
+## コンテナクエリとメディアクエリの比較
+
+重要な違い：メディアクエリは**ビューポート**に応じて反応し、コンテナクエリは**親コンテナ**に応じて反応します。このデモでは、同じページ上の幅が異なる2つのコンテナに同一コンポーネントを配置しています。メディアクエリ版はビューポートが変わっていないため両方とも同じ見た目になります。コンテナクエリ版はそれぞれのコンテナに独立して適応します。
+
+<CssPreview client:load
+  title="コンテナクエリ vs メディアクエリ — 同じコンポーネント、異なるコンテナ"
+  html={`
+    <h4 class="demo-heading">Using @container (adapts to each container)</h4>
+    <div class="comparison-layout">
+      <div class="narrow-container cq-container">
+        <article class="cq-card">
+          <div class="cq-card__image"></div>
+          <div class="cq-card__body">
+            <strong>Container Query Card</strong>
+            <span>Narrow container</span>
+          </div>
+        </article>
+      </div>
+      <div class="wide-container cq-container">
+        <article class="cq-card">
+          <div class="cq-card__image"></div>
+          <div class="cq-card__body">
+            <strong>Container Query Card</strong>
+            <span>Wide container</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    
+    <h4 class="demo-heading" style="margin-top: 1.5rem;">Using @media (both look the same)</h4>
+    <div class="comparison-layout">
+      <div class="narrow-container">
+        <article class="mq-card">
+          <div class="mq-card__image"></div>
+          <div class="mq-card__body">
+            <strong>Media Query Card</strong>
+            <span>Narrow container</span>
+          </div>
+        </article>
+      </div>
+      <div class="wide-container">
+        <article class="mq-card">
+          <div class="mq-card__image"></div>
+          <div class="mq-card__body">
+            <strong>Media Query Card</strong>
+            <span>Wide container</span>
+          </div>
+        </article>
+      </div>
+    </div>
+    `}
+  css={`
+    .demo-heading {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: #475569;
+      margin: 0 0 0.5rem;
+      padding: 0 0.75rem;
+    }
+    
+    .comparison-layout {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 0.75rem;
+      padding: 0 0.75rem;
+    }
+    
+    .narrow-container {
+      min-width: 0;
+    }
+    
+    .wide-container {
+      min-width: 0;
+    }
+    
+    /* ---- Container Query version ---- */
+    .cq-container {
+      container-type: inline-size;
+    }
+    
+    .cq-card {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #bfdbfe;
+      border-radius: 0.375rem;
+      overflow: hidden;
+      background: #eff6ff;
+    }
+    
+    .cq-card__image {
+      width: 100%;
+      height: 48px;
+      background: #3b82f6;
+    }
+    
+    .cq-card__body {
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+    
+    .cq-card__body strong {
+      font-size: 0.75rem;
+      color: #1e293b;
+    }
+    
+    .cq-card__body span {
+      font-size: 0.6875rem;
+      color: #64748b;
+    }
+    
+    @container (min-width: 300px) {
+    .cq-card {
+      flex-direction: row;
+    }
+    .cq-card__image {
+      width: 80px;
+      height: auto;
+      min-height: 60px;
+    }
+    }
+    
+    /* ---- Media Query version ---- */
+    .mq-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    background: #fef2f2;
+    }
+    
+    .mq-card__image {
+    width: 100%;
+    height: 48px;
+    background: #ef4444;
+    }
+    
+    .mq-card__body {
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    }
+    
+    .mq-card__body strong {
+    font-size: 0.75rem;
+    color: #1e293b;
+    }
+    
+    .mq-card__body span {
+    font-size: 0.6875rem;
+    color: #64748b;
+    }
+    
+    @media (min-width: 300px) {
+    .mq-card {
+    flex-direction: row;
+    }
+    .mq-card__image {
+    width: 80px;
+    height: auto;
+    min-height: 60px;
+    }
+    }
+    `}
+  height={380} />
+
+上のデモでは、`@container` カードはそれぞれ独立して適応します。狭いコンテナ内のカードは縦に積み重なり、広いコンテナ内のカードは横並びになります。`@media` カードはビューポート（iframe）が `300px` より広いため両方とも横並びになります。どちらのカードも実際のコンテナの幅を認識していません。
+
+## コード例
+
+### レスポンシブカードコンポーネント
+
+```css
+.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+/* Base: stacked layout */
+.card {
+  display: flex;
+  flex-direction: column;
+}
+
+.card__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* When container is wide enough: horizontal layout */
+@container card (min-width: 500px) {
+  .card {
+    flex-direction: row;
+  }
+
+  .card__image {
+    width: 200px;
+    aspect-ratio: 1;
+  }
+}
+
+/* When container is very wide: add extra spacing */
+@container card (min-width: 800px) {
+  .card {
+    gap: 2rem;
+    padding: 2rem;
+  }
+
+  .card__image {
+    width: 300px;
+  }
+}
+```
+
+### コンテナに適応するナビゲーション
+
+```css
+.nav-wrapper {
+  container-type: inline-size;
+  container-name: nav;
+}
+
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Horizontal layout when container allows */
+@container nav (min-width: 600px) {
+  .nav-list {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}
+```
+
+### コンテナクエリとコンテナクエリ単位の組み合わせ
+
+```css
+.widget-wrapper {
+  container: widget / inline-size;
+}
+
+.widget__title {
+  font-size: clamp(1rem, 5cqi, 2rem);
+}
+
+.widget__body {
+  padding: clamp(0.5rem, 3cqi, 1.5rem);
+}
+
+@container widget (min-width: 400px) {
+  .widget {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+  }
+}
+```
+
+## AIがよくやるミス
+
+- **コンポーネントレイアウトにメディアクエリを使う**: AIエージェントは、コンポーネントがビューポートではなくコンテナに適応する必要がある場合でも、デフォルトで `@media` クエリを使ってしまいます。
+- **`container-type` を忘れる**: 親要素に `container-type` を設定せずに `@container` ルールを書いてしまいます。コンテナは明示的に宣言する必要があります。
+- **`container-type: size` を不必要に使う**: 高さベースのコンテインメント（`size`）はレイアウトの問題を引き起こす可能性があります。ほとんどの場合は `inline-size` を使いましょう。
+- **ネストされたコンテナに名前を付けない**: コンテナがネストされているとき、`container-name` を省略すると曖昧さが生じます。`@container` クエリは最も近い祖先コンテナにマッチします。ネスト時は特定の祖先をターゲットにするためにコンテナに名前を付けましょう。
+- **要素自体にクエリしてしまう**: `@container` クエリは `container-type` が設定された最も近い祖先をターゲットにするのであって、スタイルを適用する要素自体ではありません。コンテナとスタイル対象の要素は別の要素である必要があります。
+
+## 使い分け
+
+- **コンポーネントレベルのレスポンシブ対応**: 異なるレイアウト幅に配置される可能性のある再利用可能なコンポーネント（カード、ナビゲーション、フォームグループ）に使いましょう。
+- **サイドバーとメインコンテンツ**: 同じページ上で、同じコンポーネントが広いコンテキストと狭いコンテキストの両方に表示される場合に使いましょう。
+- **デザインシステムのコンポーネント**: 異なるアプリケーションやレイアウトで再利用するために構築されたコンポーネントに使いましょう。
+- **ページレベルのレイアウトには不向き**: シングルカラムとマルチカラムのページレイアウト切り替えなど、マクロなレイアウトの関心事には引き続き `@media` クエリを使いましょう。
+
+## 参考リンク
+
+- [CSS Container Queries — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Containment/Container_queries)
+- [@container — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@container)
+- [Container Query Units — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_size_and_style_queries#container_query_length_units)
+- [Container Queries Unleashed — Josh W. Comeau](https://www.joshwcomeau.com/css/container-queries-unleashed/)
+- [CSS Container Queries — CSS-Tricks](https://css-tricks.com/css-container-queries/)

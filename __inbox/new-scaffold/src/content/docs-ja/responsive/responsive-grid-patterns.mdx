@@ -1,0 +1,297 @@
+---
+title: レスポンシブグリッドパターン
+sidebar_position: 5
+---
+
+import CssPreview from '@/components/CssPreview';
+import TailwindPreview from '@/components/TailwindPreview';
+
+## 問題
+
+レスポンシブなグリッドレイアウトの作成には、従来、各ブレークポイントで異なる `grid-template-columns` 値を持つ複数のメディアクエリが必要でした。AIエージェントはほぼ常にカラム数をハードコード（例：`grid-template-columns: repeat(3, 1fr)`）してから、2カラム、1カラムに切り替えるブレークポイントを追加します。これではコンテナ幅が予想外に変わると壊れる脆いレイアウトになります。CSS Grid にはメディアクエリなしでグリッドを本質的にレスポンシブにする組み込み機能があります。
+
+## 解決方法
+
+`repeat()` と `auto-fill` または `auto-fit` を `minmax()` と組み合わせることで、利用可能なスペースに基づいてカラム数を自動調整するグリッドを作成できます。これは **RAM パターン**（Repeat, Auto, Minmax）と呼ばれることがあります。
+
+### auto-fill vs auto-fit
+
+- **`auto-fill`**: コンテナに収まるだけのトラックを作成します。空のトラックはそのまま残りスペースを占有します。
+- **`auto-fit`**: コンテナに収まるだけのトラックを作成しますが、空のトラックを幅ゼロに折りたたみ、埋まっているトラックを引き伸ばします。
+
+グリッドのアイテム数がカラム数より少ない場合、違いが顕著になります：
+
+- `auto-fill` は空のカラムスロットを保持します（一貫したカラム幅に便利です）。
+- `auto-fit` は空のスロットを折りたたみ、既存のアイテムを行全体に引き伸ばします。
+
+<CssPreview client:load
+  title="auto-fill + minmax() グリッド — Mobile / Tablet / Full でリフローを確認"
+  html={`
+    <div class="grid">
+      <div class="grid-card" style="background: #3b82f6;">Card 1</div>
+      <div class="grid-card" style="background: #ef4444;">Card 2</div>
+      <div class="grid-card" style="background: #22c55e;">Card 3</div>
+      <div class="grid-card" style="background: #f59e0b;">Card 4</div>
+      <div class="grid-card" style="background: #8b5cf6;">Card 5</div>
+      <div class="grid-card" style="background: #ec4899;">Card 6</div>
+    </div>
+    `}
+  css={`
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    
+    .grid-card {
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 2rem 1rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80px;
+    }
+    `} />
+
+## コード例
+
+### 基本的なレスポンシブグリッド（RAM パターン）
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+```
+
+この1行で以下のグリッドが作成されます：
+
+- 各カラムの最小幅は `250px` です。
+- カラムは残りのスペースを均等に満たすように伸びます（`1fr`）。
+- コンテナが縮むと、カラムは自動的に1行あたりの数が減ります。
+- メディアクエリは不要です。
+
+### auto-fill: 一貫したカラムスロット
+
+```css
+.grid-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+```
+
+```html
+<div class="grid-fill">
+  <div class="card">Card 1</div>
+  <div class="card">Card 2</div>
+  <!-- Only 2 items, but empty column slots are preserved -->
+</div>
+```
+
+利用可能なスロットよりアイテムが少ない場合でも一貫したカラムサイズにしたいときは `auto-fill` を使いましょう。
+
+### auto-fit: アイテムが引き伸ばされて埋まる
+
+```css
+.grid-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+```
+
+```html
+<div class="grid-fit">
+  <div class="card">Card 1</div>
+  <div class="card">Card 2</div>
+  <!-- 2 items stretch to fill the entire row -->
+</div>
+```
+
+アイテム数に関係なくアイテムが利用可能なスペースを埋めるように伸びてほしいときは `auto-fit` を使いましょう。
+
+### min() によるオーバーフローの防止
+
+`minmax(250px, 1fr)` でよくある問題は、ビューポートが `250px` より狭いとグリッドがオーバーフローすることです。`min()` を使って修正しましょう：
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+  gap: 1.5rem;
+}
+```
+
+`min(250px, 100%)` により、非常に狭い画面でもカラムがコンテナ幅を超えないようになります。
+
+### 一貫した高さのカードグリッド
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface, #f5f5f5);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.card__body {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.card__footer {
+  padding: 1rem 1.5rem;
+  margin-block-start: auto;
+}
+```
+
+### 最小カラム数を保証するレスポンシブグリッド
+
+狭い画面でも最低2カラムにしたい場合があります。RAM パターンに最小サイズ用のメディアクエリだけを組み合わせましょう：
+
+```css
+.grid-min-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 40rem) {
+  .grid-min-2 {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+```
+
+### 非対称レスポンシブレイアウト
+
+一方のカラムを広くしたいレイアウト（例：メインコンテンツ + サイドバー）の場合：
+
+```css
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 50rem) {
+  .layout {
+    grid-template-columns: 1fr 20rem;
+  }
+}
+```
+
+### サイズが異なるアイテムのデンスパッキング
+
+グリッドアイテムのスパンが異なる場合、`grid-auto-flow: dense` を使ってギャップを埋めましょう：
+
+```css
+.masonry-like {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-auto-flow: dense;
+  gap: 1rem;
+}
+
+.masonry-like .wide {
+  grid-column: span 2;
+}
+
+.masonry-like .tall {
+  grid-row: span 2;
+}
+```
+
+### Subgrid を使ったコンテンツ揃えのレスポンシブグリッド
+
+カードのコンテンツ（タイトル、テキスト、フッター）を行をまたいで揃える必要がある場合：
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 1.5rem;
+}
+
+@supports (grid-template-rows: subgrid) {
+  .card-grid {
+    grid-template-rows: auto;
+  }
+
+  .card {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3; /* title, body, footer */
+  }
+}
+```
+
+## AIがよくやるミス
+
+- **カラム数をハードコードする**: `auto-fill`/`auto-fit` と `minmax()` を使う代わりに、`grid-template-columns: repeat(3, 1fr)` と書いてからメディアクエリで2カラム、1カラムに変更してしまいます。
+- **`auto-fill` と `auto-fit` を混同する**: 互換的に使ってしまいます。グリッドのアイテム数がカラム数より少ない場合、挙動が異なります。
+- **オーバーフローを防がない**: `min(250px, 100%)` なしで `minmax(250px, 1fr)` を使い、狭いビューポートで水平オーバーフローを引き起こします。
+- **グリッドレイアウトに Flexbox を使う**: CSS Grid の `auto-fill` でより簡潔に解決できるのに、`display: flex; flex-wrap: wrap` とパーセント幅や gap ハックを使ってしまいます。
+- **メディアクエリを多用する**: `auto-fill`/`auto-fit` に自動処理させる代わりに、カラム数が変わるたびにブレークポイントを追加してしまいます。
+- **`grid-auto-flow: dense` を無視する**: アイテムのサイズが異なるときにグリッドにギャップを残してしまい、デンスパッキングを使いません。
+
+## 使い分け
+
+- **カードグリッド**: 商品リスト、ブログ記事グリッド、画像ギャラリーなど、均一なアイテムのグリッドに使いましょう。
+- **ダッシュボードレイアウト**: 利用可能なスペースを埋めるべきウィジェットやパネルに使いましょう。
+- **`auto-fill`**: アイテムが少なくても一貫したカラム幅にしたいとき（例：構造を維持すべき商品グリッド）に使いましょう。
+- **`auto-fit`**: アイテムが行を引き伸ばして埋めてほしいとき（例：1〜3個のフィーチャーカードを持つヒーローセクション）に使いましょう。
+- **複雑な非対称レイアウトには不向き**: サイドバー、ヘッダー、フッターを持つレイアウトには、明示的な `grid-template-columns` と `grid-template-areas` を使いましょう。
+
+## Tailwind CSS
+
+Tailwind はレスポンシブブレークポイントプレフィックス（`sm:`、`md:`、`lg:`、`xl:`）を使って、異なるビューポート幅でグリッドのカラム数を変更します。ビューポートボタンを使ってグリッドのリフローを確認しましょう。
+
+### レスポンシブカードグリッド
+
+<TailwindPreview client:load
+  title="Tailwind: レスポンシブグリッド（Mobile / Tablet / Full で確認）"
+  html={`    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <div class="bg-blue-500 text-white font-bold p-8 rounded-lg flex items-center justify-center min-h-[80px]">Card 1</div>
+      <div class="bg-red-500 text-white font-bold p-8 rounded-lg flex items-center justify-center min-h-[80px]">Card 2</div>
+      <div class="bg-green-500 text-white font-bold p-8 rounded-lg flex items-center justify-center min-h-[80px]">Card 3</div>
+      <div class="bg-amber-500 text-white font-bold p-8 rounded-lg flex items-center justify-center min-h-[80px]">Card 4</div>
+      <div class="bg-violet-500 text-white font-bold p-8 rounded-lg flex items-center justify-center min-h-[80px]">Card 5</div>
+      <div class="bg-pink-500 text-white font-bold p-8 rounded-lg flex items-center justify-center min-h-[80px]">Card 6</div>
+    </div>`} />
+
+### 非対称レイアウト
+
+<TailwindPreview client:load
+  title="Tailwind: メイン + サイドバーのレスポンシブレイアウト"
+  html={`    <div class="grid grid-cols-1 md:grid-cols-[1fr_16rem] gap-4 p-4">
+      <div class="bg-green-500 text-white p-6 rounded-lg min-h-[200px]">
+        <h3 class="font-bold mb-2">Main Content</h3>
+        <p class="text-sm text-green-100">Takes full width on mobile, shares space with sidebar on wider screens.</p>
+      </div>
+      <div class="bg-amber-500 text-white p-4 rounded-lg">
+        <h3 class="font-bold mb-2">Sidebar</h3>
+        <p class="text-sm text-amber-100">Fixed 16rem width on desktop.</p>
+      </div>
+    </div>`}
+  height={260} />
+
+## 参考リンク
+
+- [Auto-Sizing Columns in CSS Grid: auto-fill vs auto-fit — CSS-Tricks](https://css-tricks.com/auto-sizing-columns-css-grid-auto-fill-vs-auto-fit/)
+- [minmax() — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/minmax)
+- [Auto-placement in Grid Layout — MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Auto-placement)
+- [Responsive CSS Grid Layouts — Harshal V. Ladhe](https://harshal-ladhe.netlify.app/post/responsive-css-grid-layouts)
