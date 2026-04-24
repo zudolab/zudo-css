@@ -35,7 +35,20 @@ pnpm-debug.log*
 .playwright-cli/
 
 # Misc
-__inbox/
+# Global gitignore (~/.gitignore_global) ignores __inbox/ whole-dir; re-include the dir
+# itself and the specific tracked paths for the zudo-doc-rebuild staging area.
+!__inbox/
+__inbox/*
+!__inbox/new-scaffold/
+!__inbox/zcss-preset.json
+# …but ignore derived/heavy output inside the tracked scaffold
+__inbox/new-scaffold/node_modules
+__inbox/new-scaffold/dist
+__inbox/new-scaffold/.astro
+__inbox/new-scaffold/.output
+__inbox/new-scaffold/.wrangler
+__inbox/new-scaffold/.playwright-cli
+__inbox/new-scaffold/.DS_Store
 src/data/
 doc/
 
