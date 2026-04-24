@@ -1,0 +1,104 @@
+# Production deployment workflow for the Astro docs site.
+#
+# Triggered on every push to `main`. The pipeline:
+#   1. Builds the Astro static site
+#   2. Deploys to Cloudflare Pages (production)
+#   3. Sends IFTTT notification with deploy status
+#
+# Build and deploy run in a single job so the build output stays on the
+# runner filesystem -- no artifacts, no cache transfers, no storage usage.
+#
+# Concurrency: only one production deploy runs at a time.
+# We do NOT cancel in-progress runs -- the earlier deploy should finish.
+
+name: Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Build and Deploy ─────────────────────────────────────────────────
+
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build site
+        run: pnpm build
+      - name: Prepare deploy directory
+        run: |
+          mkdir -p deploy/pj/zcss
+          cp -r dist/. deploy/pj/zcss/
+          echo '/ /pj/zcss/ 302' > deploy/_redirects
+      - name: Deploy to Cloudflare Pages (production)
+        run: |
+          npx wrangler@4 pages deploy deploy \
+            --project-name=zudo-css \
+            --branch=main \
+            --commit-hash="${GITHUB_SHA}" \
+            --commit-message="Production deploy: ${GITHUB_SHA}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # ─── Notify ───────────────────────────────────────────────────────────
+
+  notify:
+    name: Deploy Notification
+    needs: build-and-deploy
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Notify via IFTTT
+        if: env.IFTTT_PROD_NOTIFY != ''
+        env:
+          IFTTT_PROD_NOTIFY: ${{ secrets.IFTTT_PROD_NOTIFY }}
+          RAW_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          DEPLOY_RESULT: ${{ needs.build-and-deploy.result }}
+          GITHUB_SHA_VAL: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ "$DEPLOY_RESULT" = "success" ]; then
+            STATUS="zudo-css deploy succeeded!"
+          elif [ "$DEPLOY_RESULT" = "failure" ]; then
+            STATUS="zudo-css deploy failed"
+          else
+            STATUS="zudo-css deploy cancelled"
+          fi
+
+          COMMIT_MSG=$(echo "$RAW_COMMIT_MSG" | head -1 | sed 's/"/\\"/g')
+          SHORT_SHA=$(echo "$GITHUB_SHA_VAL" | cut -c1-7)
+          RUN_URL="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+
+          curl -sSf --max-time 10 -X POST "$IFTTT_PROD_NOTIFY" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"value1\": \"${STATUS}\",
+              \"value2\": \"${SHORT_SHA} ${COMMIT_MSG}\",
+              \"value3\": \"${RUN_URL}\"
+            }" || echo "::warning::IFTTT notification failed"
