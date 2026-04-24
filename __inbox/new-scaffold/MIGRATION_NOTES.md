@@ -253,3 +253,64 @@ correct output. Logged here so they are not lost between sub-issues.
 build work in child agents. `pnpm install` succeeded and produced a clean
 lockfile, which is enough here. Full `pnpm build` in `__inbox/new-scaffold/`
 is the acceptance criterion for Sub #58 (manager-side verification).
+
+## Sub #53 — CssPreview + TailwindPreview port
+
+The zcss `<CssPreview>` and `<TailwindPreview>` components were ported
+verbatim from `src/components/{css-preview,tailwind-preview}/` into
+`__inbox/new-scaffold/src/components/`. Audit of `src/content/docs` and
+`src/content/docs-ja` showed **30+ `<TailwindPreview>` usages** across
+both locales, so TailwindPreview was ported (not dropped).
+
+### Preact-compat status
+
+Both components import `{ type ReactNode, useMemo } from "react"`. Under
+the scaffold's `preact({ compat: true })` setup, those imports alias to
+`preact/compat` at build time — the same path the scaffold's existing
+`html-preview/*` components already exercise, so no source changes were
+needed. No React-specific runtime APIs (`react-dom/client`, `createRoot`,
+`useInsertionEffect`, devtools hooks) are used by either component or by
+`preview-base.tsx`/`highlighted-code.tsx` that they depend on. The
+"Preact compat" concern raised in Sub #48 notes is, for these two
+components, empirically a non-issue.
+
+### MDX globals registration
+
+Followed the scaffold's existing pattern for `HtmlPreview`: created
+`src/components/css-preview-wrapper.astro` and
+`src/components/tailwind-preview-wrapper.astro` as Astro wrappers that
+instantiate the Preact component with `client:visible`. Registered both
+wrappers in `src/pages/docs/[...slug].astro` and
+`src/pages/en/docs/[...slug].astro` under the `components` object passed
+to `<Content components={components} />`.
+
+Capitalized-directory re-exports (`src/components/CssPreview/index.tsx`,
+`src/components/TailwindPreview/index.tsx`) were also ported — they
+re-export the default from the kebab-case sibling. These exist so any
+content that still does `import CssPreview from "@/components/CssPreview"`
+(legacy zcss pattern) resolves without error. New content should prefer
+the global form and omit the import.
+
+**Content-port implication (Sub #51 / #52).** Existing zcss MDX uses
+`<CssPreview client:load ...>` and `<TailwindPreview client:load ...>`.
+Under the wrapper-based global, `client:*` directives on the MDX call
+site are unnecessary (the wrapper already pins `client:visible`) and may
+emit Astro warnings when applied to an `.astro` component. Content ports
+should strip `client:load` / `client:visible` from `<CssPreview>` and
+`<TailwindPreview>` tags. Content that keeps the explicit
+`import CssPreview from "@/components/CssPreview"` needs to keep
+`client:*` because the import resolves to the raw Preact component, not
+the wrapper.
+
+### Acceptance gate
+
+`pnpm check` was run after installation. The 16 TypeScript errors it
+reports (in `header.astro`, `mermaid-init.astro`, both `[...slug].astro`
+pages, `utils/tags.ts`) are all pre-existing scaffold issues over
+`settings.tagPlacement` / `settings.frontmatterPreview` /
+`settings.tagVocabulary` / `settings.tagGovernance` / `settings.githubUrl`
+not being defined on the scaffold's settings type — these are Sub #49's
+territory (settings port). Zero errors originate from the new
+css-preview / tailwind-preview sources or from the new MDX-global
+registrations. `pnpm build` / `pnpm dev` deferred to Sub #58 per the
+`/x-wt-teams` child-agent rules.
