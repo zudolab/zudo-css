@@ -6,6 +6,10 @@ export type {
   LocaleConfig,
   VersionConfig,
   FooterConfig,
+  TagPlacement,
+  FrontmatterPreviewConfig,
+  TagGovernanceMode,
+  TagVocabularyEntry,
 } from "./settings-types";
 import type {
   HeaderNavItem,
@@ -14,6 +18,10 @@ import type {
   LocaleConfig,
   VersionConfig,
   FooterConfig,
+  TagPlacement,
+  FrontmatterPreviewConfig,
+  TagGovernanceMode,
+  TagVocabularyEntry,
 } from "./settings-types";
 
 export const settings = {
@@ -24,24 +32,38 @@ export const settings = {
     darkScheme: "Default Dark",
     respectPrefersColorScheme: true,
   } satisfies ColorModeConfig,
-  siteName: "New Scaffold",
-  siteDescription: "" as string,
-  base: "/",
-  trailingSlash: false as boolean,
+  siteName: "zudo-css-wisdom",
+  siteDescription: "Pragmatic CSS knowledge for AI" as string,
+  base: "/pj/zcss/",
+  trailingSlash: true as boolean,
   noindex: false as boolean,
   editUrl: false as string | false,
-  siteUrl: "" as string,
+  siteUrl: "https://takazudomodular.com/pj/zcss/" as string,
+  // Workaround for zudo-doc#401 — scaffold's header.astro reads settings.githubUrl
+  // but the default settings.ts doesn't declare it. Declared as false (no link).
+  githubUrl: false as string | false,
+  // URL-shape override (see MIGRATION_NOTES.md → "URL-shape override — Sub #49"):
+  // Preset ran with `defaultLang: "ja"` but zcss keeps EN as the URL-default locale
+  // (EN at `/pj/zcss/docs/...`, JA at `/pj/zcss/ja/docs/...`). So `docsDir` is the
+  // EN root and `locales` declares `ja` as the additional locale.
   docsDir: "src/content/docs",
   locales: {
-    en: { label: "EN", dir: "src/content/docs-en" },
+    ja: { label: "JA", dir: "src/content/docs-ja" },
   } as Record<string, LocaleConfig>,
-  mermaid: true,
-  sitemap: false,
-  docMetainfo: false,
+  mermaid: false,
+  sitemap: true,
+  docMetainfo: true,
   docTags: false,
+  // Workaround for zudo-doc#401 — framework reads these from settings but the
+  // scaffold default settings.ts doesn't declare them. Safe defaults keep
+  // `pnpm check` clean until the upstream generator is fixed.
+  tagPlacement: "after-title" as TagPlacement,
+  frontmatterPreview: false as FrontmatterPreviewConfig | false,
+  tagVocabulary: false as TagVocabularyEntry[] | false,
+  tagGovernance: "off" as TagGovernanceMode,
   llmsTxt: true,
   math: false,
-  cjkFriendly: false as boolean,
+  cjkFriendly: true as boolean,
   onBrokenMarkdownLinks: "warn" as "warn" | "error" | "ignore",
   aiAssistant: false as boolean,
   docHistory: true,
@@ -56,15 +78,37 @@ export const settings = {
   footer: {
     links: [
       {
-        title: "Docs",
+        title: "Fundamentals",
+        locales: { ja: { title: "基本戦略" } },
         items: [
-          { label: "Getting Started", href: "/docs/getting-started" },
+          {
+            label: "Tight Token Strategy",
+            href: "/docs/methodology/design-systems/tight-token-strategy",
+            locales: { ja: { label: "タイトトークン戦略" } },
+          },
+          {
+            label: "Component First Strategy",
+            href: "/docs/methodology/architecture/component-first-strategy",
+            locales: { ja: { label: "コンポーネントファースト戦略" } },
+          },
+          {
+            label: "Three-Tier Color Strategy",
+            href: "/docs/styling/color/three-tier-color-strategy",
+            locales: { ja: { label: "3層カラー戦略" } },
+          },
         ],
       },
     ],
-    copyright: "Copyright © 2026 Your Name. Built with zudo-doc.",
+    copyright: `Copyright © ${new Date().getFullYear()} <a href="https://x.com/Takazudo">Takazudo</a>. Built with <a href="https://takazudomodular.com/pj/zudo-doc">zudo-doc</a>. Enjoy synth on <a href="https://takazudomodular.com/">Takazudo Modular</a>.`,
   } satisfies FooterConfig as FooterConfig | false,
   headerNav: [
-    { label: "Getting Started", path: "/docs/getting-started", categoryMatch: "getting-started" },
+    { label: "Overview", path: "/docs/overview", categoryMatch: "overview" },
+    { label: "Methodology", path: "/docs/methodology", categoryMatch: "methodology" },
+    { label: "Layout", path: "/docs/layout", categoryMatch: "layout" },
+    { label: "Typography", path: "/docs/typography", categoryMatch: "typography" },
+    { label: "Styling", path: "/docs/styling", categoryMatch: "styling" },
+    { label: "Responsive", path: "/docs/responsive", categoryMatch: "responsive" },
+    { label: "Interactive", path: "/docs/interactive", categoryMatch: "interactive" },
+    { label: "Claude", path: "/docs/claude", categoryMatch: "claude" },
   ] as HeaderNavItem[],
 };
