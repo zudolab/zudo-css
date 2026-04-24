@@ -38,6 +38,7 @@ Upstream issue zudolab/zudo-doc#400 stays open as a real framework bug — it wi
 ## Scaffold version snapshot
 
 Generated via:
+
 ```
 node /Users/takazudo/repos/myoss/zudo-doc/packages/create-zudo-doc/dist/index.js \
   --preset ./zcss-preset.json --name new-scaffold --no-install
@@ -138,6 +139,55 @@ Deleted from the scaffold:
   needed.
 
 No new zudo-doc upstream issues surfaced by this port.
+
+## Sub #56 workflow port
+
+Phase 3 port of zcss GitHub Actions workflows (issue
+zudolab/zudo-css-wisdom#56). Landed in worktree
+`zudo-doc-rebuild/sub56-gh-actions`.
+
+Copied verbatim from `.github/workflows/` to `__inbox/new-scaffold/.github/workflows/`:
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `main-deploy.yml` | push to `main` | Build + Cloudflare Pages production deploy + IFTTT notify |
+| `pr-checks.yml` | pull_request to `main` | Typecheck + build + link check + Cloudflare Pages preview deploy + PR comment |
+| `preview-deploy.yml` | push to `preview` / `expreview/*` | Branch-based preview deploys to Cloudflare Pages with commit status |
+
+### Version alignment
+
+- `actions/checkout@v5`, `actions/setup-node@v5`, `actions/github-script@v8`, `pnpm/action-setup@v4` — all current.
+- `node-version: 22` in all three workflows. Satisfies scaffold's documented Node.js >= 20 (zcss CLAUDE.md).
+- pnpm version comes from `packageManager` field via `pnpm/action-setup@v4`. zcss source specifies `pnpm@10.30.3`; scaffold's `package.json` currently has **no** `packageManager` or `engines` field (scaffold gap). CI will still resolve pnpm via the action's default, but for reproducible builds the scaffold's `package.json` should gain `packageManager: pnpm@10.x` + `engines.node: ">=20"`. Out of Sub #56 scope — flag for Sub #58 / #59 to add before repo-root swap.
+
+### Command references
+
+| Workflow step | Command | Scaffold `package.json` mapping |
+|---|---|---|
+| Type Check | `pnpm check` | `astro check` (scaffold default). zcss uses `astro sync && tsc --noEmit`; scaffold version is less strict but still catches type errors. |
+| Build | `pnpm build` | `astro build` ✓ |
+| Link Check | `node scripts/check-links.js` | matches Sub #54's ported `scripts/check-links.js`. Note: workflow invokes the script directly (non-strict), while `pnpm check:links` in `package.json` passes `--strict`. Kept verbatim to match current production CI semantics. |
+
+### Secrets
+
+Verified via `gh secret list --repo zudolab/zudo-css-wisdom`:
+
+- `CLOUDFLARE_ACCOUNT_ID` ✓
+- `CLOUDFLARE_API_TOKEN` ✓
+- `IFTTT_PROD_NOTIFY` ✓
+
+### Project references
+
+Both Cloudflare deploy steps use `--project-name=zudo-css`, preserving the existing Pages project binding. Base path `/pj/zcss/` preserved in `_redirects` + deploy directory shape.
+
+### Validation
+
+- `actionlint` not installed on the agent host — skipped per Sub #56 directive. Workflows will be validated by GitHub's own parser at PR time.
+- YAML syntactic validity confirmed via `js-yaml` parse (3/3 files OK).
+
+### No upstream bug filed
+
+The zudo-doc scaffolder has no github-actions feature template — this is by design, not a bug. Features dir listing confirms: `bodyFootUtil/`, `claudeResources/`, `designTokenPanel/`, `docHistory/`, `footer/`, `i18n/`, `imageEnlarge/`, `llmsTxt/`, `search/`, `sidebarResizer/`, `sidebarToggle/`, `tagGovernance/`, `tauri/`, `versioning/`. Consumers bring their own CI. Not filing.
 
 ## Concerns for downstream
 
