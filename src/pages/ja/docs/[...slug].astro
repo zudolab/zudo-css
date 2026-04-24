@@ -14,6 +14,7 @@ import Tabs from "@/components/tabs.astro";
 import TabItem from "@/components/tab-item.astro";
 import Details from "@/components/details.astro";
 import HtmlPreview from "@/components/html-preview-wrapper.astro";
+import { htmlOverrides } from "@/components/content/component-map";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import {
@@ -34,6 +35,7 @@ import EditLink from "@/components/edit-link.astro";
 import { settings } from "@/config/settings";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import FrontmatterPreview from "@/components/frontmatter-preview.astro";
 import type { DocsEntry } from "@/types/docs-entry";
 
 export async function getStaticPaths() {
@@ -149,6 +151,7 @@ const {
 } = Astro.props;
 
 const components = {
+  ...htmlOverrides,
   Note,
   Tip,
   Info,
@@ -182,6 +185,8 @@ const slug = autoIndex
   description={autoIndex ? autoIndex.description : entry.data.description}
   lang="ja"
   currentSlug={slug}
+  contentDir={entry ? contentDir : undefined}
+  entryId={entry?.id}
   headings={autoIndex ? [] : headings}
   unlisted={entry?.data?.unlisted}
   hideSidebar={entry?.data?.hide_sidebar}
@@ -191,7 +196,7 @@ const slug = autoIndex
   {
     autoIndex ? (
       <Fragment>
-        <h1 class="text-heading font-normal font-futura mb-vsp-xs">{autoIndex.label}</h1>
+        <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
         {autoIndex.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {autoIndex.description}
@@ -219,7 +224,7 @@ const slug = autoIndex
       </Fragment>
     ) : (
       <Fragment>
-        <h1 class="text-heading font-normal font-futura mb-vsp-xs">{entry.data.title}</h1>
+        <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
         {settings.docMetainfo && (
           <DocMetainfo filePath={`${contentDir}/${entry.id}`} locale="ja" />
         )}
@@ -233,13 +238,19 @@ const slug = autoIndex
           </div>
         )}
 
+        {entry?.data?.tags && settings.tagPlacement === "after-title" && (
+          <DocTags tags={entry.data.tags} locale="ja" placement="after-title" />
+        )}
+
         {entry.data.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {entry.data.description}
           </p>
         )}
 
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="ja" />}
+        {settings.frontmatterPreview && entry && (
+          <FrontmatterPreview data={entry.data} locale="ja" />
+        )}
 
         <Content components={components} />
 
@@ -247,6 +258,14 @@ const slug = autoIndex
           <div class="mt-vsp-xl mb-vsp-md border-t border-muted pt-vsp-md">
             <EditLink contentDir={contentDir} entryId={entry.id} locale="ja" />
           </div>
+        )}
+
+        {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
+          <DocTags
+            tags={entry.data.tags}
+            locale="ja"
+            placement="before-pager"
+          />
         )}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">

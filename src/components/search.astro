@@ -2,12 +2,20 @@
 /**
  * Search component using MiniSearch for universal search (dev + build + Electron).
  * Renders a trigger button (for the header) and a <dialog> modal.
- * Uses vanilla JS custom element pattern — no React island needed.
+ * Uses vanilla JS custom element pattern — no Preact island needed.
  */
-import { withBase } from "@/utils/base";
+import { withBase, stripBase } from "@/utils/base";
+import { detectLocaleFromPath, t } from "@/config/i18n";
+
+const pathWithoutBase = stripBase(Astro.url.pathname);
+const lang = detectLocaleFromPath(pathWithoutBase);
+const resultCountTemplate = t("search.resultCount", lang);
 ---
 
-<site-search data-base={withBase("/")}>
+<site-search
+  data-base={withBase("/")}
+  data-result-count-template={resultCountTemplate}
+>
   <button
     data-open-search
     class="flex items-center justify-center text-muted transition-colors hover:text-fg"
@@ -32,7 +40,7 @@ import { withBase } from "@/utils/base";
 
   <dialog
     data-search-dialog
-    class="m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:bg-[rgba(0,0,0,0.6)] sm:mx-auto sm:my-[10vh] sm:h-auto sm:max-h-[80vh] sm:max-w-[52rem] sm:rounded-lg"
+    class="m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:bg-overlay/60 sm:mx-auto sm:my-[10vh] sm:h-auto sm:max-h-[80vh] sm:max-w-[52rem] sm:rounded-lg"
   >
     <div
       class="flex h-full flex-col overflow-hidden bg-surface sm:rounded-lg sm:border sm:border-muted"
@@ -65,6 +73,10 @@ import { withBase } from "@/utils/base";
           autocomplete="off"
           spellcheck="false"
         />
+        <span
+          data-search-count
+          class="hidden shrink-0 text-caption text-muted"
+          aria-live="polite"></span>
         <button
           data-close-search
           class="shrink-0 text-muted hover:text-fg"
@@ -87,6 +99,12 @@ import { withBase } from "@/utils/base";
         </button>
       </div>
 
+      {/* Narrow-viewport hit count (below header, sm:hidden when shown) */}
+      <span
+        data-search-count-narrow
+        class="hidden border-b border-muted px-hsp-lg py-vsp-xs text-caption text-muted"
+        aria-live="polite"></span>
+
       {/* Results area */}
       <div
         class="flex-1 overflow-y-auto px-hsp-lg py-vsp-md"
@@ -108,6 +126,7 @@ import { withBase } from "@/utils/base";
 
 <script>
   import MiniSearch from "minisearch";
+  import { isPathLike, escapeAndInjectWbr } from "@/utils/smart-break";
 
   interface SearchEntry {
     id: string;
@@ -138,7 +157,16 @@ import { withBase } from "@/utils/base";
 
   function highlightTerms(text: string, query: string): string {
     const terms = parseQueryTerms(query).map(escapeRegExp);
-    if (terms.length === 0) return escapeHtml(text);
+    // Decide path-likeness once for the whole text. When the string as a
+    // whole is path-like (URL, filesystem path, etc.), each split segment
+    // must unconditionally receive wbr injection — even if the segment
+    // itself is too short for the heuristic to classify correctly.
+    // Byte-identical to smartBreakToHtml(text) for path-like input when
+    // no query terms are present.
+    const pathLike = isPathLike(text);
+    const escapeSegment = (seg: string) =>
+      pathLike ? escapeAndInjectWbr(seg) : escapeHtml(seg);
+    if (terms.length === 0) return escapeSegment(text);
     // Sort by length descending so longer terms match before their prefixes
     terms.sort((a, b) => b.length - a.length);
     const pattern = new RegExp(`(${terms.join("|")})`, "gi");
@@ -146,8 +174,8 @@ import { withBase } from "@/utils/base";
       .split(pattern)
       .map((segment, i) =>
         i % 2 === 1
-          ? `<mark>${escapeHtml(segment)}</mark>`
-          : escapeHtml(segment),
+          ? `<mark>${escapeSegment(segment)}</mark>`
+          : escapeSegment(segment),
       )
       .join("");
   }
@@ -194,6 +222,8 @@ import { withBase } from "@/utils/base";
     private closeBtn!: HTMLButtonElement;
     private searchInput!: HTMLInputElement;
     private resultsContainer!: HTMLElement;
+    private countWide!: HTMLElement | null;
+    private countNarrow!: HTMLElement | null;
     private miniSearch: MiniSearch<SearchEntry> | null = null;
     private entryMap: Map<string, SearchEntry> = new Map();
     private loading = false;
@@ -203,6 +233,10 @@ import { withBase } from "@/utils/base";
     private shownCount = 0;
     private currentQuery = "";
     private shortcutLabel = "";
+    private resultCountTemplate = "";
+    private observer: IntersectionObserver | null = null;
+    private sentinel: HTMLElement | null = null;
+    private isLoadingBatch = false;
 
     constructor() {
       super();
@@ -211,6 +245,10 @@ import { withBase } from "@/utils/base";
       this.closeBtn = this.querySelector("[data-close-search]")!;
       this.searchInput = this.querySelector("[data-search-input]")!;
       this.resultsContainer = this.querySelector("[data-search-results]")!;
+      this.countWide = this.querySelector("[data-search-count]");
+      this.countNarrow = this.querySelector("[data-search-count-narrow]");
+      this.resultCountTemplate =
+        this.dataset.resultCountTemplate ?? "{count} results";
     }
 
     connectedCallback() {
@@ -276,6 +314,7 @@ import { withBase } from "@/utils/base";
         clearTimeout(this.debounceTimer);
         this.debounceTimer = null;
       }
+      this.teardownSentinel();
     }
 
     open() {
@@ -290,8 +329,40 @@ import { withBase } from "@/utils/base";
         clearTimeout(this.debounceTimer);
         this.debounceTimer = null;
       }
+      this.teardownSentinel();
       this.dialog.close();
       document.documentElement.style.overflow = "";
+    }
+
+    /**
+     * Sync the two hit-count spans with the current query + allResults.
+     * Visible whenever the user has typed anything (including 0-hit),
+     * hidden only when the input is fully empty.
+     */
+    private updateHitCountUI() {
+      const hasQuery = this.currentQuery.length > 0;
+      if (!hasQuery) {
+        this.countWide?.classList.add("hidden");
+        this.countWide?.classList.remove("sm:inline");
+        this.countNarrow?.classList.add("hidden");
+        this.countNarrow?.classList.remove("block", "sm:hidden");
+        return;
+      }
+      const text = this.resultCountTemplate.replace(
+        "{count}",
+        String(this.allResults.length),
+      );
+      if (this.countWide) {
+        this.countWide.textContent = text;
+        // hidden on narrow, inline on sm+
+        this.countWide.classList.add("hidden", "sm:inline");
+      }
+      if (this.countNarrow) {
+        this.countNarrow.textContent = text;
+        // block on narrow, hidden on sm+
+        this.countNarrow.classList.remove("hidden");
+        this.countNarrow.classList.add("block", "sm:hidden");
+      }
     }
 
     private placeholderHtml(): string {
@@ -340,13 +411,16 @@ import { withBase } from "@/utils/base";
       this.currentQuery = query;
 
       if (!query) {
+        this.teardownSentinel();
         this.allResults = [];
         this.shownCount = 0;
         this.resultsContainer.innerHTML = this.placeholderHtml();
+        this.updateHitCountUI();
         return;
       }
 
       if (!this.miniSearch) {
+        this.teardownSentinel();
         this.resultsContainer.innerHTML =
           '<p class="text-small text-muted">Loading search index...</p>';
         this.loadIndex();
@@ -359,6 +433,10 @@ import { withBase } from "@/utils/base";
         score: r.score,
       }));
       this.shownCount = 0;
+      this.updateHitCountUI();
+
+      // Query replaced — always tear down the previous observer before re-rendering
+      this.teardownSentinel();
 
       if (results.length === 0) {
         this.resultsContainer.innerHTML =
@@ -368,61 +446,133 @@ import { withBase } from "@/utils/base";
 
       this.resultsContainer.innerHTML = "";
       this.loadMore();
+      if (this.shownCount < this.allResults.length) {
+        this.setupSentinel();
+      }
     }
 
     private loadMore() {
-      const nextBatch = this.allResults.slice(
-        this.shownCount,
-        this.shownCount + PAGE_SIZE,
-      );
-      if (nextBatch.length === 0) return;
+      if (this.isLoadingBatch) return;
+      if (this.shownCount >= this.allResults.length) return;
+      this.isLoadingBatch = true;
 
-      for (const result of nextBatch) {
-        const entry = this.entryMap.get(result.id);
-        if (!entry) continue;
-        this.resultsContainer.appendChild(this.renderResult(entry));
+      try {
+        const nextBatch = this.allResults.slice(
+          this.shownCount,
+          this.shownCount + PAGE_SIZE,
+        );
+
+        for (const result of nextBatch) {
+          const entry = this.entryMap.get(result.id);
+          if (!entry) continue;
+          const article = this.renderResult(entry);
+          // Keep the sentinel anchored at the end of the list so the observer
+          // continues to watch it across batches.
+          if (
+            this.sentinel &&
+            this.sentinel.parentNode === this.resultsContainer
+          ) {
+            this.resultsContainer.insertBefore(article, this.sentinel);
+          } else {
+            this.resultsContainer.appendChild(article);
+          }
+        }
+
+        this.shownCount += nextBatch.length;
+
+        if (this.shownCount >= this.allResults.length) {
+          // Nothing left to load — remove sentinel + observer from the DOM.
+          this.teardownSentinel();
+        }
+      } finally {
+        // Always clear the guard so a stray exception doesn't permanently
+        // wedge lazy-loading.
+        this.isLoadingBatch = false;
       }
+    }
 
-      this.shownCount += nextBatch.length;
+    /**
+     * Attach a 1px sentinel at the end of the results container and observe it
+     * with IntersectionObserver. When it enters the scroll viewport we trigger
+     * loadMore(). Constructed once per query and reused across batches; use
+     * teardownSentinel() to detach.
+     *
+     * Sentinel is `1px` (not `0px`) because some browsers refuse to fire
+     * intersections on zero-area targets.
+     */
+    private setupSentinel() {
+      this.teardownSentinel();
 
-      // Remove existing "load more" button
-      this.resultsContainer.querySelector("[data-load-more]")?.remove();
+      const sentinel = document.createElement("div");
+      sentinel.setAttribute("data-search-sentinel", "");
+      sentinel.setAttribute("aria-hidden", "true");
+      sentinel.style.height = "1px";
+      sentinel.style.width = "100%";
+      this.resultsContainer.appendChild(sentinel);
+      this.sentinel = sentinel;
 
-      // Add "load more" if there are more results
-      if (this.shownCount < this.allResults.length) {
-        const remaining = this.allResults.length - this.shownCount;
-        const btn = document.createElement("button");
-        btn.setAttribute("data-load-more", "");
-        btn.className =
-          "mt-vsp-md w-full rounded border border-muted bg-surface px-hsp-md py-vsp-xs text-small text-accent hover:border-accent";
-        btn.textContent = `Load more (${remaining} remaining)`;
-        btn.addEventListener("click", () => this.loadMore());
-        this.resultsContainer.appendChild(btn);
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              this.loadMore();
+            }
+          }
+        },
+        {
+          root: this.resultsContainer,
+          rootMargin: "200px 0px",
+        },
+      );
+      this.observer.observe(sentinel);
+    }
+
+    private teardownSentinel() {
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
+      if (this.sentinel) {
+        this.sentinel.remove();
+        this.sentinel = null;
       }
     }
 
     private renderResult(entry: SearchEntry): HTMLElement {
+      // Break out of the container's px-hsp-lg so the click area is edge-to-edge.
+      // The <a> re-adds px-hsp-lg internally so text content keeps the same indent.
       const article = document.createElement("article");
-      article.className = "border-b border-muted py-vsp-sm";
+      article.className = "-mx-hsp-lg border-b border-muted";
 
-      // Title link
+      // Full-row link wraps title + (optional) description.
+      // Title is the first text inside so screen readers announce it first;
+      // no aria-label so the description is read as supplementary context.
       const link = document.createElement("a");
       link.href = entry.url;
-      link.className = "block font-semibold text-fg hover:text-accent";
-      link.innerHTML = highlightTerms(entry.title, this.currentQuery);
-      article.appendChild(link);
+      link.className =
+        "group block px-hsp-lg py-vsp-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-      // Description or body excerpt
+      // Title (phrasing) — primary accessible name, hover color via group-hover.
+      // Underline mirrors doc-content links on hover/keyboard-focus of the row.
+      const title = document.createElement("span");
+      title.className =
+        "font-semibold text-fg group-hover:text-accent group-hover:underline group-focus-visible:underline";
+      title.innerHTML = highlightTerms(entry.title, this.currentQuery);
+      link.appendChild(title);
+
+      // Description or body excerpt (optional, flow content inside <a>).
+      // Underline together with the title so the whole row is clearly linked on hover/focus.
       const text = entry.description || entry.body;
       if (text) {
         const excerpt = document.createElement("p");
         excerpt.className =
-          "mt-vsp-2xs text-caption text-muted leading-relaxed";
+          "mt-vsp-2xs text-caption text-muted leading-relaxed group-hover:underline group-focus-visible:underline decoration-muted";
         const truncated = truncateExcerpt(text, this.currentQuery);
         excerpt.innerHTML = highlightTerms(truncated, this.currentQuery);
-        article.appendChild(excerpt);
+        link.appendChild(excerpt);
       }
 
+      article.appendChild(link);
       return article;
     }
   }

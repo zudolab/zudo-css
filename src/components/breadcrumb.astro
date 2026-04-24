@@ -1,5 +1,6 @@
 ---
 import type { BreadcrumbItem } from "@/utils/docs";
+import { isPathLike, smartBreakToHtml } from "@/utils/smart-break";
 
 interface Props {
   items: BreadcrumbItem[];
@@ -17,7 +18,7 @@ const { items } = Astro.props;
             {i > 0 && (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-[0.75rem] w-[0.75rem] text-muted shrink-0"
+                class="h-icon-xs w-icon-xs text-muted shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -53,8 +54,14 @@ const { items } = Astro.props;
                     />
                   </svg>
                 )}
-                {item.label}
+                {isPathLike(item.label) ? (
+                  <span set:html={smartBreakToHtml(item.label)} />
+                ) : (
+                  item.label
+                )}
               </a>
+            ) : isPathLike(item.label) ? (
+              <span class="text-fg" set:html={smartBreakToHtml(item.label)} />
             ) : (
               <span class="text-fg">{item.label}</span>
             )}

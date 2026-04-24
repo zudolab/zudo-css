@@ -61,15 +61,17 @@
   --color-danger: var(--zd-danger);
   --color-warning: var(--zd-warning);
   --color-info: var(--zd-info);
+  /* Overlay is intentionally theme-independent (always dark, not scheme-driven) */
+  --color-overlay: #000;
+  --color-image-overlay-bg: var(--zd-image-overlay-bg);
+  --color-image-overlay-fg: var(--zd-image-overlay-fg);
   --color-mermaid-node-bg: var(--zd-mermaid-node-bg);
   --color-mermaid-text: var(--zd-mermaid-text);
   --color-mermaid-line: var(--zd-mermaid-line);
   --color-mermaid-label-bg: var(--zd-mermaid-label-bg);
   --color-mermaid-note-bg: var(--zd-mermaid-note-bg);
-  --color-chat-user-bg: var(--zd-chat-user-bg);
-  --color-chat-user-text: var(--zd-chat-user-text);
-  --color-chat-assistant-bg: var(--zd-chat-assistant-bg);
-  --color-chat-assistant-text: var(--zd-chat-assistant-text);
+  --color-matched-keyword-bg: var(--zd-matched-keyword-bg);
+  --color-matched-keyword-fg: var(--zd-matched-keyword-fg);
 
   /* ========================================
    * Spacing — hsp (horizontal) + vsp (vertical)
@@ -96,26 +98,31 @@
   --spacing-vsp-2xl: 3.5rem;     /* 56px — page-level gap */
 
   /* ========================================
+   * Element sizes — semantic icon dimensions
+   * ======================================== */
+  --spacing-icon-xs: 0.75rem;    /* 12px — inline meta icons, chevrons */
+  --spacing-icon-sm: 1rem;       /* 16px — standard UI icons */
+  --spacing-icon-md: 1.25rem;    /* 20px — medium emphasis icons */
+  --spacing-icon-lg: 1.5rem;     /* 24px — large / mobile icons */
+
+  /* Image overlay button chrome */
+  --spacing-image-overlay-inset: 0.5rem;  /* 8px — overlay button corner inset + internal padding */
+
+  /* ========================================
    * Typography
    * ======================================== */
 
-  /* Font sizes (6 steps) */
-  --text-caption: 0.875rem;      /* 14px — labels, timestamps */
-  --text-small: 1rem;            /* 16px — secondary text, nav items */
-  --text-body: 1.2rem;           /* 19.2px — paragraphs, default */
-  --text-subheading: 1.4rem;     /* 22.4px — card titles, section labels */
-  --text-heading: 3rem;          /* 48px — page headings */
-  --text-display: 3.75rem;       /* 60px — hero text */
+  /* ── Tier 2: Semantic font-size tokens (reference Tier 1 scale only) ── */
+  --text-micro:      var(--text-scale-2xs);  /* 12px — compact panel labels, color swatch annotations */
+  --text-caption:    var(--text-scale-xs);   /* labels, timestamps */
+  --text-small:      var(--text-scale-sm);   /* secondary text, nav items */
+  --text-body:       var(--text-scale-md);   /* paragraphs, default */
+  --text-subheading: var(--text-scale-lg);   /* card titles, section labels */
+  --text-heading:    var(--text-scale-xl);   /* page headings */
+  --text-display:    var(--text-scale-2xl);  /* hero text */
 
   /* Font families */
-  --font-noto:
-    'Noto Sans', 'Noto Sans JP', ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic Pro',
-    'Yu Gothic', Meiryo, sans-serif;
-  --font-futura:
-    Futura, Jost, 'Century Gothic', system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', 'Noto Sans', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
-  --font-sans: var(--font-noto);
+  --font-sans: system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
 
   /* Font weights (4 steps) */
@@ -146,7 +153,18 @@
 }
 
 :root {
+  /* Default responsive range; sidebar-resizer.ts allows 192–448px for explicit resizing */
   --zd-sidebar-w: clamp(14rem, 20vw, 22rem);
+
+  /* ── Tier 1: Abstract font-size scale (raw values — NOT for direct component use) ── */
+  /* Used only as a source of truth for Tier 2 semantic tokens above. */
+  --text-scale-2xs: 0.75rem;    /* 12px */
+  --text-scale-xs:  0.875rem;   /* 14px */
+  --text-scale-sm:  1rem;       /* 16px */
+  --text-scale-md:  1.2rem;     /* 19.2px */
+  --text-scale-lg:  1.4rem;     /* 22.4px */
+  --text-scale-xl:  3rem;       /* 48px */
+  --text-scale-2xl: 3.75rem;    /* 60px */
 }
 
 /* ========================================
@@ -160,7 +178,6 @@
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-noto);
 }
 
 ::selection {
@@ -193,15 +210,15 @@ body {
 
 /* ── Flow spacing (vertical rhythm) ── */
 
-.zd-content :where(> * + *) {
-  margin-top: var(--spacing-vsp-md);
+.zd-content > :where(* + *) {
+  margin-top: var(--flow-space, var(--spacing-vsp-md));
 }
 
 /* ── Headings ── */
 
 .zd-content :where(h2) {
   font-size: var(--text-subheading);
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-bold);
   line-height: var(--leading-tight);
   margin-top: var(--spacing-vsp-2xl);
   margin-bottom: var(--spacing-vsp-xs);
@@ -212,7 +229,7 @@ body {
 
 .zd-content :where(h3) {
   font-size: var(--text-body);
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-bold);
   line-height: var(--leading-snug);
   margin-top: var(--spacing-vsp-xl);
   margin-bottom: var(--spacing-vsp-xs);
@@ -223,7 +240,7 @@ body {
 
 .zd-content :where(h4) {
   font-size: var(--text-body);
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
   margin-top: var(--spacing-vsp-lg);
   margin-bottom: var(--spacing-vsp-xs);
@@ -234,7 +251,7 @@ body {
 
 .zd-content :where(h5, h6) {
   font-size: var(--text-small);
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-semibold);
   line-height: var(--leading-snug);
   margin-top: var(--spacing-vsp-md);
   margin-bottom: var(--spacing-vsp-2xs);
@@ -379,7 +396,7 @@ body {
 .zd-content :where(td) {
   padding: var(--spacing-vsp-xs) var(--spacing-hsp-md);
   border-bottom: 1px solid var(--color-muted);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .zd-content :where(th) {
@@ -624,204 +641,17 @@ pre.astro-code .line .highlighted-word {
   color: var(--zd-fg);
 }
 
-/* ========================================
- * Doc History Diff Viewer (side-by-side)
- * ======================================== */
-
-.diff-row {
-  border-bottom: 1px solid color-mix(in oklch, var(--color-muted) 30%, transparent);
-}
-
-.diff-line-num {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-  padding: 0 var(--spacing-hsp-xs);
-  text-align: right;
-  color: var(--color-muted);
-  user-select: none;
-  vertical-align: top;
-  border-right: 1px solid color-mix(in oklch, var(--color-muted) 30%, transparent);
-}
-
-.diff-line-content {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-  padding: 0 var(--spacing-hsp-sm);
-  white-space: pre-wrap;
-  word-break: break-all;
-  vertical-align: top;
-}
-
-/* Left column right border to separate the two sides */
-.diff-row td:nth-child(2) {
-  border-right: 2px solid var(--color-muted);
-}
-
-.diff-line-added {
-  background-color: color-mix(in oklch, var(--color-success) 15%, transparent);
-}
-
-.diff-line-removed {
-  background-color: color-mix(in oklch, var(--color-danger) 15%, transparent);
-}
-
-.diff-line-empty {
-  background-color: color-mix(in oklch, var(--color-muted) 8%, transparent);
-}
-
 /* ── Search highlight ── */
 [data-search-results] mark {
-  background-color: color-mix(in oklch, var(--color-p3) 35%, transparent);
-  color: inherit;
+  background-color: var(--color-matched-keyword-bg);
+  color: var(--color-matched-keyword-fg);
   padding: 0;
   border-radius: 2px;
 }
 
 /* ========================================
- * Desktop sidebar toggle
- * ======================================== */
-
-@media (min-width: 1024px) {
-  #desktop-sidebar {
-    transition:
-      transform 200ms ease-in-out,
-      visibility 200ms;
-  }
-
-  html[data-sidebar-hidden] #desktop-sidebar {
-    transform: translateX(calc(-1 * var(--zd-sidebar-w)));
-    visibility: hidden;
-  }
-
-  .zd-sidebar-content-wrapper {
-    transition: margin-left 200ms ease-in-out;
-  }
-
-  html[data-sidebar-hidden] .zd-sidebar-content-wrapper {
-    margin-left: 0;
-  }
-}
-
-.zd-desktop-sidebar-toggle {
-  display: none;
-}
-
-@media (min-width: 1024px) {
-  .zd-desktop-sidebar-toggle {
-    position: fixed;
-    bottom: var(--spacing-vsp-xl);
-    left: var(--zd-sidebar-w);
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 3rem;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-muted);
-    border-left: none;
-    border-radius: 0 var(--radius-DEFAULT) var(--radius-DEFAULT) 0;
-    color: var(--color-muted);
-    cursor: pointer;
-    transition:
-      left 200ms ease-in-out,
-      color 0.15s;
-  }
-
-  .zd-desktop-sidebar-toggle:hover {
-    color: var(--color-fg);
-  }
-
-  html[data-sidebar-hidden] .zd-desktop-sidebar-toggle {
-    left: 0;
-  }
-}
-
-/* ========================================
  * Page transition animations
  * ======================================== */
-
-/* ========================================
- * AI Chat markdown (.ai-chat-md)
- *
- * Compact typography for chat bubbles.
- * ======================================== */
-
-.ai-chat-md :where(p) {
-  margin: 0 0 var(--spacing-vsp-2xs);
-}
-
-.ai-chat-md :where(p:last-child) {
-  margin-bottom: 0;
-}
-
-.ai-chat-md :where(strong) {
-  font-weight: var(--font-weight-bold);
-}
-
-.ai-chat-md :where(em) {
-  font-style: italic;
-}
-
-.ai-chat-md :where(a) {
-  color: var(--color-accent);
-  text-decoration: underline;
-}
-
-.ai-chat-md :where(a:hover) {
-  color: var(--color-accent-hover);
-}
-
-.ai-chat-md :where(code:not(pre code)) {
-  font-size: 0.9em;
-  background: color-mix(in oklch, var(--color-muted) 20%, transparent);
-  padding: 0.1em 0.3em;
-  border-radius: 3px;
-}
-
-.ai-chat-md :where(pre) {
-  font-size: var(--text-caption);
-  line-height: var(--leading-relaxed);
-  background: var(--color-code-bg);
-  color: var(--color-code-fg);
-  padding: var(--spacing-vsp-2xs) var(--spacing-hsp-sm);
-  border-radius: 6px;
-  overflow-x: auto;
-  margin: var(--spacing-vsp-2xs) 0;
-}
-
-.ai-chat-md :where(pre code) {
-  background: transparent;
-  padding: 0;
-  font-size: inherit;
-}
-
-.ai-chat-md :where(ul) {
-  list-style-type: disc;
-  padding-left: var(--spacing-hsp-lg);
-  margin: var(--spacing-vsp-2xs) 0;
-}
-
-.ai-chat-md :where(ol) {
-  list-style-type: decimal;
-  padding-left: var(--spacing-hsp-lg);
-  margin: var(--spacing-vsp-2xs) 0;
-}
-
-.ai-chat-md :where(li) {
-  margin-bottom: 0.15em;
-}
-
-.ai-chat-md :where(li::marker) {
-  color: var(--color-muted);
-}
-
-.ai-chat-md :where(h4, h5, h6) {
-  font-weight: var(--font-weight-bold);
-  margin: var(--spacing-vsp-xs) 0 var(--spacing-vsp-2xs);
-}
 
 @keyframes contentFadeIn {
   from {
@@ -840,5 +670,27 @@ pre.astro-code .line .highlighted-word {
   }
   to {
     opacity: 0;
+  }
+}
+
+/* ── Find-in-page highlight ── */
+.find-match {
+  background-color: rgba(255, 200, 0, 0.4);
+  border-radius: 2px;
+}
+.find-match-active {
+  background-color: rgba(255, 150, 0, 0.7);
+  border-radius: 2px;
+  outline: 2px solid rgba(255, 150, 0, 0.9);
+}
+
+/* Sidebar toggle button — left position uses CSS variable */
+@media (min-width: 1024px) {
+  .zd-desktop-sidebar-toggle {
+    left: var(--zd-sidebar-w);
+  }
+
+  html[data-sidebar-hidden] .zd-desktop-sidebar-toggle {
+    left: 0;
   }
 }

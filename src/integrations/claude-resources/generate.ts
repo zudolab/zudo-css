@@ -376,9 +376,16 @@ function generateSkillsDocs(config: ClaudeResourcesConfig): SkillItem[] {
       ? description.substring(0, 200) + "..."
       : description;
 
+    // Rewrite references/scripts/assets links in skill body to match doc site URLs
+    let skillBody = parsed.content.trim();
+    skillBody = skillBody
+      .replace(/\]\(references\/([^)]+)\.md\)/g, "](./ref-$1)")
+      .replace(/\]\(scripts\/([^)]+)\.md\)/g, "](./script-$1)")
+      .replace(/\]\(assets\/([^)]+)\.md\)/g, "](./asset-$1)");
+
     const body = [
       fileStructureSection,
-      escapeForMdx(parsed.content.trim()),
+      escapeForMdx(skillBody),
     ]
       .filter(Boolean)
       .join("\n\n");

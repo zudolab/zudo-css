@@ -2,6 +2,7 @@
 import { getDocsCollection } from "@/utils/get-docs-collection";
 import DocLayout from "@/layouts/doc-layout.astro";
 import Breadcrumb from "@/components/breadcrumb.astro";
+import DocCardGrid from "@/components/doc-card-grid.astro";
 import { toRouteSlug } from "@/utils/slug";
 import { collectTags } from "@/utils/tags";
 import { t } from "@/config/i18n";
@@ -46,6 +47,8 @@ const countText =
   title={`${t("doc.taggedWith", "ja")}: ${tag}`}
   lang="ja"
   currentSlug={`tags/${tag}`}
+  hideSidebar={true}
+  hideToc={true}
 >
   <Breadcrumb
     slot="breadcrumb"
@@ -55,28 +58,17 @@ const countText =
       { label: tag },
     ]}
   />
-  <h1 class="text-heading font-normal font-futura mb-vsp-xs">
+  <h1 class="text-heading font-bold mb-vsp-xs">
     {t("doc.taggedWith", "ja")}: {tag}
   </h1>
   <p class="text-muted mb-vsp-lg">{countText}</p>
 
-  <nav class="grid grid-cols-1 gap-y-vsp-md">
-    {
-      tagInfo.docs.map((doc) => (
-        <a
-          href={docsUrl(doc.slug, "ja")}
-          class="group block border border-muted bg-surface px-hsp-lg py-vsp-md hover:border-accent"
-        >
-          <span class="font-medium text-accent underline group-hover:underline">
-            {doc.title}
-          </span>
-          {doc.description && (
-            <span class="mt-vsp-2xs block text-small text-muted group-hover:underline decoration-muted">
-              {doc.description}
-            </span>
-          )}
-        </a>
-      ))
-    }
-  </nav>
+  <DocCardGrid
+    ariaLabel={`${t("doc.taggedWith", "ja")}: ${tag}`}
+    items={tagInfo.docs.map((doc) => ({
+      href: docsUrl(doc.slug, "ja"),
+      title: doc.title,
+      description: doc.description,
+    }))}
+  />
 </DocLayout>

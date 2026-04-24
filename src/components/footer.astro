@@ -1,24 +1,137 @@
 ---
 import { settings } from "@/config/settings";
-import { isExternal, resolveHref } from "@/utils/base";
+import { isExternal, resolveHref, withBase } from "@/utils/base";
 import { defaultLocale, type Locale } from "@/config/i18n";
+import { tagVocabulary } from "@/config/tag-vocabulary";
+import { collectTags, type TagInfo } from "@/utils/tags";
+import { getDocsCollection } from "@/utils/get-docs-collection";
+import { toRouteSlug } from "@/utils/slug";
+import type { DocsEntry } from "@/types/docs-entry";
 
 interface Props {
   lang?: Locale;
 }
 
 const { lang = defaultLocale } = Astro.props;
+
 const footer = settings.footer;
 if (!footer) return;
 
-const { links, copyright } = footer;
-const isNonDefaultLocale = lang !== defaultLocale;
+const { links, copyright, taglist } = footer;
 
+/** Prefix internal hrefs with locale path for non-default locales. */
 function localizeHref(href: string): string {
   if (isExternal(href)) return href;
-  const localized = isNonDefaultLocale ? `/${lang}${href}` : href;
-  return resolveHref(localized);
+  if (lang !== defaultLocale) {
+    const path = href.startsWith("/") ? href : `/${href}`;
+    return resolveHref(`/${lang}${path}`);
+  }
+  return resolveHref(href);
 }
+
+function tagHref(tag: string): string {
+  const path =
+    lang === defaultLocale ? `/docs/tags/${tag}` : `/${lang}/docs/tags/${tag}`;
+  return withBase(path);
+}
+
+interface TaglistColumn {
+  group: string;
+  title: string;
+  tags: TagInfo[];
+}
+
+let taglistColumns: TaglistColumn[] = [];
+
+if (taglist?.enabled) {
+  const filterDocs = (docs: DocsEntry[]) =>
+    import.meta.env.PROD
+      ? docs.filter((doc) => !doc.data.draft && !doc.data.unlisted)
+      : docs.filter((doc) => !doc.data.unlisted);
+
+  let docs: DocsEntry[];
+  if (lang === defaultLocale) {
+    docs = filterDocs(await getDocsCollection("docs"));
+  } else {
+    const localeDocs = filterDocs(await getDocsCollection(`docs-${lang}`));
+    const baseDocs = filterDocs(await getDocsCollection("docs"));
+    const localeSlugSet = new Set(
+      localeDocs.map((d) => d.data.slug ?? toRouteSlug(d.id)),
+    );
+    docs = [
+      ...localeDocs,
+      ...baseDocs.filter(
+        (d) => !localeSlugSet.has(d.data.slug ?? toRouteSlug(d.id)),
+      ),
+    ];
+  }
+
+  const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
+  const allTags = [...tagMap.values()].sort((a, b) =>
+    a.tag.localeCompare(b.tag, lang),
+  );
+
+  const vocabularyActive =
+    Boolean(settings.tagVocabulary) && settings.tagGovernance !== "off";
+  const requestedGroupBy = taglist.groupBy ?? "group";
+  const effectiveGroupBy = vocabularyActive ? requestedGroupBy : "flat";
+
+  const localeOverrides = taglist.locales?.[lang];
+  const groupTitles: Record<string, string> = {
+    ...taglist.groupTitles,
+    ...localeOverrides?.groupTitles,
+  };
+  const flatTitle = localeOverrides?.title ?? taglist.title ?? "Tags";
+
+  if (effectiveGroupBy === "flat" || !vocabularyActive) {
+    if (allTags.length > 0) {
+      taglistColumns = [{ group: "__flat__", title: flatTitle, tags: allTags }];
+    }
+  } else {
+    const groupByCanonical = new Map<string, string>();
+    const groupOrder: string[] = [];
+    const seenGroups = new Set<string>();
+    for (const entry of tagVocabulary) {
+      if (!entry.group) continue;
+      groupByCanonical.set(entry.id, entry.group);
+      if (!seenGroups.has(entry.group)) {
+        seenGroups.add(entry.group);
+        groupOrder.push(entry.group);
+      }
+    }
+
+    const buckets = new Map<string, TagInfo[]>();
+    for (const group of groupOrder) buckets.set(group, []);
+    const ungrouped: TagInfo[] = [];
+
+    for (const info of allTags) {
+      const group = groupByCanonical.get(info.tag);
+      if (group && buckets.has(group)) {
+        buckets.get(group)!.push(info);
+      } else {
+        ungrouped.push(info);
+      }
+    }
+
+    taglistColumns = groupOrder
+      .filter((g) => (buckets.get(g)?.length ?? 0) > 0)
+      .map((g) => ({
+        group: g,
+        title: groupTitles[g] ?? g.charAt(0).toUpperCase() + g.slice(1),
+        tags: buckets.get(g)!,
+      }));
+
+    if (ungrouped.length > 0) {
+      taglistColumns.push({
+        group: "__flat__",
+        title: flatTitle,
+        tags: ungrouped,
+      });
+    }
+  }
+}
+
+const hasColumns = links.length > 0 || taglistColumns.length > 0;
 ---
 
 <footer class="border-t border-muted bg-surface">
@@ -26,36 +139,52 @@ function localizeHref(href: string): string {
     class="mx-auto max-w-[clamp(50rem,75vw,90rem)] px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl"
   >
     {
-      links.length > 0 && (
-        <div class="text-center">
-          {links.map((column) => {
-            const columnTitle = column.locales?.[lang]?.title ?? column.title;
-            return (
-              <div class="mb-vsp-md">
-                <p class="text-small font-semibold text-fg mb-vsp-xs">
-                  {columnTitle}
-                </p>
-                <ul class="list-none p-0 grid grid-cols-1 gap-y-vsp-2xs lg:grid-cols-3 lg:gap-x-hsp-xl">
-                  {column.items.map((item) => {
-                    const itemLabel = item.locales?.[lang]?.label ?? item.label;
-                    return (
-                      <li>
-                        <a
-                          href={localizeHref(item.href)}
-                          class="text-caption text-accent underline hover:text-accent-hover"
-                          {...(isExternal(item.href)
-                            ? { target: "_blank", rel: "noopener noreferrer" }
-                            : {})}
-                        >
-                          {itemLabel}
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
+      hasColumns && (
+        <div class="grid grid-cols-1 gap-vsp-lg sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">
+          {links.map((column) => (
+            <div>
+              <p class="text-small font-semibold text-fg mb-vsp-xs">
+                {column.locales?.[lang]?.title ?? column.title}
+              </p>
+              <ul class="list-none p-0">
+                {column.items.map((item) => (
+                  <li class="mb-vsp-2xs">
+                    <a
+                      href={localizeHref(item.href)}
+                      class="text-caption text-muted hover:text-accent hover:underline focus-visible:underline"
+                      {...(isExternal(item.href)
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
+                    >
+                      {item.locales?.[lang]?.label ?? item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {taglistColumns.map((column) => (
+            <div data-taglist-group={column.group}>
+              <h2 class="text-small font-semibold text-fg mb-vsp-xs">
+                {column.title}
+              </h2>
+              <ul class="list-none p-0">
+                {column.tags.map(({ tag, count }) => (
+                  <li class="mb-vsp-2xs">
+                    <a
+                      href={tagHref(tag)}
+                      class="text-caption text-muted hover:text-accent hover:underline focus-visible:underline"
+                    >
+                      #{tag}
+                      <span class="opacity-60" aria-hidden="true">
+                        &nbsp;({count})
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       )
     }
@@ -64,7 +193,7 @@ function localizeHref(href: string): string {
         <div
           class:list={[
             "text-center text-caption text-muted [&_a]:text-accent [&_a]:underline",
-            links.length > 0 && "mt-vsp-lg border-t border-muted pt-vsp-md",
+            hasColumns && "mt-vsp-lg border-t border-muted pt-vsp-md",
           ]}
         >
           <Fragment set:html={copyright} />

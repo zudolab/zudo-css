@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { NavNode } from "@/utils/docs";
+import type { LocaleLink } from "@/types/locale";
 import { INDENT, BASE_PAD, connectorLeft, ConnectorLines, CategoryLinkIcon } from "./tree-nav-shared";
-import ThemeToggle from "./theme-toggle";
+import ThemeToggle from "@/components/theme-toggle";
+import { smartBreakToHtml } from "@/utils/smart-break";
 
 function ToggleChevron({ isExpanded, className }: { isExpanded: boolean; className?: string }) {
   return (
@@ -97,12 +99,50 @@ function filterTree(nodes: NavNode[], query: string): NavNode[] {
 interface RootMenuItem {
   label: string;
   href: string;
+  children?: RootMenuItem[];
 }
 
-interface LocaleLink {
-  label: string;
-  href: string;
-  active: boolean;
+function RootMenuItemEntry({ item }: { item: RootMenuItem }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = item.children && item.children.length > 0;
+
+  return (
+    <div className="border-t border-muted">
+      <div className="flex items-center">
+        <a
+          href={item.href}
+          className="flex flex-1 items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline break-words"
+        >
+          <CategoryLinkIcon className="w-[14px]" />
+          <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(item.label) }} />
+        </a>
+        {hasChildren && (
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            className="flex items-center justify-center px-hsp-sm py-vsp-xs text-muted hover:text-fg"
+            aria-expanded={expanded}
+            aria-label={expanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+          >
+            <ToggleChevron isExpanded={expanded} className="text-muted" />
+          </button>
+        )}
+      </div>
+      {hasChildren && expanded && (
+        <div className="pb-vsp-xs">
+          {item.children!.map((child) => (
+            <a
+              key={child.href}
+              href={child.href}
+              className="block pl-hsp-xl pr-hsp-sm py-vsp-2xs text-small text-muted hover:text-accent hover:underline break-words"
+            >
+              <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(child.label) }} />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface SidebarTreeProps {
@@ -115,16 +155,18 @@ interface SidebarTreeProps {
 }
 
 function SidebarFooter({ links, themeDefaultMode }: { links?: LocaleLink[]; themeDefaultMode?: "light" | "dark" }) {
+  if (!links && !themeDefaultMode) return null;
   return (
-    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[200px] text-small">
+    // pb-[50vh] provides scroll room so the footer doesn't sit at the very bottom of the viewport
+    <div className="lg:hidden flex items-center gap-hsp-md border-t border-muted px-hsp-sm py-vsp-xs pb-[50vh] text-small">
       {themeDefaultMode && <ThemeToggle defaultMode={themeDefaultMode} />}
       {links && links.map((link, i) => (
         <span key={link.href} className="flex items-center gap-hsp-xs">
           {i > 0 && <span className="text-muted">/</span>}
           {link.active ? (
-            <span className="font-medium text-fg">{link.label}</span>
+            <span aria-current="true" className="font-medium text-fg">{link.label}</span>
           ) : (
-            <a href={link.href} className="text-muted hover:text-fg">
+            <a href={link.href} lang={link.code} className="text-muted hover:text-fg">
               {link.label}
             </a>
           )}
@@ -169,25 +211,10 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
     [nodes, query],
   );
 
-  // Top page: show only header nav links, no doc tree or filter.
-  // Derived from activeSlug (runtime-synced) so it stays correct across View Transitions.
-  if (!activeSlug && rootMenuItems) {
-    return (
-      <nav>
-        {rootMenuItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
-          >
-            <CategoryLinkIcon className="w-[14px]" />
-            {item.label}
-          </a>
-        ))}
-        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
-      </nav>
-    );
-  }
+  const footer = useMemo(
+    () => (localeLinks || themeDefaultMode) ? <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} /> : null,
+    [localeLinks, themeDefaultMode],
+  );
 
   // Root menu view: show headerNav items as a simple list (Docusaurus-style)
   if (showingRootMenu && rootMenuItems) {
@@ -196,24 +223,30 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         <button
           type="button"
           onClick={() => setShowingRootMenu(false)}
-          className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
+          className="flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
         >
-          <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-icon-sm w-icon-sm shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
           {backToMenuLabel ?? "Back to main menu"}
         </button>
         {rootMenuItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-hsp-xs border-t border-muted px-hsp-sm py-vsp-xs text-small font-semibold text-fg hover:text-accent hover:underline"
-          >
-            <CategoryLinkIcon className="w-[14px]" />
-            {item.label}
-          </a>
+          <RootMenuItemEntry key={item.href} item={item} />
         ))}
-        {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
+        {footer}
+      </nav>
+    );
+  }
+
+  // Top page: show only header nav links, no doc tree or filter.
+  // Derived from activeSlug (runtime-synced) so it stays correct across View Transitions.
+  if (!activeSlug && rootMenuItems) {
+    return (
+      <nav>
+        {rootMenuItems.map((item) => (
+          <RootMenuItemEntry key={item.href} item={item} />
+        ))}
+        {footer}
       </nav>
     );
   }
@@ -224,9 +257,9 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         <button
           type="button"
           onClick={() => setShowingRootMenu(true)}
-          className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-small text-muted hover:text-fg border-b border-muted"
+          className="lg:hidden flex w-full items-center gap-hsp-xs px-hsp-sm py-vsp-xs text-left text-small text-muted hover:text-fg border-b border-muted"
         >
-          <svg className="h-[1rem] w-[1rem] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-icon-sm w-icon-sm shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           {backToMenuLabel ?? "Back to main menu"}
@@ -253,7 +286,7 @@ export default function SidebarTree({ nodes, currentSlug, rootMenuItems, backToM
         depth={0}
         forceOpen={!!query}
       />
-      {(localeLinks || themeDefaultMode) && <SidebarFooter links={localeLinks} themeDefaultMode={themeDefaultMode} />}
+      {footer}
     </nav>
   );
 }
@@ -390,11 +423,11 @@ function CategoryNode({
             <a
               href={node.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline ${isActive ? "text-bg" : "text-fg"}`}
+              className={`flex-1 flex items-center gap-hsp-xs py-vsp-xs hover:underline focus:underline break-words ${isActive ? "text-bg" : "text-fg"}`}
               style={{ paddingLeft }}
             >
               {depth === 0 && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
-              {node.label}
+              <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
             </a>
             <button
               type="button"
@@ -410,7 +443,7 @@ function CategoryNode({
           <button
             type="button"
             onClick={toggle}
-            className={`flex w-full items-center gap-hsp-md text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline`}
+            className={`flex w-full items-center gap-hsp-md text-left text-small font-semibold py-vsp-xs text-fg hover:underline focus:underline break-words`}
             style={{ paddingLeft }}
             aria-expanded={isExpanded}
             aria-label={isExpanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
@@ -418,7 +451,7 @@ function CategoryNode({
             <span className="aspect-square flex items-center justify-center w-[1.5rem] shrink-0 border border-muted">
               <ToggleChevron isExpanded={isExpanded} className="text-muted" />
             </span>
-            {node.label}
+            <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
           </button>
         )}
       </div>
@@ -452,18 +485,28 @@ function LeafNode({
   const isRoot = depth === 0;
   const paddingLeft = padLeft(depth, isRoot);
 
+  // For nested last leaves, add visual breathing space as margin on the outer wrapper
+  // rather than padding on the anchor — padding would grow the row box and throw off
+  // the ConnectorLines geometry (which uses bottom: 50% of the row to land the horizontal
+  // connector at the label midpoint).
+  const outerClass = isRoot
+    ? "border-t border-muted"
+    : !isRoot && isLast
+      ? "pb-vsp-md"
+      : "";
+
   return (
-    <div className={isRoot ? "border-t border-muted" : ""}>
+    <div className={outerClass}>
       <div className="relative">
         <ConnectorLines depth={depth} isLast={isLast} />
         <a
           href={node.href}
           aria-current={isActive ? "page" : undefined}
           className={isRoot
-            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold ${
+            ? `flex items-center gap-hsp-xs py-[calc(var(--spacing-vsp-xs)+0.15rem)] pr-[4px] text-small font-semibold break-words ${
                 isActive ? "bg-fg text-bg" : "text-fg hover:underline focus:underline"
               }`
-            : `block py-vsp-2xs pr-[4px] ${isLast ? "pb-vsp-xs" : ""} text-small ${
+            : `block py-vsp-2xs pr-[4px] text-small break-words ${
                 isActive
                   ? "bg-fg font-medium text-bg"
                   : "text-muted hover:underline focus:underline"
@@ -472,7 +515,7 @@ function LeafNode({
           style={{ paddingLeft }}
         >
           {isRoot && <CategoryLinkIcon className={`w-[14px] ${isActive ? "text-bg" : ""}`} />}
-          {node.label}
+          <span dangerouslySetInnerHTML={{ __html: smartBreakToHtml(node.label) }} />
         </a>
       </div>
     </div>

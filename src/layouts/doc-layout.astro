@@ -4,7 +4,6 @@ import Header from "@/components/header.astro";
 import Sidebar from "@/components/sidebar.astro";
 import { Toc } from "@/components/toc";
 import { MobileToc } from "@/components/mobile-toc";
-import { DocHistory } from "@/components/doc-history";
 import ColorSchemeProvider from "@/components/color-scheme-provider.astro";
 import CodeBlockEnhancer from "@/components/code-block-enhancer.astro";
 import TabsInit from "@/components/tabs-init.astro";
@@ -17,21 +16,18 @@ import { getNavSectionForSlug } from "@/utils/nav-scope";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import { withBase, docsUrl } from "@/utils/base";
 import type { VersionConfig } from "@/config/settings-types";
-import VersionSwitcher from "@/components/version-switcher.astro";
-import VersionBanner from "@/components/version-banner.astro";
-import { getVersionAvailability } from "@/utils/version-availability";
-import Footer from "@/components/footer.astro";
-import ColorTweakPanel from "@/components/color-tweak-panel";
-import AiChatModal from "@/components/ai-chat-modal";
 import DesktopSidebarToggle from "@/components/desktop-sidebar-toggle";
-import MockInit from "@/components/mock-init";
-import { SEMANTIC_DEFAULTS, SEMANTIC_CSS_NAMES } from "@/config/color-scheme-utils";
+import { DocHistory } from "@/components/doc-history";
+import FindInPageInit from "@/components/find-in-page-init";
+import Footer from "@/components/footer.astro";
 
 interface Props {
   title: string;
   description?: string;
   lang?: Locale;
   currentSlug?: string;
+  contentDir?: string;
+  entryId?: string;
   headings?: Heading[];
   unlisted?: boolean;
   currentVersion?: string;
@@ -45,6 +41,8 @@ const {
   description,
   lang = defaultLocale,
   currentSlug,
+  contentDir,
+  entryId,
   headings = [],
   unlisted = false,
   currentVersion,
@@ -52,13 +50,20 @@ const {
   hideSidebar = false,
   hideToc = false,
 } = Astro.props;
+// Silence unused-var warnings when no feature consumes these.
+void contentDir;
+void entryId;
 const latestUrl = currentSlug ? docsUrl(currentSlug, lang) : undefined;
-const versionAvailability = settings.versions ? await getVersionAvailability() : undefined;
-const fullTitle = title === settings.siteName ? title : `${title} | ${settings.siteName}`;
+
+const fullTitle =
+  title === settings.siteName ? title : `${title} | ${settings.siteName}`;
 const navSection = currentSlug ? getNavSectionForSlug(currentSlug) : undefined;
 const currentPath = Astro.url.pathname;
 const htmlColorAttrs = settings.colorMode
-  ? { "data-theme": settings.colorMode.defaultMode, style: `color-scheme: ${settings.colorMode.defaultMode}` }
+  ? {
+      "data-theme": settings.colorMode.defaultMode,
+      style: `color-scheme: ${settings.colorMode.defaultMode}`,
+    }
   : {};
 const contentAnim = {
   old: {
@@ -90,52 +95,23 @@ const contentTransition = {
     {!settings.noindex && unlisted && <meta name="robots" content="noindex" />}
     <meta property="og:title" content={fullTitle} />
     {description && <meta property="og:description" content={description} />}
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site || Astro.url).href} />
-    <meta property="og:image" content={new URL(withBase("/img/ogp.png"), Astro.site || Astro.url).href} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={settings.siteDescription} />
-    <meta property="og:site_name" content={settings.siteName} />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
-      media="print"
-      onload="this.media='all'"
-    />
-    <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" />
-    </noscript>
     <ColorSchemeProvider />
-    {settings.colorTweakPanel && (
-      <script is:inline define:vars={{ tweakSemanticDefaults: SEMANTIC_DEFAULTS, tweakSemanticCss: SEMANTIC_CSS_NAMES }}>
+
+    {settings.sidebarToggle && (
+      <script is:inline>
         (function () {
-          function applyTweakState() {
-            var raw = localStorage.getItem("zudo-doc-tweak-state");
-            if (!raw) return;
-            try {
-              var s = JSON.parse(raw);
-              if (!s.palette || s.palette.length !== 16 || s.background === undefined) return;
-              var root = document.documentElement;
-              for (var i = 0; i < 16; i++) root.style.setProperty("--zd-" + i, s.palette[i]);
-              root.style.setProperty("--zd-bg", s.palette[s.background]);
-              root.style.setProperty("--zd-fg", s.palette[s.foreground]);
-              root.style.setProperty("--zd-cursor", s.palette[s.cursor]);
-              root.style.setProperty("--zd-sel-bg", s.palette[s.selectionBg]);
-              root.style.setProperty("--zd-sel-fg", s.palette[s.selectionFg]);
-              for (var key in tweakSemanticCss) {
-                var m = s.semanticMappings && s.semanticMappings[key];
-                if (m === undefined) m = tweakSemanticDefaults[key];
-                var val = m === "bg" ? s.palette[s.background] : m === "fg" ? s.palette[s.foreground] : s.palette[m];
-                root.style.setProperty(tweakSemanticCss[key], val);
-              }
-            } catch (e) { localStorage.removeItem("zudo-doc-tweak-state"); }
+          function applySidebarState() {
+            if (localStorage.getItem("zudo-doc-sidebar-visible") === "false") {
+              document.documentElement.setAttribute("data-sidebar-hidden", "");
+            } else {
+              document.documentElement.removeAttribute("data-sidebar-hidden");
+            }
           }
-          applyTweakState();
-          document.addEventListener("astro:after-swap", applyTweakState);
+          applySidebarState();
+          if (!window.__zdSidebarApplied) {
+            document.addEventListener("astro:after-swap", applySidebarState);
+            window.__zdSidebarApplied = true;
+          }
         })();
       </script>
     )}
@@ -153,53 +129,61 @@ const contentTransition = {
         })();
       </script>
     )}
-    {settings.math && (
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css" integrity="sha384-/L6i+LN3dyoaK2jYG5ZLh5u13cjdsPDcFOSNJeFBFa/KgVXR5kOfTdiN3ft1uMAq" crossorigin="anonymous" />
-    )}
+    {
+      settings.math && (
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.38/dist/katex.min.css"
+          integrity="sha384-/L6i+LN3dyoaK2jYG5ZLh5u13cjdsPDcFOSNJeFBFa/KgVXR5kOfTdiN3ft1uMAq"
+          crossorigin="anonymous"
+        />
+      )
+    }
     {settings.llmsTxt && (
       <Fragment>
         <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms.txt" : `/${lang}/llms.txt`)} title="llms.txt" />
         <link rel="alternate" type="text/plain" href={withBase(lang === defaultLocale ? "/llms-full.txt" : `/${lang}/llms-full.txt`)} title="llms-full.txt" />
       </Fragment>
     )}
-    {settings.sidebarToggle && (
-      <script is:inline>
-        (function () {
-          function applySidebarState() {
-            try {
-              if (localStorage.getItem("zudo-css-sidebar-visible") === "false") {
-                document.documentElement.setAttribute("data-sidebar-hidden", "");
-              } else {
-                document.documentElement.removeAttribute("data-sidebar-hidden");
-              }
-            } catch (e) {}
-          }
-          applySidebarState();
-          if (!window.__zdSidebarApplied) {
-            document.addEventListener("astro:after-swap", applySidebarState);
-            window.__zdSidebarApplied = true;
-          }
-        })();
-      </script>
-    )}
+
     <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
-    <Header lang={lang} currentPath={currentPath} currentVersion={currentVersion} currentSlug={currentSlug} versionAvailability={versionAvailability}>
-      <Sidebar slot="sidebar" currentSlug={currentSlug} lang={lang} navSection={navSection} />
+
+    <Header
+      lang={lang}
+      currentPath={currentPath}
+      currentVersion={currentVersion}
+      currentSlug={currentSlug}
+    >
+
+      <Sidebar
+        slot="sidebar"
+        currentSlug={currentSlug}
+        lang={lang}
+        navSection={navSection}
+        currentVersion={currentVersion}
+      />
     </Header>
 
     {/* Desktop sidebar - fixed, outside content flow */}
-    {!hideSidebar && (
-      <aside
-        id="desktop-sidebar"
-        aria-label="Documentation sidebar"
-        transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
-        class="hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted"
-      >
-        <Sidebar currentSlug={currentSlug} lang={lang} navSection={navSection} />
-      </aside>
-    )}
+    {
+      !hideSidebar && (
+        <aside
+          id="desktop-sidebar"
+          aria-label="Documentation sidebar"
+          transition:persist={`sidebar-${lang}-${navSection ?? "default"}`}
+          class="hidden lg:block fixed top-[3.5rem] left-0 z-30 w-[var(--zd-sidebar-w)] h-[calc(100vh-3.5rem)] overflow-y-auto bg-bg border-r border-muted pb-vsp-xl"
+        >
+          <Sidebar
+            currentSlug={currentSlug}
+            lang={lang}
+            navSection={navSection}
+            currentVersion={currentVersion}
+          />
+        </aside>
+      )
+    }
 
     {!hideSidebar && settings.sidebarToggle && (
       <DesktopSidebarToggle
@@ -211,44 +195,50 @@ const contentTransition = {
     {/* Content margin wrapper - pushes content right of fixed sidebar */}
     <div class:list={[!hideSidebar && "lg:ml-[var(--zd-sidebar-w)]", !hideSidebar && settings.sidebarToggle && "zd-sidebar-content-wrapper"]}>
       <div class="flex min-h-[calc(100vh-3.5rem)] justify-center">
-        <div class:list={[
-          "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
-          hideSidebar ? "max-w-[80rem]" : "max-w-[clamp(50rem,75vw,90rem)]",
-        ]}>
+        <div
+          class:list={[
+            "flex w-full gap-[clamp(1.5rem,3vw,4rem)]",
+            hideSidebar ? "max-w-[80rem]" : "max-w-[clamp(50rem,75vw,90rem)]",
+          ]}
+        >
           {/* Main content */}
-          <main class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl" transition:animate={contentTransition}>
-            {settings.versions && currentSlug ? (
-              <div class="mb-vsp-sm flex flex-col items-start gap-vsp-xs sm:flex-row sm:items-center sm:justify-between [&_nav]:mb-0">
-                <slot name="breadcrumb" />
-                <VersionSwitcher currentVersion={currentVersion} currentSlug={currentSlug} lang={lang} availability={versionAvailability} />
-              </div>
-            ) : (
-              <slot name="breadcrumb" />
-            )}
-            {versionBanner && latestUrl && (
-              <VersionBanner type={versionBanner} latestUrl={latestUrl} lang={lang} />
-            )}
-            {!hideToc && <MobileToc headings={headings} title={t("toc.title", lang)} client:load />}
+          <main
+            class="flex-1 min-w-0 px-hsp-xl py-vsp-xl lg:px-hsp-2xl lg:py-vsp-2xl"
+            transition:animate={contentTransition}
+          >
+
+            <slot name="breadcrumb" />
+
+            {
+              !hideToc && (
+                <MobileToc
+                  headings={headings}
+                  title={t("toc.title", lang)}
+                  client:load
+                />
+              )
+            }
             <article class="zd-content max-w-none">
               <slot />
             </article>
             {settings.docHistory && currentSlug && (
               <DocHistory slug={currentSlug} locale={lang !== defaultLocale ? lang : undefined} basePath={withBase("/")} client:idle />
             )}
+
           </main>
 
           {/* Table of contents */}
           {!hideToc && <Toc headings={headings} client:load />}
         </div>
       </div>
+
       <Footer lang={lang} />
     </div>
-    {settings.aiAssistant && <AiChatModal basePath={withBase("/")} client:load />}
-    {settings.colorTweakPanel && <ColorTweakPanel client:only="react" />}
+
+    <FindInPageInit client:load />
     <CodeBlockEnhancer />
     <TabsInit />
     {settings.mermaid && <MermaidInit />}
-    {import.meta.env.PUBLIC_ENABLE_MOCKS === "true" && settings.aiAssistant && <MockInit client:only="react" />}
     <PageLoadingOverlay />
     <script>
       let _sidebarScrollTop = 0;
@@ -261,97 +251,10 @@ const contentTransition = {
         if (el) el.scrollTop = _sidebarScrollTop;
       });
     </script>
+
     {settings.sidebarResizer && (
       <script>
-        function initSidebarResizer() {
-          const sidebar = document.getElementById("desktop-sidebar");
-          if (!sidebar || sidebar.querySelector("[data-sidebar-resizer]")) return;
-
-          const handle = document.createElement("div");
-          handle.setAttribute("data-sidebar-resizer", "");
-          Object.assign(handle.style, {
-            position: "absolute",
-            top: "0",
-            right: "0",
-            width: "6px",
-            height: "100%",
-            cursor: "col-resize",
-            zIndex: "10",
-            transition: "background 0.15s",
-          });
-
-          handle.addEventListener("mouseenter", () => {
-            if (!dragging) handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
-          });
-          handle.addEventListener("mouseleave", () => {
-            if (!dragging) handle.style.background = "";
-          });
-
-          let dragging = false;
-
-          handle.addEventListener("pointerdown", (e: PointerEvent) => {
-            e.preventDefault();
-            handle.setPointerCapture(e.pointerId);
-            dragging = true;
-            handle.style.background = "var(--zd-accent, rgba(128,128,128,0.3))";
-            document.documentElement.style.cursor = "col-resize";
-            document.documentElement.style.userSelect = "none";
-
-            const ghost = document.createElement("div");
-            Object.assign(ghost.style, {
-              position: "fixed",
-              top: "0",
-              width: "2px",
-              height: "100vh",
-              background: "var(--zd-accent, rgba(128,128,128,0.5))",
-              pointerEvents: "none",
-              zIndex: "9999",
-            });
-            const sidebarRect = sidebar!.getBoundingClientRect();
-            const sidebarLeft = sidebarRect.left;
-            ghost.style.left = (sidebarLeft + sidebarRect.width) + "px";
-            document.body.appendChild(ghost);
-            let targetWidth = 0;
-
-            const onMove = (ev: PointerEvent) => {
-              targetWidth = Math.max(192, Math.min(448, ev.clientX - sidebarLeft));
-              ghost.style.left = (sidebarLeft + targetWidth) + "px";
-            };
-
-            const cleanup = () => {
-              dragging = false;
-              handle.style.background = "";
-              document.documentElement.style.cursor = "";
-              document.documentElement.style.userSelect = "";
-              ghost.remove();
-              handle.removeEventListener("pointermove", onMove);
-              handle.removeEventListener("pointerup", onUp);
-              handle.removeEventListener("pointercancel", onCancel);
-              handle.removeEventListener("lostpointercapture", onCancel);
-            };
-
-            const onUp = (ev: PointerEvent) => {
-              handle.releasePointerCapture(ev.pointerId);
-              cleanup();
-              if (targetWidth > 0) {
-                document.documentElement.style.setProperty("--zd-sidebar-w", targetWidth + "px");
-                try { localStorage.setItem("zudo-doc-sidebar-width", String(Math.round(targetWidth))); } catch (e) {}
-              }
-            };
-
-            const onCancel = () => {
-              cleanup();
-            };
-
-            handle.addEventListener("pointermove", onMove);
-            handle.addEventListener("pointerup", onUp);
-            handle.addEventListener("pointercancel", onCancel);
-            handle.addEventListener("lostpointercapture", onCancel);
-          });
-
-          sidebar.appendChild(handle);
-        }
-
+        import { initSidebarResizer } from "@/scripts/sidebar-resizer";
         initSidebarResizer();
         document.addEventListener("astro:after-swap", initSidebarResizer);
       </script>

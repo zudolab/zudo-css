@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { Heading } from "@/types/heading";
+import { SmartBreak } from "@/utils/smart-break";
 import clsx from "clsx";
 
 interface MobileTocProps {
@@ -29,7 +30,7 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
           xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
           className={clsx(
-            "h-[1rem] w-[1rem] text-muted transition-transform duration-150",
+            "h-icon-sm w-icon-sm text-muted transition-transform duration-150",
             open && "rotate-180",
           )}
           fill="none"
@@ -57,9 +58,9 @@ export function MobileToc({ headings, title = "On this page" }: MobileTocProps) 
               <a
                 href={`#${heading.slug}`}
                 onClick={() => setOpen(false)}
-                className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline"
+                className="block py-vsp-2xs text-small text-muted hover:text-fg hover:underline focus-visible:underline"
               >
-                {heading.text}
+                <SmartBreak>{heading.text}</SmartBreak>
               </a>
             </li>
           ))}

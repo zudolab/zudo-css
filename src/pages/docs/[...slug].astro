@@ -13,6 +13,7 @@ import Tabs from "@/components/tabs.astro";
 import TabItem from "@/components/tab-item.astro";
 import Details from "@/components/details.astro";
 import HtmlPreview from "@/components/html-preview-wrapper.astro";
+import { htmlOverrides } from "@/components/content/component-map";
 import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import {
@@ -33,6 +34,7 @@ import { docsUrl } from "@/utils/base";
 import EditLink from "@/components/edit-link.astro";
 import DocMetainfo from "@/components/doc-metainfo.astro";
 import DocTags from "@/components/doc-tags.astro";
+import FrontmatterPreview from "@/components/frontmatter-preview.astro";
 
 export async function getStaticPaths() {
   const allDocs = await getCollection("docs");
@@ -105,6 +107,7 @@ export async function getStaticPaths() {
 const { entry, breadcrumbs = [], prev, next, autoIndex } = Astro.props;
 
 const components = {
+  ...htmlOverrides,
   Note,
   Tip,
   Info,
@@ -137,6 +140,8 @@ const slug = autoIndex
   title={autoIndex ? autoIndex.label : entry.data.title}
   description={autoIndex ? autoIndex.description : entry.data.description}
   currentSlug={slug}
+  contentDir={entry ? settings.docsDir : undefined}
+  entryId={entry?.id}
   headings={autoIndex ? [] : headings}
   unlisted={entry?.data?.unlisted}
   hideSidebar={entry?.data?.hide_sidebar}
@@ -146,7 +151,7 @@ const slug = autoIndex
   {
     autoIndex ? (
       <Fragment>
-        <h1 class="text-heading font-normal font-futura mb-vsp-xs">{autoIndex.label}</h1>
+        <h1 class="text-heading font-bold mb-vsp-xs">{autoIndex.label}</h1>
         {autoIndex.description && (
           <p class="mt-0 mb-vsp-lg text-subheading text-muted">
             {autoIndex.description}
@@ -174,12 +179,16 @@ const slug = autoIndex
       </Fragment>
     ) : (
       <Fragment>
-        <h1 class="text-heading font-normal font-futura mb-vsp-xs">{entry.data.title}</h1>
+        <h1 class="text-heading font-bold mb-vsp-xs">{entry.data.title}</h1>
         {settings.docMetainfo && (
           <DocMetainfo
             filePath={`${settings.docsDir}/${entry.id}`}
             locale="en"
           />
+        )}
+
+        {entry?.data?.tags && settings.tagPlacement === "after-title" && (
+          <DocTags tags={entry.data.tags} locale="en" placement="after-title" />
         )}
 
         {entry.data.description && (
@@ -188,7 +197,9 @@ const slug = autoIndex
           </p>
         )}
 
-        {entry?.data?.tags && <DocTags tags={entry.data.tags} locale="en" />}
+        {settings.frontmatterPreview && entry && (
+          <FrontmatterPreview data={entry.data} locale="en" />
+        )}
 
         <Content components={components} />
 
@@ -200,6 +211,14 @@ const slug = autoIndex
               locale="en"
             />
           </div>
+        )}
+
+        {entry?.data?.tags && settings.tagPlacement === "before-pager" && (
+          <DocTags
+            tags={entry.data.tags}
+            locale="en"
+            placement="before-pager"
+          />
         )}
 
         <nav class="mt-vsp-2xl grid grid-cols-2 gap-hsp-xl">

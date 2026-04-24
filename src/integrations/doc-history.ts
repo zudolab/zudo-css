@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { settings } from "../config/settings";
 import { collectContentFiles, getDocHistory } from "../utils/doc-history";
 
+const DOC_HISTORY_SERVER_PORT = 4322;
+
 /** Build list of [localeKey | null, absoluteDir] pairs from settings */
 function getContentDirEntries(): Array<[string | null, string]> {
   const entries: Array<[string | null, string]> = [
@@ -22,12 +24,76 @@ export function docHistoryIntegration(): AstroIntegration {
   return {
     name: "doc-history",
     hooks: {
+      "astro:config:setup": ({ updateConfig, command, logger }) => {
+        if (command !== "dev") return;
+
+        logger.info(
+          `Proxying /doc-history/* to localhost:${DOC_HISTORY_SERVER_PORT}`,
+        );
+
+        updateConfig({
+          vite: {
+            plugins: [
+              {
+                name: "doc-history-dev-proxy",
+                configureServer(server) {
+                  server.middlewares.use((req, res, next) => {
+                    const url = req.url ?? "";
+                    // Match /doc-history/*.json requests (with optional base path prefix)
+                    if (!url.includes("/doc-history/")) {
+                      next();
+                      return;
+                    }
+
+                    // Extract the path starting from /doc-history/
+                    const idx = url.indexOf("/doc-history/");
+                    const proxyPath = url.slice(idx);
+
+                    const proxyUrl = `http://localhost:${DOC_HISTORY_SERVER_PORT}${proxyPath}`;
+
+                    // Proxy the request to the standalone doc-history server
+                    fetch(proxyUrl)
+                      .then(async (upstream) => {
+                        res.statusCode = upstream.status;
+                        res.setHeader(
+                          "Content-Type",
+                          upstream.headers.get("content-type") ??
+                            "application/json",
+                        );
+                        const body = await upstream.text();
+                        res.end(body);
+                      })
+                      .catch((err) => {
+                        const msg =
+                          err instanceof Error ? err.message : String(err);
+                        logger.warn(
+                          `Doc history proxy failed: ${msg}. Is the doc-history server running on port ${DOC_HISTORY_SERVER_PORT}?`,
+                        );
+                        res.statusCode = 502;
+                        res.setHeader("Content-Type", "application/json");
+                        res.end(
+                          JSON.stringify({
+                            error: `Doc history server unavailable (port ${DOC_HISTORY_SERVER_PORT})`,
+                          }),
+                        );
+                      });
+                  });
+                },
+              },
+            ],
+          },
+        });
+      },
+
       "astro:build:done": async ({ dir, logger }) => {
+        // CI uses SKIP_DOC_HISTORY=1 when the separate build-history job
+        // handles generation via @zudo-doc/doc-history-server CLI.
         if (process.env.SKIP_DOC_HISTORY === "1") {
           logger.info("Skipping doc history generation (SKIP_DOC_HISTORY=1)");
           return;
         }
 
+        // Fallback: generate inline (for local builds and E2E tests)
         const outDir = fileURLToPath(dir);
         const historyDir = join(outDir, "doc-history");
         mkdirSync(historyDir, { recursive: true });
@@ -55,89 +121,6 @@ export function docHistoryIntegration(): AstroIntegration {
         logger.info(
           `Generated doc history for ${totalFiles} files in doc-history/`,
         );
-      },
-
-      "astro:config:setup": ({ updateConfig, command }) => {
-        if (command !== "dev") return;
-
-        updateConfig({
-          vite: {
-            plugins: [
-              {
-                name: "doc-history-dev",
-                configureServer(server) {
-                  server.middlewares.use((req, res, next) => {
-                    const url = req.url ?? "";
-                    const basePrefix = settings.base.replace(/\/+$/, "");
-                    const stripped = basePrefix && url.startsWith(basePrefix) ? url.slice(basePrefix.length) : url;
-                    const match = stripped.match(/^\/doc-history\/(.+)\.json$/);
-                    if (!match) {
-                      next();
-                      return;
-                    }
-
-                    try {
-                      const requestedSlug = decodeURIComponent(match[1]);
-
-                      // Parse locale prefix from requested slug
-                      // Check locale-prefixed entries first, then default (empty prefix)
-                      const dirEntries = getContentDirEntries();
-                      const sorted = [...dirEntries].sort(
-                        ([a], [b]) => (a ? 0 : 1) - (b ? 0 : 1),
-                      );
-                      const hasLocalePrefix = sorted.some(
-                        ([k]) => k && requestedSlug.startsWith(`${k}/`),
-                      );
-                      for (const [localeKey, contentDir] of sorted) {
-                        const prefix = localeKey ? `${localeKey}/` : "";
-                        if (
-                          (prefix && requestedSlug.startsWith(prefix)) ||
-                          (!prefix && !hasLocalePrefix)
-                        ) {
-                          const slug = prefix
-                            ? requestedSlug.slice(prefix.length)
-                            : requestedSlug;
-                          const files = collectContentFiles(contentDir);
-                          const found = files.find(
-                            (f) => f.slug === slug,
-                          );
-                          if (found) {
-                            const history = getDocHistory(
-                              found.filePath,
-                              found.slug,
-                            );
-                            res.setHeader("Content-Type", "application/json");
-                            res.end(JSON.stringify(history));
-                            return;
-                          }
-                        }
-                      }
-
-                      res.statusCode = 404;
-                      res.setHeader("Content-Type", "application/json");
-                      res.end(
-                        JSON.stringify({
-                          error: `No doc found for slug: ${requestedSlug}`,
-                        }),
-                      );
-                    } catch (err) {
-                      res.statusCode = 500;
-                      res.setHeader("Content-Type", "application/json");
-                      res.end(
-                        JSON.stringify({
-                          error:
-                            err instanceof Error
-                              ? err.message
-                              : "Internal error",
-                        }),
-                      );
-                    }
-                  });
-                },
-              },
-            ],
-          },
-        });
       },
     },
   };

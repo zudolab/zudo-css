@@ -33,7 +33,7 @@ function createFixture() {
 
   fs.writeFileSync(
     path.join(skillDir, "SKILL.md"),
-    '---\nname: test-skill\ndescription: "A test skill"\n---\n\nSkill instructions here.',
+    '---\nname: test-skill\ndescription: "A test skill"\n---\n\nSkill instructions here.\n\nSee [references/guide.md](references/guide.md) for details.',
   );
   fs.writeFileSync(
     path.join(skillDir, "references", "guide.md"),
@@ -216,6 +216,23 @@ describe("generateClaudeResourcesDocs", () => {
           `Link target "test-skill--${subPage}.mdx" should exist`,
         ).toBe(true);
       }
+    });
+
+    it("skill body references/scripts/assets links are rewritten to doc site format", () => {
+      generateClaudeResourcesDocs({
+        claudeDir,
+        projectRoot: tmpDir,
+        docsDir,
+      });
+
+      const skillPage = fs.readFileSync(
+        path.join(docsDir, "claude-skills", "test-skill.mdx"),
+        "utf8",
+      );
+
+      // Body links like (references/guide.md) should be rewritten to (./ref-guide)
+      expect(skillPage).toContain("](./ref-guide)");
+      expect(skillPage).not.toContain("](references/guide.md)");
     });
 
     it("agent page has model badge", () => {

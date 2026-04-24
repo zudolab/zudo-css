@@ -22,6 +22,10 @@ export const SEMANTIC_DEFAULTS: Record<string, number> = {
   chatUserText: 9,
   chatAssistantBg: 9,
   chatAssistantText: 11,
+  imageOverlayBg: 0,
+  imageOverlayFg: 11,
+  matchedKeywordBg: 3,
+  matchedKeywordFg: 15,
 };
 
 export const SEMANTIC_CSS_NAMES: Record<string, string> = {
@@ -44,6 +48,10 @@ export const SEMANTIC_CSS_NAMES: Record<string, string> = {
   chatUserText: "--zd-chat-user-text",
   chatAssistantBg: "--zd-chat-assistant-bg",
   chatAssistantText: "--zd-chat-assistant-text",
+  imageOverlayBg: "--zd-image-overlay-bg",
+  imageOverlayFg: "--zd-image-overlay-fg",
+  matchedKeywordBg: "--zd-matched-keyword-bg",
+  matchedKeywordFg: "--zd-matched-keyword-fg",
 };
 
 export const lightDarkPairings = [
@@ -95,6 +103,10 @@ export function resolveSemanticColors(scheme: ColorScheme) {
     chatUserText: resolveColor(scheme.semantic?.chatUserText, p, p[9]),
     chatAssistantBg: resolveColor(scheme.semantic?.chatAssistantBg, p, p[9]),
     chatAssistantText: resolveColor(scheme.semantic?.chatAssistantText, p, p[11]),
+    imageOverlayBg: resolveColor(scheme.semantic?.imageOverlayBg, p, p[0]),
+    imageOverlayFg: resolveColor(scheme.semantic?.imageOverlayFg, p, p[11]),
+    matchedKeywordBg: resolveColor(scheme.semantic?.matchedKeywordBg, p, p[3]),
+    matchedKeywordFg: resolveColor(scheme.semantic?.matchedKeywordFg, p, p[15]),
   };
 }
 
@@ -127,6 +139,10 @@ export function schemeToCssPairs(scheme: ColorScheme): [string, string][] {
     ["--zd-chat-user-text", sem.chatUserText],
     ["--zd-chat-assistant-bg", sem.chatAssistantBg],
     ["--zd-chat-assistant-text", sem.chatAssistantText],
+    ["--zd-image-overlay-bg", sem.imageOverlayBg],
+    ["--zd-image-overlay-fg", sem.imageOverlayFg],
+    ["--zd-matched-keyword-bg", sem.matchedKeywordBg],
+    ["--zd-matched-keyword-fg", sem.matchedKeywordFg],
   ];
 }
 

@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
+import { fileURLToPath } from "node:url";
 import mdx from "@astrojs/mdx";
-import react from "@astrojs/react";
+import preact from "@astrojs/preact";
 import {
   transformerMetaHighlight,
   transformerMetaWordHighlight,
@@ -8,15 +9,17 @@ import {
 import tailwindcss from "@tailwindcss/vite";
 import { colorSchemes } from "./src/config/color-schemes";
 import { settings } from "./src/config/settings";
-import { claudeResourcesIntegration } from "./src/integrations/claude-resources";
-import { docHistoryIntegration } from "./src/integrations/doc-history";
 import { searchIndexIntegration } from "./src/integrations/search-index";
+import { docHistoryIntegration } from "./src/integrations/doc-history";
 import { llmsTxtIntegration } from "./src/integrations/llms-txt";
-import { sitemapIntegration } from "./src/integrations/sitemap";
+import { claudeResourcesIntegration } from "./src/integrations/claude-resources";
+import remarkCjkFriendly from "remark-cjk-friendly";
 import remarkDirective from "remark-directive";
 import { remarkAdmonitions } from "./src/plugins/remark-admonitions";
+import { remarkResolveMarkdownLinks } from "./src/plugins/remark-resolve-markdown-links";
 import { rehypeCodeTitle } from "./src/plugins/rehype-code-title";
 import { rehypeHeadingLinks } from "./src/plugins/rehype-heading-links";
+import { rehypeMermaid } from "./src/plugins/rehype-mermaid";
 import { rehypeStripMdExtension } from "./src/plugins/rehype-strip-md-extension";
 
 const activeScheme = colorSchemes[settings.colorScheme];
@@ -45,20 +48,17 @@ const shikiConfig = settings.colorMode
     };
 
 export default defineConfig({
-  site: "https://takazudomodular.com",
   output: "static",
-  trailingSlash: settings.trailingSlash ? "always" : "never",
   base: settings.base,
   integrations: [
     mdx(),
-    react(),
+    preact({ compat: true }),
     searchIndexIntegration(),
-    ...(settings.sitemap && !settings.noindex ? [sitemapIntegration()] : []),
+    ...(settings.llmsTxt ? [llmsTxtIntegration()] : []),
     ...(settings.docHistory ? [docHistoryIntegration()] : []),
     ...(settings.claudeResources
       ? [claudeResourcesIntegration(settings.claudeResources)]
       : []),
-    ...(settings.llmsTxt ? [llmsTxtIntegration()] : []),
   ],
   i18n: {
     defaultLocale: "en",
@@ -69,23 +69,32 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    build: {
-      rollupOptions: {
-        // mermaid is not used in zcss — stub the dynamic import to avoid build failure
-        external: settings.mermaid ? [] : ["mermaid"],
-      },
-    },
   },
   markdown: {
     shikiConfig,
     remarkPlugins: [
-      remarkDirective, // Must run before remarkAdmonitions
+      remarkDirective,
       remarkAdmonitions,
+      [remarkResolveMarkdownLinks, {
+        rootDir: fileURLToPath(new URL(".", import.meta.url)),
+        docsDir: settings.docsDir,
+        locales: Object.fromEntries(
+          Object.entries(settings.locales).map(([code, config]) => [code, { dir: config.dir }])
+        ),
+        versions: settings.versions
+          ? settings.versions.map((v) => ({ slug: v.slug, docsDir: v.docsDir }))
+          : false,
+        base: settings.base,
+        trailingSlash: settings.trailingSlash,
+        onBrokenLinks: settings.onBrokenMarkdownLinks,
+      }],
+      ...(settings.cjkFriendly ? [remarkCjkFriendly] : []),
     ],
     rehypePlugins: [
       rehypeCodeTitle,
-      rehypeHeadingLinks, // Must run before Astro's built-in heading ID plugin
+      rehypeHeadingLinks,
       rehypeStripMdExtension,
+      ...(settings.mermaid ? [rehypeMermaid] : []),
     ],
   },
 });

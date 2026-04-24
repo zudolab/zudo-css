@@ -41,14 +41,33 @@ interface BuildNode {
 const categoryMetaCache = new Map<string, Map<string, CategoryMeta>>();
 const navTreeCache = new Map<string, NavNode[]>();
 
-/** Build a cache key from docs array + locale + category meta. */
+/** Build a cache key from docs array + locale + category meta.
+ *  Includes nav-affecting frontmatter so HMR picks up changes. */
 function navTreeCacheKey(
   docs: DocsEntry[],
   lang: Locale,
   categoryMeta?: Map<string, CategoryMeta>,
 ): string {
-  const metaKey = categoryMeta ? [...categoryMeta.keys()].sort().join(";") : "_";
-  return `${lang}:${metaKey}:${docs.map((d) => d.id).sort().join(",")}`;
+  const metaKey = categoryMeta
+    ? JSON.stringify([...categoryMeta.entries()].sort(([a], [b]) => a.localeCompare(b)))
+    : "_";
+  return `${lang}:${metaKey}:${docs
+    .map((d) => {
+      const { sidebar_position, sidebar_label, title, description, unlisted, standalone, slug } =
+        d.data;
+      return JSON.stringify([
+        d.id,
+        sidebar_position,
+        sidebar_label,
+        title,
+        description,
+        unlisted,
+        standalone,
+        slug,
+      ]);
+    })
+    .sort()
+    .join(",")}`;
 }
 
 /**

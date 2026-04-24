@@ -1,66 +1,7 @@
-# Dependencies
-node_modules/
+node_modules
+dist
+.astro
 
-# Build outputs
-dist/
-build/
-
-# Astro
-.astro/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-*.sublime-*
-
-# Environment
-.env
-.env.local
-.env*.local
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# Cloudflare
-.wrangler/
-
-# Playwright
-.playwright-cli/
-
-# Misc
-!__inbox/
-__inbox/*
-!__inbox/new-scaffold/
-!__inbox/zcss-preset.json
-!__inbox/MIGRATION_NOTES.md
-__inbox/new-scaffold/node_modules
-__inbox/new-scaffold/dist
-__inbox/new-scaffold/.astro
-__inbox/new-scaffold/.output
-__inbox/new-scaffold/.wrangler
-__inbox/new-scaffold/.playwright-cli
-__inbox/new-scaffold/.DS_Store
-src/data/
-doc/
-
-# Generated skill files (contain machine-specific absolute paths)
-.claude/skills/css-wisdom/SKILL.md
-.claude/skills/css-wisdom/docs
-.claude/skills/css-wisdom/docs-ja
-.claude/skills/zcss-wisdom/
-
-# Generated claude-resources docs (auto-generated at build time)
-src/content/docs/claude/
-src/content/docs/claude-agents/
-src/content/docs/claude-md/
-src/content/docs/claude-skills/
-
-# Worktrees
-worktrees/
+# Tauri build artifacts
+src-tauri/target
+src-tauri/gen

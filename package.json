@@ -1,66 +1,43 @@
 {
-  "name": "zcss",
+  "name": "new-scaffold",
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
   "scripts": {
-    "// ── Core ─────────────────────────────────────────": "",
-    "predev": "lsof -ti :8811 | xargs kill 2>/dev/null; true",
-    "dev": "astro dev --port 8811 --host css-bp.localhost",
-    "dev:network": "astro dev --port 8811 --host 0.0.0.0",
+    "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview --port 8811",
-    "// ── Quality ──────────────────────────────────────": "",
-    "check": "astro sync && tsc --noEmit",
-    "check:links": "node scripts/check-links.js --strict",
-    "b4push": "bash scripts/run-b4push.sh",
-    "// ── Tools ──────────────────────────────────────": "",
-    "generate:css-wisdom": "node scripts/generate-css-wisdom.js",
-    "setup:doc-skill": "node scripts/generate-css-wisdom.js && mkdir -p ~/.claude/skills && ln -sfn \"$(pwd)/.claude/skills/css-wisdom\" ~/.claude/skills/css-wisdom && echo 'Symlinked'"
+    "preview": "astro preview",
+    "check": "astro check",
+    "setup:doc-skill": "bash scripts/setup-doc-skill.sh",
+    "dev:tauri": "cargo tauri dev",
+    "build:tauri": "pnpm build && cargo tauri build"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.0",
-    "@astrojs/react": "^5.0.0",
-    "@shikijs/transformers": "^4.0.1",
-    "astro": "^6.0.4",
-    "clsx": "^2.1.1",
+    "@astrojs/mdx": "^4.3.0",
+    "@astrojs/preact": "^4.1.0",
+    "@shikijs/transformers": "^4.0.0",
+    "astro": "^5.18.0",
+    "clsx": "^2.1.0",
     "diff": "^8.0.3",
     "github-slugger": "^2.0.0",
-    "gray-matter": "^4.0.3",
+    "gray-matter": "^4.0.0",
+    "mermaid": "^11.14.0",
     "minisearch": "^7.2.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "remark-directive": "^4.0.0",
+    "preact": "^10.26.0",
+    "remark-cjk-friendly": "^2.0.1",
+    "remark-directive": "^3.0.0",
     "shiki": "^4.0.2",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.7",
-    "@tailwindcss/vite": "^4.2.1",
+    "@astrojs/check": "^0.9.0",
+    "@tailwindcss/vite": "^4.2.0",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
-    "@types/node": "^25.3.5",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "lefthook": "^1.11.13",
-    "prettier": "^3.5.3",
-    "prettier-plugin-astro": "^0.14.1",
-    "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.1"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lefthook",
-      "sharp"
-    ],
-    "patchedDependencies": {
-      "astro@6.0.4": "patches/astro@6.0.4.patch"
-    }
-  },
-  "engines": {
-    "node": ">=20.0"
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "pagefind": "^1.4.0",
+    "tailwindcss": "^4.2.0",
+    "typescript": "^5.9.0"
   }
 }

@@ -1,5 +1,6 @@
 import { settings } from "@/config/settings";
-import { defaultLocale, type Locale } from "@/config/i18n";
+import { defaultLocale, locales, getLocaleLabel, type Locale } from "@/config/i18n";
+import type { LocaleLink } from "@/types/locale";
 
 /** Normalized base path with no trailing slash (empty string when "/"). */
 export const normalizedBase = settings.base.replace(/\/+$/, "");
@@ -55,6 +56,52 @@ export function isExternal(href: string): boolean {
 /** Resolve a href: external URLs pass through, internal ones get the base prefix. */
 export function resolveHref(href: string): string {
   return isExternal(href) ? href : withBase(href);
+}
+
+/**
+ * Build a localized, versioned nav href.
+ * Note: uses /{lang}/v/{version}/... ordering (for header/sidebar nav links).
+ * This differs from versionedDocsUrl() which uses /v/{version}/{lang}/... (for doc page links).
+ * Both orderings are handled by the routing layer.
+ */
+export function navHref(
+  path: string,
+  lang: Locale | undefined,
+  currentVersion: string | undefined,
+): string {
+  const isNonDefaultLocale = lang != null && lang !== defaultLocale;
+  const versionPrefix = currentVersion ? `/v/${currentVersion}` : "";
+  return withBase(
+    isNonDefaultLocale
+      ? `/${lang}${versionPrefix}${path}`
+      : `${versionPrefix}${path}`,
+  );
+}
+
+/** Build a locale-switched path from the current page path. */
+export function getPathForLocale(
+  path: string,
+  currentLang: Locale,
+  targetLang: Locale,
+): string {
+  let relativePath = stripBase(path);
+  if (currentLang !== defaultLocale) {
+    relativePath = relativePath.replace(new RegExp(`^/${currentLang}/`), "/");
+  }
+  if (targetLang !== defaultLocale) {
+    relativePath = `/${targetLang}${relativePath}`;
+  }
+  return withBase(relativePath);
+}
+
+/** Build locale links for locale switcher UI components. */
+export function buildLocaleLinks(currentPath: string, currentLang: Locale): LocaleLink[] {
+  return locales.map((code) => ({
+    code,
+    label: getLocaleLabel(code),
+    href: getPathForLocale(currentPath, currentLang, code),
+    active: code === currentLang,
+  }));
 }
 
 /** Build a versioned docs URL for the given slug, version, and lang. */

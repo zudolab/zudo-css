@@ -27,17 +27,6 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
     return () => document.removeEventListener("astro:after-swap", handleSwap);
   }, []);
 
-  // Close on Escape key
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && open) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
-
   return (
     <>
       {/* Hamburger button - visible only on mobile */}
@@ -46,12 +35,11 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         onClick={() => setOpen(!open)}
         className="lg:hidden px-hsp-sm py-vsp-xs -ml-hsp-sm mr-hsp-sm text-muted hover:text-fg"
         aria-label={open ? "Close sidebar" : "Open sidebar"}
-        aria-expanded={open}
       >
         {open ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-[1.5rem] w-[1.5rem]"
+            className="h-icon-lg w-icon-lg"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -66,7 +54,7 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-[1.5rem] w-[1.5rem]"
+            className="h-icon-lg w-icon-lg"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -84,17 +72,15 @@ export default function SidebarToggle({ children }: SidebarToggleProps) {
       {/* Backdrop overlay - mobile only */}
       {open && (
         <div
-          className="fixed inset-0 z-30 lg:hidden"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.3)" }}
+          className="fixed inset-0 z-30 bg-overlay/30 lg:hidden"
           onClick={() => setOpen(false)}
-          aria-hidden="true"
         />
       )}
 
       {/* Sidebar panel - mobile only (desktop sidebar is in doc-layout) */}
       <aside
         className={`
-          fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[20.8rem] flex flex-col
+          fixed top-[3.5rem] left-0 z-40 h-[calc(100vh-3.5rem)] w-[16rem] flex flex-col
           border-r border-muted bg-bg transition-transform duration-200
           lg:hidden
           ${open ? "translate-x-0" : "-translate-x-full"}

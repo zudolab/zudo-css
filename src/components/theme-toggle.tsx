@@ -73,7 +73,9 @@ export default function ThemeToggle({ defaultMode = "dark" }: ThemeToggleProps) 
     document.documentElement.setAttribute("data-theme", next);
     document.documentElement.style.colorScheme = next;
     localStorage.setItem(STORAGE_KEY, next);
+    // Clear both v1 and v2 tweak state so the new scheme's palette takes effect.
     localStorage.removeItem("zudo-doc-tweak-state");
+    localStorage.removeItem("zudo-doc-tweak-state-v2");
     window.dispatchEvent(new CustomEvent("color-scheme-changed"));
   }
 

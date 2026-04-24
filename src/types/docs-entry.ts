@@ -29,6 +29,7 @@ export interface DocsEntry {
     hide_toc?: boolean;
     standalone?: boolean;
     slug?: string;
+    generated?: boolean;
   };
   rendered?: RenderedContent;
   filePath?: string;
