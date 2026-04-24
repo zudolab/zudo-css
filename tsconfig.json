@@ -6,5 +6,5 @@
       "@/*": ["src/*"]
     }
   },
-  "exclude": ["dist", "e2e/fixtures", "packages", "worktrees", "vendor", "src/**/__tests__", "vitest.config.ts"]
+  "exclude": ["dist", "e2e", "packages", "worktrees", "vendor", "src/**/__tests__", "scripts/**/__tests__", "vitest.config.ts"]
 }

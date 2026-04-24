@@ -5,7 +5,6 @@ import { settings } from "@/config/settings";
 import { withBase, stripBase, navHref } from "@/utils/base";
 import { defaultLocale, t, type Locale } from "@/config/i18n";
 import LanguageSwitcher from "@/components/language-switcher.astro";
-import { locales } from "@/config/i18n";
 import Search from "@/components/search.astro";
 
 interface Props {
@@ -208,7 +207,7 @@ function isNavItemActive(item: (typeof settings.headerNav)[number]): boolean {
         )
       }
 
-      {lang && <LanguageSwitcher lang={lang} locales={locales} />}
+      {lang && <LanguageSwitcher lang={lang} />}
     </div>
     <Search />
 

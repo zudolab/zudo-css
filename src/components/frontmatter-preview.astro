@@ -73,7 +73,7 @@ function renderValue(v: unknown): { text?: string; code?: string } {
                   <td class="px-hsp-md py-vsp-2xs text-fg break-words align-top">
                     {Renderer ? (
                       <Renderer
-                        value={value}
+                        value={value as NonNullable<unknown>}
                         entryKey={key}
                         data={data}
                         locale={locale}

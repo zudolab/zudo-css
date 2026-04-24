@@ -14,7 +14,10 @@ import type {
   LocaleConfig,
   VersionConfig,
   FooterConfig,
+  FrontmatterPreviewConfig,
+  TagPlacement,
 } from "./settings-types";
+import type { TagGovernanceMode } from "./tag-vocabulary-types";
 
 export const settings = {
   colorScheme: "Default Dark",
@@ -30,6 +33,7 @@ export const settings = {
   trailingSlash: true as boolean,
   noindex: false as boolean,
   editUrl: false as string | false,
+  githubUrl: false as string | false,
   siteUrl: "https://takazudomodular.com/pj/zcss/" as string,
   docsDir: "src/content/docs",
   locales: {
@@ -39,6 +43,10 @@ export const settings = {
   sitemap: true,
   docMetainfo: true,
   docTags: false,
+  tagPlacement: "after-title" as TagPlacement,
+  tagGovernance: "off" as TagGovernanceMode,
+  tagVocabulary: false as boolean,
+  frontmatterPreview: false as FrontmatterPreviewConfig | false,
   llmsTxt: true,
   math: false,
   cjkFriendly: true as boolean,
