@@ -247,6 +247,39 @@ correct output. Logged here so they are not lost between sub-issues.
   i18n dictionary). Downstream zcss may replace this page entirely in
   Sub #57, but the upstream bug remains for other consumers.
 
+## Upstream bugs surfaced by Sub #50 `pnpm check`
+
+Running `pnpm check` inside `__inbox/new-scaffold/` surfaces additional
+type errors in the scaffold's base templates — they reference `settings.*`
+properties that the generated `src/config/settings.ts` does not declare.
+Same policy: do not hand-patch; fix upstream in `zudo-doc` so a fresh
+re-scaffold produces type-clean output. Logged here so Sub #49 (settings
+port) knows what surface area to cover.
+
+- **`settings.tagPlacement` / `settings.frontmatterPreview` referenced but
+  not in the generated settings type.**
+  `src/pages/docs/[...slug].astro` (lines ~190, ~200, ~216) and
+  `src/pages/en/docs/[...slug].astro` (lines ~241, ~251, ~263) both
+  narrow on `settings.tagPlacement === "before-pager" | "after-title"` and
+  read `settings.frontmatterPreview`. The scaffolder's
+  `src/config/settings.ts` does not declare either field, so
+  `astro check` fails with `ts(2339) Property 'tagPlacement' does not
+  exist …` and the matching error for `frontmatterPreview`. Fix upstream
+  so the settings template emits these fields (typed and defaulted) for
+  every scaffold that ships the `[...slug].astro` page template.
+- **`settings.tagVocabulary` / `settings.tagGovernance` referenced but not
+  in the generated settings type.**
+  `src/utils/tags.ts` (line ~40) calls
+  `Boolean(settings.tagVocabulary) && settings.tagGovernance !== "off"`.
+  Neither field is in the generated settings, so both lines fail
+  `ts(2339)`. Same fix: emit these in the settings template when the
+  tag-governance code path is part of base.
+
+These were surfaced in Sub #50 by running `pnpm check` against the Sub #48
+output. Sub #50 itself only edits `src/config/sidebars.ts`, so they are
+tracked here rather than patched. File these upstream at
+`zudolab/zudo-doc` alongside the Sub #48 batch (#394, #396, #398).
+
 ## Build verification
 
 **Not** run in Sub #48 by design — `/x-wt-teams` rules ban heavy test /
