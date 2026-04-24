@@ -86,6 +86,61 @@ All 13 features in the preset were applied. See `__inbox/new-scaffold/package.js
 | zudolab/zudo-doc#403 | `settings.githubUrl` undeclared, `LanguageSwitcher` rejects locales prop, mermaid dep missing | Post-Sub #49 residual TS errors. |
 | zudolab/zudo-doc#404 | LanguageSwitcher prop, frontmatter-preview unknown-JSX, missing mermaid dep | Residual from the scaffolder; non-blocking for URL parity. |
 
+## Sub #54 script decisions
+
+Phase 3 port of zcss custom scripts and package.json wiring (issue
+zudolab/zudo-css-wisdom#54). Landed in worktree
+`zudo-doc-rebuild/sub54-scripts`.
+
+Ported into `__inbox/new-scaffold/scripts/`:
+
+| Script | Notes |
+|---|---|
+| `check-links.js` | Post-build link checker, `--strict` mode used by `pnpm check:links`. |
+| `dev-stable.js` | Build-then-serve fallback dev mode. Not referenced from package.json; kept as a manual utility (`node scripts/dev-stable.js`) because the scaffold ships no equivalent. |
+| `generate-css-wisdom.js` | Regenerates `.claude/skills/css-wisdom/SKILL.md` from `descriptions.json`. Driven by `pnpm generate:css-wisdom`. |
+| `run-b4push.sh` | Pre-push orchestrator (typecheck + build + link check). Driven by `pnpm b4push`. |
+| `version-bump.sh` | Release helper. Not wired into `package.json`; invoked manually (`./scripts/version-bump.sh …`). |
+| `__tests__/check-links.test.ts` | Unit tests for `check-links.js`. `vitest.config.ts` currently only scans `e2e/`, so these tests are not yet included by `pnpm test`; widening the include pattern is Sub #58 territory. |
+
+Deliberately NOT ported:
+
+- **zcss's `scripts/setup-doc-skill.sh`** — superseded. zcss's own
+  `package.json` no longer calls this file (the live `setup:doc-skill`
+  entry is an inline `node … && ln -sfn …`). It was legacy/dead in
+  zcss already, so porting it would be importing stale code.
+- **`scripts/__tests__/setup-doc-skill.test.ts`** — its subject
+  (`setup-doc-skill.sh`) is not in the port, so the test would be
+  dangling. Also, the test's expected doc-category tree (`getting-started/`,
+  `guides/`, `reference/`, `components/`) does not match zcss's actual
+  tree (`layout/`, `typography/`, `styling/`, …) and would fail against
+  the live content.
+
+Deleted from the scaffold:
+
+- **`__inbox/new-scaffold/scripts/setup-doc-skill.sh`** (provided by
+  the `skillSymlinker` feature). The scaffold's version generates a
+  generic SKILL.md templated for `<HtmlPreview>` demos and a
+  project-name-derived skill name (`new-scaffold-wisdom`). zcss's
+  SKILL.md is curated via `generate-css-wisdom.js` + a static
+  `descriptions.json`, and demos use `<CssPreview>`, so the scaffold
+  script would produce the wrong shape. `setup:doc-skill` in
+  `package.json` is overridden to point at zcss's inline
+  generate-and-symlink flow instead.
+
+`package.json` merge result (scripts section):
+
+- Added: `predev`, `dev` (with `--port 8811 --host css-bp.localhost`),
+  `dev:network`, `check:links`, `b4push`, `generate:css-wisdom`.
+- Overridden: `setup:doc-skill` (see above).
+- Left untouched (scaffold defaults): `build`, `preview`, `check`,
+  `dev:tauri`, `build:tauri`. Overriding `check` (`astro check` →
+  `astro sync && tsc --noEmit` in zcss) and `preview` (`--port 8811`
+  in zcss) is out of Sub #54 scope; Sub #58 can revisit if actually
+  needed.
+
+No new zudo-doc upstream issues surfaced by this port.
+
 ## Concerns for downstream
 
 - `patches/astro@6.0.4.patch` will not apply on astro 5.18. Sub #57 equivalent decides drop/retarget/defer.
