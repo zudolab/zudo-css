@@ -77,5 +77,7 @@
   "methodology/design-systems/display-scale-strategy.mdx": "Custom --display-scale CSS property for desktop app zoom (Tauri/Electron), token-based scaling",
   "typography/font-sizing/three-tier-font-size-strategy.mdx": "Three-tier font-size architecture: base, scale, component",
   "typography/text-effects/text-outline-and-stroke.mdx": "Text outline/stroke (縁取り): -webkit-text-stroke, text-shadow hack, SVG stroke, feMorphology, paint-order",
-  "methodology/architecture/mdx-component-architecture.mdx": "MDX component overrides vs container-scoped CSS, cascade layer conflicts with Tailwind v4, server-rendered components"
+  "methodology/architecture/mdx-component-architecture.mdx": "MDX component overrides vs container-scoped CSS, cascade layer conflicts with Tailwind v4, server-rendered components",
+  "methodology/design-systems/multi-namespace-token-strategy.mdx": "Split tokens into per-context namespaces (myweb-, myadmin-) to keep each design context tight as the site grows",
+  "typography/text-control/long-url-and-path-wrapping.mdx": "Delimiter-aware wrapping for long URLs/paths via <wbr> injection instead of word-break: break-all or overflow-wrap: anywhere"
 }
