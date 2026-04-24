@@ -5,7 +5,6 @@ import Breadcrumb from "@/components/breadcrumb.astro";
 import { toRouteSlug } from "@/utils/slug";
 import { collectTags } from "@/utils/tags";
 import { t } from "@/config/i18n";
-import { withBase } from "@/utils/base";
 import TagNav from "@/components/tag-nav.astro";
 
 const allDocs = await getCollection("docs");
@@ -24,7 +23,7 @@ const tagMap = collectTags(docs, (id, data) => data.slug ?? toRouteSlug(id));
   <Breadcrumb
     slot="breadcrumb"
     items={[
-      { label: "Docs", href: withBase("/docs") },
+      { label: "Docs" },
       { label: t("doc.allTags") },
     ]}
   />
