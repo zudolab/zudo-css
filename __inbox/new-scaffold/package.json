@@ -31,6 +31,7 @@
     "preact": "^10.26.0",
     "remark-cjk-friendly": "^2.0.1",
     "remark-directive": "^3.0.0",
+    "shiki": "^4.0.2",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
