@@ -1,5 +1,6 @@
 {
   "label": "Flexbox & Grid",
   "position": 1,
-  "noPage": true
+  "noPage": true,
+  "description": "Core 1D and 2D layout engines: Flexbox patterns, Grid patterns, subgrid alignment, and gap vs margin for spacing."
 }

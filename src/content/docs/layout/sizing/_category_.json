@@ -1,5 +1,6 @@
 {
   "label": "Sizing",
   "position": 3,
-  "noPage": true
+  "noPage": true,
+  "description": "Controlling element dimensions: intrinsic sizing keywords, aspect-ratio, clamp() for fluid scaling, and logical properties for i18n-safe layouts."
 }
