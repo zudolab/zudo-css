@@ -391,7 +391,7 @@ A token system that is not enforced is a token system that decays. Add a lint ru
 
 The escape hatch matters. Some legitimate cases (a one-off third-party widget integration, an experimental layer) need a raw integer with a code comment explaining why — block by default, but do not block forever.
 
-A companion lint-rule article (covering AST patterns, CI wiring, and the matching enforcement rules for other token families) will land in a follow-up sub-issue.
+For the full multi-pass linter pattern (raw color literals, zone-aware semantic tokens, and the matching enforcement rules for other token families), see [Design Token Lint](../architecture/design-token-lint.mdx). Pass 3 covers the raw-z-index rule documented above.
 
 :::info[Pre-push wiring]
 Add both `pnpm check:z-index` (codegen drift) and the lint rule (raw `z-index:` integers) to a pre-push hook. The drift check catches stale generated CSS; the lint check catches new violations. Together they prevent the system from rotting between PRs.

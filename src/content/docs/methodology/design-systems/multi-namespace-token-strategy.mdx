@@ -850,6 +850,10 @@ This strategy builds on top of the tight token strategy. It does not replace it 
 | [Two-Tier Size Strategy](../two-tier-size-strategy/) | Theme tokens + arbitrary values for width/height | When sizing elements within any namespace |
 | **Multi Namespace Token Strategy** | Multiple namespaces for different UI contexts | When a project serves fundamentally different design contexts |
 
+## Build-time enforcement
+
+A multi-namespace token system needs the same enforcement boundary as a single-namespace one — arguably more, because each new namespace expands the surface where raw values can hide. See [Design Token Lint](../architecture/design-token-lint.mdx) for the multi-pass linter pattern that catches raw literals in component code and validates that semantic tokens reference palette tokens via `var()`.
+
 ## References
 
 - [Tailwind CSS v4 Theme Configuration](https://tailwindcss.com/docs/theme)

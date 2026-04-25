@@ -444,6 +444,10 @@ Every spacing value in this layout maps directly to a token from the table. The 
 - **Small personal projects** where one developer maintains full context
 - **Tailwind learning projects** where using the full default scale is part of the learning process
 
+## Build-time enforcement
+
+Defining a tight token set is half the work. The other half is preventing raw values from sneaking back into component code as the codebase grows. See [Design Token Lint](../../architecture/design-token-lint.mdx) for the multi-pass linter pattern that enforces a tight token set at pre-push and CI time.
+
 ## Deep Dive
 
 For detailed token strategies in specific categories:
