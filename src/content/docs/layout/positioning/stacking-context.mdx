@@ -343,6 +343,7 @@ In Chrome DevTools, the Layers panel (More Tools > Layers) visualizes stacking c
 
 ## See Also
 
+- [Containing Block for position fixed](./containing-block-for-fixed.mdx) — the silent twin of this bug. Almost the same trigger property list (`transform`, `filter`, `backdrop-filter`, `perspective`, `will-change`, `contain`, `content-visibility`) also creates a new **containing block for `position: fixed` descendants**, which silently makes them pin to that ancestor's box instead of the viewport.
 - [Z-Index Strategy](../../methodology/design-systems/z-index-strategy.mdx) — once the stacking-context rules are clear, manage z-index values themselves with semantic tokens (`--z-modal`, `--z-tooltip`, `--z-local-N`) generated from a single source of truth, plus a lint rule that forbids raw integers.
 
 ## References
